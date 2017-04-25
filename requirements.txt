@@ -1,3 +1,4 @@
+numba >= 0.32.0
 numpy >= 1.12.1
 numpy_groupies >= 0.9.6
 scikit-learn >= 0.18.1
