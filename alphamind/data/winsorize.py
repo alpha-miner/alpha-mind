@@ -12,8 +12,8 @@ import numpy_groupies as npg
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
-        mean_values = npg.aggregate_np(groups, x, axis=0, func='mean')
-        std_values = npg.aggregate_np(groups, x, axis=0, func='std', ddof=1)
+        mean_values = npg.aggregate_nb(groups, x, axis=0, func='mean')
+        std_values = npg.aggregate_nb(groups, x, axis=0, func='std', ddof=1)
 
         value_index = np.searchsorted(range(len(mean_values)), groups)
 
