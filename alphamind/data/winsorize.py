@@ -8,6 +8,7 @@ Created on 2017-4-25
 import pandas as pd
 import numpy as np
 
+
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
