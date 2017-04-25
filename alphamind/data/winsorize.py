@@ -5,21 +5,17 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
-import pandas as pd
 import numpy as np
+import numpy_groupies as npg
 
 
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
-        df = pd.DataFrame(x)
-        gs = df.groupby(groups)
+        mean_values = npg.aggregate_np(groups, x, axis=0, func='mean')
+        std_values = npg.aggregate_np(groups, x, axis=0, func='std', ddof=1)
 
-        mean_values = gs.mean()
-        std_values = gs.std().values
-
-        value_index = np.searchsorted(mean_values.index, groups)
-        mean_values = mean_values.values
+        value_index = np.searchsorted(range(len(mean_values)), groups)
 
         ubound = mean_values + num_stds * std_values
         lbound = mean_values - num_stds * std_values

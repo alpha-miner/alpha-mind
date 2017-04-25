@@ -6,20 +6,16 @@ Created on 2017-4-25
 """
 
 import numpy as np
-import pandas as pd
+import numpy_groupies as npg
 
 
 def standardize(x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
-        df = pd.DataFrame(x)
-        gs = df.groupby(groups)
+        mean_values = npg.aggregate_np(groups, x, axis=0, func='mean')
+        std_values = npg.aggregate_np(groups, x, axis=0, func='std', ddof=1)
 
-        mean_values = gs.mean()
-        std_values = gs.std().values
-
-        value_index = np.searchsorted(mean_values.index, groups)
-        mean_values = mean_values.values
+        value_index = np.searchsorted(range(len(mean_values)), groups)
 
         mean_values = mean_values[value_index]
         std_values = std_values[value_index]
