@@ -18,4 +18,3 @@ def standardize(x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
         return (x - mean_values) / std_values
     else:
         return (x - x.mean(axis=0)) / x.std(axis=0)
-
