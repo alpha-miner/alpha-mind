@@ -1,6 +1,5 @@
-numba >= 0.32.0
+cython >= 0.25.2
 numpy >= 1.12.1
-numpy_groupies >= 0.9.6
 scikit-learn >= 0.18.1
 scipy >= 0.19.0
 pandas >= 0.19.2

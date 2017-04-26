@@ -6,14 +6,15 @@ Created on 2017-4-25
 """
 
 import numpy as np
-import numpy_groupies as npg
+from alphamind.data.impl import agg_mean
+from alphamind.data.impl import agg_std
 
 
 def standardize(x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
-        mean_values = npg.aggregate_nb(groups, x, axis=0, func='mean')
-        std_values = npg.aggregate_nb(groups, x, axis=0, func='std', ddof=1)
+        mean_values = agg_mean(groups, x)
+        std_values = agg_std(groups, x, ddof=1)
 
         value_index = np.searchsorted(range(len(mean_values)), groups)
 

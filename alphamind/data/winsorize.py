@@ -6,14 +6,15 @@ Created on 2017-4-25
 """
 
 import numpy as np
-import numpy_groupies as npg
+from alphamind.data.impl import agg_mean
+from alphamind.data.impl import agg_std
 
 
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
-        mean_values = npg.aggregate_nb(groups, x, axis=0, func='mean')
-        std_values = npg.aggregate_nb(groups, x, axis=0, func='std', ddof=1)
+        mean_values = agg_mean(groups, x)
+        std_values = agg_std(groups, x, ddof=1)
 
         value_index = np.searchsorted(range(len(mean_values)), groups)
 
@@ -36,7 +37,7 @@ def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) ->
 
 if __name__ == '__main__':
     x = np.random.randn(3000, 10)
-    groups = np.random.randint(20, 40, size=3000)
+    groups = np.random.randint(0, 20, size=3000)
 
     for _ in range(1000):
         winsorize_normal(x, 2, groups)

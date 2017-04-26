@@ -14,6 +14,7 @@ from alphamind.data.neutralize import ls_fit
 
 
 def benchmark_neutralize(n_samples: int, n_features: int, n_loops: int) -> None:
+    print("-" * 60)
     print("Starting least square fitting benchmarking")
     print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2})".format(n_samples, n_features, n_loops))
 
