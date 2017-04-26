@@ -6,29 +6,20 @@ Created on 2017-4-25
 """
 
 import numpy as np
-from alphamind.data.impl import agg_mean
-from alphamind.data.impl import agg_std
+from alphamind.data.impl import transform
 
 
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:
 
     if groups is not None:
-        mean_values = agg_mean(groups, x)
-        std_values = agg_std(groups, x, ddof=1)
-
-        value_index = np.searchsorted(range(len(mean_values)), groups)
-
-        ubound = mean_values + num_stds * std_values
-        lbound = mean_values - num_stds * std_values
-
-        ubound = ubound[value_index]
-        lbound = lbound[value_index]
+        mean_values = transform(groups, x, 'mean')
+        std_values = transform(groups, x, 'std')
     else:
         std_values = x.std(axis=0)
         mean_values = x.mean(axis=0)
 
-        ubound = mean_values + num_stds * std_values
-        lbound = mean_values - num_stds * std_values
+    ubound = mean_values + num_stds * std_values
+    lbound = mean_values - num_stds * std_values
 
     res = np.where(x > ubound, ubound, np.where(x < lbound, lbound, x))
 
