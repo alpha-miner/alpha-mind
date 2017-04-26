@@ -25,7 +25,7 @@ class TestStandardize(unittest.TestCase):
         
     def test_standardize_with_group(self):
         x = np.random.randn(3000, 10)
-        groups = np.random.randint(30, size=3000)
+        groups = np.random.randint(10, 30, size=3000)
 
         calc_zscore = standardize(x, groups)
         exp_zscore = pd.DataFrame(x).groupby(groups).transform(lambda s: (s - s.mean(axis=0)) / s.std(axis=0))

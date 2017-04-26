@@ -37,7 +37,7 @@ class TestWinsorize(unittest.TestCase):
     def test_winsorize_normal_with_group(self):
         num_stds = 2
         x = np.random.randn(3000, 10)
-        groups = np.random.randint(30, size=3000)
+        groups = np.random.randint(10, 30, size=3000)
 
         cal_winsorized = winsorize_normal(x, num_stds, groups)
 
