@@ -13,6 +13,7 @@ from libc.math cimport sqrt
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.initializedcheck(False)
 cdef int max_groups(long[:] groups, size_t length) nogil:
     cdef long curr_max = 0
     cdef size_t i
@@ -27,6 +28,7 @@ cdef int max_groups(long[:] groups, size_t length) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
+@cython.initializedcheck(False)
 cdef double[:, :] agg_mean(long[:] groups, double[:, :] x, size_t length, size_t width):
     cdef long max_g = max_groups(groups, length)
     cdef double[:, :] res = np.zeros((max_g+1, width))
@@ -51,6 +53,39 @@ cdef double[:, :] agg_mean(long[:] groups, double[:, :] x, size_t length, size_t
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
+@cython.initializedcheck(False)
+cdef double[:, :] agg_std(long[:] groups, double[:, :] x, size_t length, size_t width, long ddof=1):
+    cdef long max_g = max_groups(groups, length)
+    cdef double[:, :] running_sum_square = np.zeros((max_g+1, width))
+    cdef double[:, :] running_sum = np.zeros((max_g+1, width))
+    cdef long[:] bin_count = np.zeros(max_g+1, dtype=int)
+    cdef size_t i
+    cdef size_t j
+    cdef long k
+    cdef long curr
+    cdef double raw_value
+
+    with nogil:
+        for i in range(length):
+            k = groups[i]
+            for j in range(width):
+                raw_value = x[i, j]
+                running_sum[k, j] += raw_value
+                running_sum_square[k, j] += raw_value * raw_value
+            bin_count[k] += 1
+
+        for i in range(running_sum_square.shape[0]):
+            curr = bin_count[i]
+            if curr > ddof:
+                for j in range(width):
+                    running_sum_square[i, j] = sqrt((running_sum_square[i, j] - running_sum[i, j] * running_sum[i, j] / curr) / (curr - ddof))
+    return running_sum_square
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
 cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str func):
 
     cdef size_t length = x.shape[0]
@@ -59,6 +94,7 @@ cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str f
     cdef double[:, :] value_data = np.zeros((length, width))
     cdef size_t i
     cdef size_t j
+    cdef size_t k
 
     if func == 'mean':
         value_data = agg_mean(groups, x, length, width)
@@ -67,36 +103,8 @@ cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str f
 
     with nogil:
         for i in range(length):
+            k = groups[i]
             for j in range(width):
-                res_data[i, j] = value_data[groups[i], j]
+                res_data[i, j] = value_data[k, j]
 
     return np.asarray(res_data)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef double[:, :] agg_std(long[:] groups, double[:, :] x, size_t length, size_t width, long ddof=1):
-    cdef long max_g = max_groups(groups, length)
-    cdef double[:, :] running_sum_square = np.zeros((max_g+1, width))
-    cdef double[:, :] running_sum = np.zeros((max_g+1, width))
-    cdef long[:] bin_count = np.zeros(max_g+1, dtype=int)
-    cdef size_t i
-    cdef size_t j
-    cdef long curr
-    cdef double raw_value
-
-    with nogil:
-        for i in range(length):
-            for j in range(width):
-                raw_value = x[i, j]
-                running_sum[groups[i], j] += raw_value
-                running_sum_square[groups[i], j] += raw_value * raw_value
-            bin_count[groups[i]] += 1
-
-        for i in range(running_sum_square.shape[0]):
-            curr = bin_count[i]
-            if curr > ddof:
-                for j in range(width):
-                    running_sum_square[i, j] = sqrt((running_sum_square[i, j] - running_sum[i, j] * running_sum[i, j] / curr) / (curr - ddof))
-    return running_sum_square
