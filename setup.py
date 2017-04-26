@@ -23,7 +23,7 @@ else:
     line_trace = False
 
 
-ext_modules = ['alphamind/data/impl.pyx']
+ext_modules = ['alphamind/aggregate.pyx']
 
 
 def generate_extensions(ext_modules, line_trace=False):

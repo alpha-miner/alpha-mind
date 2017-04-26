@@ -6,7 +6,8 @@ Created on 2017-4-25
 """
 
 import numpy as np
-from alphamind.data.impl import transform
+
+from alphamind.aggregate import transform
 
 
 def standardize(x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
