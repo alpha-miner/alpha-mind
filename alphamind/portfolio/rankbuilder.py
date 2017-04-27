@@ -15,12 +15,15 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
 
     if groups is not None:
         max_g = np.max(groups)
+        index_range = np.arange(len(er))
 
         for i in range(max_g + 1):
             current_mask = groups == i
-            current_ordering = ordering[current_mask]
-            masks[current_ordering[:use_rank]] = True
+            current_index = index_range[current_mask]
+            current_ordering = neg_er[current_mask].argsort()
+            masks[current_index[current_ordering[:use_rank]]] = True
     else:
+
         masks[ordering[:use_rank]] = True
 
     weights = np.zeros(len(er))
@@ -33,10 +36,10 @@ if __name__ == '__main__':
     import datetime as dt
 
     x = np.random.randn(3000)
-    groups = np.random.randint(20, 50, size=3000)
+
+    groups = np.random.randint(30, size=3000)
 
     start = dt.datetime.now()
     for i in range(10000):
-        weights = rank_build(x, 20, groups)
+        weights = rank_build(x, 30, groups)
     print(dt.datetime.now() - start)
-    #print(x, '\n', weights)
