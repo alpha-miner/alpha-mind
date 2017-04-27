@@ -9,9 +9,9 @@ from alphamind.utilities import add_parent_path
 
 add_parent_path(__file__, 3)
 
-from alphamind.tests.test_neutralize import TestNeutralize
-from alphamind.tests.test_standardize import TestStandardize
-from alphamind.tests.test_winsorize import TestWinsorize
+from alphamind.tests.data.test_neutralize import TestNeutralize
+from alphamind.tests.data.test_standardize import TestStandardize
+from alphamind.tests.data.test_winsorize import TestWinsorize
 from alphamind.utilities import alpha_logger
 from alphamind.utilities import TestRunner
 

@@ -5,11 +5,11 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
-from alphamind.benchmarks.neutralize import benchmark_neutralize
-from alphamind.benchmarks.standardize import benchmark_standardize
-from alphamind.benchmarks.standardize import benchmark_standardize_with_group
-from alphamind.benchmarks.winsorize import benchmark_winsorize_normal
-from alphamind.benchmarks.winsorize import benchmark_winsorize_normal_with_group
+from alphamind.benchmarks.data.neutralize import benchmark_neutralize
+from alphamind.benchmarks.data.standardize import benchmark_standardize
+from alphamind.benchmarks.data.standardize import benchmark_standardize_with_group
+from alphamind.benchmarks.data.winsorize import benchmark_winsorize_normal
+from alphamind.benchmarks.data.winsorize import benchmark_winsorize_normal_with_group
 
 
 if __name__ == '__main__':
