@@ -6,15 +6,17 @@ Created on 2017-4-26
 """
 
 import numpy as np
+from numpy import zeros
+from numpy import max
 
 
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
     neg_er = -er
-    masks = np.zeros(len(er), dtype=bool)
+    masks = zeros(len(er), dtype=bool)
     ordering = neg_er.argsort()
 
     if groups is not None:
-        max_g = np.max(groups)
+        max_g = max(groups)
         index_range = np.arange(len(er))
 
         for i in range(max_g + 1):
@@ -23,11 +25,10 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
             current_ordering = neg_er[current_mask].argsort()
             masks[current_index[current_ordering[:use_rank]]] = True
     else:
-
         masks[ordering[:use_rank]] = True
 
-    weights = np.zeros(len(er))
-    weights[masks] = 1. / np.sum(masks)
+    weights = zeros(len(er))
+    weights[masks] = 1. / use_rank
     return weights
 
 
@@ -43,3 +44,4 @@ if __name__ == '__main__':
     for i in range(10000):
         weights = rank_build(x, 30, groups)
     print(dt.datetime.now() - start)
+

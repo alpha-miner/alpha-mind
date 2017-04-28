@@ -15,7 +15,7 @@ def neutralize(x: np.ndarray, y: np.ndarray) -> np.ndarray:
 
 
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
-    x_bar = np.transpose(x)
+    x_bar = x.T
     b = solve(x_bar @ x, x_bar @ y)
     return b
 
