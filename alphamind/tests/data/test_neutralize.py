@@ -15,7 +15,7 @@ class TestNeutralize(unittest.TestCase):
 
     def test_neutralize(self):
 
-        y = np.random.randn(3000)
+        y = np.random.randn(3000, 4)
         x = np.random.randn(3000, 10)
 
         calc_res = neutralize(x, y)
@@ -23,7 +23,7 @@ class TestNeutralize(unittest.TestCase):
         model = LinearRegression(fit_intercept=False)
         model.fit(x, y)
 
-        exp_res = y - x @ model.coef_
+        exp_res = y - x @ model.coef_.T
 
         np.testing.assert_array_almost_equal(calc_res, exp_res)
 

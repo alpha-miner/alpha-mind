@@ -7,40 +7,67 @@ Created on 2017-4-26
 
 import numpy as np
 from numpy import zeros
+from numpy import arange
 
 
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
-    length = len(er)
-    neg_er = -er
-    masks = zeros(length, dtype=bool)
-    weights = zeros(length)
 
-    if groups is not None:
-        max_g = groups.max()
-        index_range = np.arange(length)
-        for i in range(max_g+1):
-            current_mask = groups == i
-            current_index = index_range[current_mask]
-            current_ordering = neg_er[current_mask].argsort()
-            masks[current_index[current_ordering[:use_rank]]] = True
-        weights[masks] = 1. / masks.sum()
+    if er.ndim == 1 or (er.shape[0] == 1 or er.shape[1] == 1):
+        """ fast path """
+        neg_er = -er.flatten()
+        length = len(neg_er)
+        weights = zeros((length, 1))
+        if groups is not None:
+            max_g = groups.max()
+            index_range = arange(length)
+            masks = zeros(length, dtype=bool)
+            for i in range(max_g + 1):
+                current_mask = groups == i
+                current_index = index_range[current_mask]
+                current_ordering = neg_er[current_mask].argsort()
+                masks[current_index[current_ordering[:use_rank]]] = True
+            weights[masks] = 1. / masks.sum()
+        else:
+            ordering = neg_er.argsort()
+            weights[ordering[:use_rank]] = 1. / use_rank
+        return weights
     else:
-        ordering = neg_er.argsort()
-        masks[ordering[:use_rank]] = True
-        weights[masks] = 1. / use_rank
-    return weights
+        length = er.shape[0]
+        width = er.shape[1]
+        neg_er = -er
+        weights = zeros((length, width))
+
+        if groups is not None:
+            max_g = groups.max()
+            index_range = arange(length)
+            masks = zeros((length, width), dtype=bool)
+            for i in range(max_g+1):
+                current_mask = groups == i
+                current_index = index_range[current_mask]
+                current_ordering = neg_er[current_mask].argsort(axis=0)
+                for j in range(width):
+                    masks[current_index[current_ordering[:use_rank, j]], j] = True
+            choosed = masks.sum(axis=0)
+
+            for j in range(width):
+                weights[masks[:, j], j] = 1. / choosed[j]
+        else:
+            ordering = neg_er.argsort(axis=0)
+            for j in range(width):
+                weights[ordering[:use_rank, j], j] = 1. / use_rank
+        return weights
 
 
 if __name__ == '__main__':
 
     import datetime as dt
 
-    x = np.random.randn(4)
+    x = np.random.randn(4, 2)
 
     groups = np.random.randint(2, size=4)
 
     start = dt.datetime.now()
-    for i in range(10000):
-        weights = rank_build(x, 1, groups)
+    for i in range(100):
+        weights = rank_build(x, 1)#, groups)
     print(dt.datetime.now() - start)
 
