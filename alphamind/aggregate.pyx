@@ -165,7 +165,6 @@ cpdef np.ndarray[double, ndim=2] aggregate(long[:] groups, double[:, :] x, str f
     cdef np.ndarray[double, ndim=2] res
     cdef double* value_data_ptr
 
-
     if func == 'mean':
         value_data_ptr = agg_mean(&groups[0], &x[0, 0], length, width)
     elif func == 'std':
