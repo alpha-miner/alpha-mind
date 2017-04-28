@@ -13,7 +13,7 @@ from numpy import arange
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
 
     if er.ndim == 1 or (er.shape[0] == 1 or er.shape[1] == 1):
-        """ fast path """
+        """ fast path methods for single column er"""
         neg_er = -er.flatten()
         length = len(neg_er)
         weights = zeros((length, 1))
@@ -57,17 +57,4 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
                 weights[ordering[:use_rank, j], j] = 1. / use_rank
         return weights
 
-
-if __name__ == '__main__':
-
-    import datetime as dt
-
-    x = np.random.randn(4, 2)
-
-    groups = np.random.randint(2, size=4)
-
-    start = dt.datetime.now()
-    for i in range(100):
-        weights = rank_build(x, 1)#, groups)
-    print(dt.datetime.now() - start)
 
