@@ -5,17 +5,48 @@ Created on 2017-4-26
 @author: cheng.li
 """
 
+import numpy as np
 cimport numpy as np
 cimport cython
 from libc.math cimport sqrt
 from libc.math cimport fabs
 from libc.stdlib cimport calloc
 from libc.stdlib cimport free
+from numpy import array
+from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
+from cpython.ref cimport PyObject
+from cpython.list cimport PyList_Append
 
 np.import_array()
 
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
+
+
+cdef inline object _groupby_core(dict d, object key, object item):
+    cdef PyObject *obj = PyDict_GetItem(d, key)
+    if obj is NULL:
+        val = []
+        PyList_Append(val, item)
+        PyDict_SetItem(d, key, val)
+    else:
+        PyList_Append(<object>obj, item)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cpdef list groupby(long[:] groups):
+
+    cdef size_t length = groups.shape[0]
+    cdef dict group_ids = {}
+    cdef size_t i
+    cdef long curr_tag
+
+    for i in range(length):
+        _groupby_core(group_ids, groups[i], i)
+
+    return [array(v, dtype=np.int64) for v in group_ids.values()]
 
 
 @cython.boundscheck(False)

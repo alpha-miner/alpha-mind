@@ -7,7 +7,7 @@ Created on 2017-4-26
 
 import numpy as np
 from numpy import zeros
-from alphamind.portfolio.impl import groupby
+from alphamind.aggregate import groupby
 from alphamind.portfolio.impl import set_value_bool
 from alphamind.portfolio.impl import set_value_double
 
