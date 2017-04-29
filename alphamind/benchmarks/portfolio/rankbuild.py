@@ -16,20 +16,26 @@ def benchmark_build_rank(n_samples: int, n_loops: int, n_included: int) -> None:
     print("Starting portfolio construction by rank benchmarking")
     print("Parameters(n_samples: {0}, n_included: {1}, n_loops: {2})".format(n_samples, n_included, n_loops))
 
-    x = np.random.randn(n_samples, 1)
+    n_portfolio = 10
+
+    x = np.random.randn(n_samples, n_portfolio)
 
     start = dt.datetime.now()
     for _ in range(n_loops):
-        _ = rank_build(x, n_included)
+        calc_weights = rank_build(x, n_included)
     impl_model_time = dt.datetime.now() - start
 
     print('{0:20s}: {1}'.format('Implemented model', impl_model_time))
 
     start = dt.datetime.now()
     for _ in range(n_loops):
-        expected_weights = np.zeros((len(x), 1))
-        expected_weights[(-x).argsort(axis=0).argsort(axis=0) < n_included] = 1. / n_included
+        exp_weights = np.zeros((len(x), n_portfolio))
+        choosed_index = (-x).argsort(axis=0).argsort(axis=0) < n_included
+        for j in range(n_portfolio):
+            exp_weights[choosed_index[:, j], j] = 1. / n_included
     benchmark_model_time = dt.datetime.now() - start
+
+    np.testing.assert_array_almost_equal(calc_weights, exp_weights)
 
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 
@@ -39,12 +45,14 @@ def benchmark_build_rank_with_group(n_samples: int, n_loops: int, n_included: in
     print("Starting  portfolio construction by rank with group-by values benchmarking")
     print("Parameters(n_samples: {0}, n_included: {1}, n_loops: {2}, n_groups: {3})".format(n_samples, n_included, n_loops, n_groups))
 
-    x = np.random.randn(n_samples, 1)
+    n_portfolio = 10
+
+    x = np.random.randn(n_samples, n_portfolio)
     groups = np.random.randint(n_groups, size=n_samples)
 
     start = dt.datetime.now()
     for _ in range(n_loops):
-        _ = rank_build(x, n_included, groups=groups)
+        calc_weights = rank_build(x, n_included, groups=groups)
     impl_model_time = dt.datetime.now() - start
 
     print('{0:20s}: {1}'.format('Implemented model', impl_model_time))
@@ -52,10 +60,13 @@ def benchmark_build_rank_with_group(n_samples: int, n_loops: int, n_included: in
     start = dt.datetime.now()
     for _ in range(n_loops):
         grouped_ordering = pd.DataFrame(-x).groupby(groups).rank()
-        expected_weights = np.zeros((len(x), 1))
-        masks = grouped_ordering <= n_included
-        expected_weights[masks] = 1. / np.sum(masks)
+        exp_weights = np.zeros((len(x), n_portfolio))
+        masks = (grouped_ordering <= n_included).values
+        for j in range(n_portfolio):
+            exp_weights[masks[:, j], j] = 1. / np.sum(masks[:, j])
     benchmark_model_time = dt.datetime.now() - start
+
+    np.testing.assert_array_almost_equal(calc_weights, exp_weights)
 
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 

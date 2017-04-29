@@ -11,7 +11,9 @@ from setuptools import setup
 from setuptools import find_packages
 from distutils.extension import Extension
 import numpy as np
+import Cython
 from Cython.Build import cythonize
+Cython.Compiler.Options.annotate = True
 
 VERSION = "0.1.0"
 

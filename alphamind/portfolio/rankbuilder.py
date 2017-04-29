@@ -8,6 +8,8 @@ Created on 2017-4-26
 import numpy as np
 from numpy import zeros
 from alphamind.portfolio.impl import groupby
+from alphamind.portfolio.impl import set_value_bool
+from alphamind.portfolio.impl import set_value_double
 
 
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
@@ -39,25 +41,32 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
             masks = zeros((length, width), dtype=bool)
             for current_index in group_ids:
                 current_ordering = neg_er[current_index].argsort(axis=0)
-                for j in range(width):
-                    masks[current_index[current_ordering[:use_rank, j]], j] = True
+                total_index = current_index[current_ordering[:use_rank]]
+                set_value_bool(masks.view(dtype=np.uint8), total_index)
             choosed = masks.sum(axis=0)
 
             for j in range(width):
                 weights[masks[:, j], j] = 1. / choosed[j]
         else:
             ordering = neg_er.argsort(axis=0)
-            for j in range(width):
-                weights[ordering[:use_rank, j], j] = 1. / use_rank
+            set_value_double(weights, ordering[:use_rank], 1. / use_rank)
         return weights
 
 
 if __name__ == '__main__':
-    n_samples = 4
-    n_include = 1
-    n_groups = 2
+    # n_samples = 4000
+    # n_include = 100
+    # n_groups = 20
+    #
+    # x = np.random.randn(n_samples, 2)
+    # groups = np.random.randint(n_groups, size=n_samples)
+    #
+    # for i in range(10000):
+    #     rank_build(x, n_include, groups)
 
-    x = np.random.randn(n_samples, 2)
-    groups = np.random.randint(n_groups, size=n_samples)
+    from alphamind.portfolio.impl import set_value
 
-    calc_weights = rank_build(x, n_include, groups)
+    x = np.zeros((3, 2), dtype=np.bool)
+    index = np.array([[1, 0], [2, 1]])
+    set_value(x.view(dtype=np.uint8), index)
+    print(x)

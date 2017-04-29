@@ -6,17 +6,22 @@ Created on 2017-4-29
 """
 
 import numpy as np
+cimport numpy as np
 from numpy import array
-cimport numpy as cnp
 cimport cython
-import cytoolz
+from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
+from cpython.ref cimport PyObject
+from cpython.list cimport PyList_Append
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
-cdef inline long index(tuple x):
-    return x[0]
+cdef inline object _groupby_core(dict d, object key, object item):
+    cdef PyObject *obj = PyDict_GetItem(d, key)
+    if obj is NULL:
+        val = []
+        PyList_Append(val, item)
+        PyDict_SetItem(d, key, val)
+    else:
+        PyList_Append(<object>obj, item)
 
 
 @cython.boundscheck(False)
@@ -24,15 +29,50 @@ cdef inline long index(tuple x):
 @cython.initializedcheck(False)
 cpdef list groupby(long[:] groups):
 
-    cdef int i
-    cdef long d
-    cdef list table
-    cdef tuple t
-    cdef list v
-    cdef dict group_dict
-    cdef list group_ids
+    cdef size_t length = groups.shape[0]
+    cdef dict group_ids = {}
+    cdef size_t i
+    cdef long curr_tag
 
-    table = [(d, i) for i, d in enumerate(groups)]
-    group_dict = cytoolz.groupby(index, table)
-    group_ids = [array([t[1] for t in v]) for v in group_dict.values()]
-    return group_ids
+    for i in range(length):
+        _groupby_core(group_ids, groups[i], i)
+
+    return [array(v, dtype=np.int64) for v in group_ids.values()]
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cpdef void set_value_bool(unsigned char[:, :] mat, long long[:, :] index):
+
+    cdef size_t length = index.shape[0]
+    cdef size_t width = index.shape[1]
+    cdef size_t i
+    cdef size_t j
+    cdef unsigned char* mat_ptr = &mat[0, 0]
+    cdef long long* index_ptr = &index[0, 0]
+    cdef size_t k
+
+    for i in range(length):
+        k = i * width
+        for j in range(width):
+            mat_ptr[index_ptr[k + j] * width + j] = True
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+cpdef void set_value_double(double[:, :] mat, long long[:, :] index, double val):
+
+    cdef size_t length = index.shape[0]
+    cdef size_t width = index.shape[1]
+    cdef size_t i
+    cdef size_t j
+    cdef double* mat_ptr = &mat[0, 0]
+    cdef long long* index_ptr = &index[0, 0]
+    cdef size_t k
+
+    for i in range(length):
+        k = i * width
+        for j in range(width):
+            mat_ptr[index_ptr[k + j] * width + j] = val
