@@ -6,8 +6,6 @@ Created on 2017-4-26
 """
 
 cimport numpy as np
-from numpy import zeros
-from numpy import asarray
 cimport cython
 from libc.math cimport sqrt
 from libc.math cimport fabs

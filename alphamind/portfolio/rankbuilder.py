@@ -7,7 +7,7 @@ Created on 2017-4-26
 
 import numpy as np
 from numpy import zeros
-from numpy import arange
+from alphamind.portfolio.impl import groupby
 
 
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
@@ -18,13 +18,10 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
         length = len(neg_er)
         weights = zeros((length, 1))
         if groups is not None:
-            max_g = groups.max()
-            index_range = arange(length)
+            group_ids = groupby(groups)
             masks = zeros(length, dtype=bool)
-            for i in range(max_g + 1):
-                current_mask = groups == i
-                current_index = index_range[current_mask]
-                current_ordering = neg_er[current_mask].argsort()
+            for current_index in group_ids:
+                current_ordering = neg_er[current_index].argsort()
                 masks[current_index[current_ordering[:use_rank]]] = True
             weights[masks] = 1. / masks.sum()
         else:
@@ -38,13 +35,10 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
         weights = zeros((length, width))
 
         if groups is not None:
-            max_g = groups.max()
-            index_range = arange(length)
+            group_ids = groupby(groups)
             masks = zeros((length, width), dtype=bool)
-            for i in range(max_g+1):
-                current_mask = groups == i
-                current_index = index_range[current_mask]
-                current_ordering = neg_er[current_mask].argsort(axis=0)
+            for current_index in group_ids:
+                current_ordering = neg_er[current_index].argsort(axis=0)
                 for j in range(width):
                     masks[current_index[current_ordering[:use_rank, j]], j] = True
             choosed = masks.sum(axis=0)
@@ -58,3 +52,12 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
         return weights
 
 
+if __name__ == '__main__':
+    n_samples = 4
+    n_include = 1
+    n_groups = 2
+
+    x = np.random.randn(n_samples, 2)
+    groups = np.random.randint(n_groups, size=n_samples)
+
+    calc_weights = rank_build(x, n_include, groups)
