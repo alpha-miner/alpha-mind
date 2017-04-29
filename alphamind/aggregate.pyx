@@ -10,6 +10,7 @@ from numpy import zeros
 from numpy import asarray
 cimport cython
 from libc.math cimport sqrt
+from libc.math cimport fabs
 from libc.stdlib cimport calloc
 from libc.stdlib cimport free
 
@@ -49,6 +50,27 @@ cdef double* agg_sum(long* groups, double* x, size_t length, size_t width) nogil
         loop_idx2 = groups[i]*width
         for j in range(width):
             res_ptr[loop_idx2 + j] += x[loop_idx1 + j]
+    return res_ptr
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+@cython.initializedcheck(False)
+cdef double* agg_abssum(long* groups, double* x, size_t length, size_t width) nogil:
+    cdef long max_g = max_groups(groups, length)
+    cdef double* res_ptr = <double*>calloc((max_g+1)*width, sizeof(double))
+    cdef size_t i
+    cdef size_t j
+    cdef size_t loop_idx1
+    cdef size_t loop_idx2
+    cdef long curr
+
+    for i in range(length):
+        loop_idx1 = i*width
+        loop_idx2 = groups[i]*width
+        for j in range(width):
+            res_ptr[loop_idx2 + j] += fabs(x[loop_idx1 + j])
     return res_ptr
 
 
@@ -144,6 +166,8 @@ cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str f
         value_data_ptr = agg_std(&groups[0], &x[0, 0], length, width, ddof=1)
     elif func == 'sum':
         value_data_ptr = agg_sum(&groups[0], &x[0, 0], length, width)
+    elif func =='abssum':
+        value_data_ptr = agg_abssum(&groups[0], &x[0, 0], length, width)
 
     with nogil:
         for i in range(length):
@@ -171,6 +195,8 @@ cpdef np.ndarray[double, ndim=2] aggregate(long[:] groups, double[:, :] x, str f
         value_data_ptr = agg_std(&groups[0], &x[0, 0], length, width, ddof=1)
     elif func == 'sum':
         value_data_ptr = agg_sum(&groups[0], &x[0, 0], length, width)
+    elif func =='abssum':
+        value_data_ptr = agg_abssum(&groups[0], &x[0, 0], length, width)
 
     res = np.PyArray_SimpleNewFromData(2, [max_g+1, width], np.NPY_FLOAT64, value_data_ptr)
     return res
