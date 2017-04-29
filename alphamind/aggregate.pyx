@@ -16,11 +16,14 @@ from libc.stdlib cimport free
 
 np.import_array()
 
+cdef extern from "numpy/arrayobject.h":
+    void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cdef int max_groups(long* groups, size_t length) nogil:
+cdef long max_groups(long* groups, size_t length) nogil:
     cdef long curr_max = 0
     cdef size_t i
     cdef long curr
@@ -151,9 +154,9 @@ cdef double* agg_std(long* groups, double* x, size_t length, size_t width, long 
 cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str func):
     cdef size_t length = x.shape[0]
     cdef size_t width = x.shape[1]
-    cdef double[:, :] res_data = zeros((length, width))
-    cdef double* res_data_ptr = &res_data[0, 0]
+    cdef double* res_data_ptr = <double*>calloc(length*width, sizeof(double))
     cdef double* value_data_ptr
+    cdef np.ndarray[double, ndim=2] res
     cdef size_t i
     cdef size_t j
     cdef size_t loop_idx1
@@ -176,7 +179,9 @@ cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str f
             for j in range(width):
                 res_data_ptr[loop_idx1 + j] = value_data_ptr[loop_idx2 + j]
         free(value_data_ptr)
-    return asarray(res_data)
+    res = np.PyArray_SimpleNewFromData(2, [length, width], np.NPY_FLOAT64, res_data_ptr)
+    PyArray_ENABLEFLAGS(res, np.NPY_OWNDATA)
+    return res
 
 
 @cython.boundscheck(False)
@@ -199,4 +204,5 @@ cpdef np.ndarray[double, ndim=2] aggregate(long[:] groups, double[:, :] x, str f
         value_data_ptr = agg_abssum(&groups[0], &x[0, 0], length, width)
 
     res = np.PyArray_SimpleNewFromData(2, [max_g+1, width], np.NPY_FLOAT64, value_data_ptr)
+    PyArray_ENABLEFLAGS(res, np.NPY_OWNDATA)
     return res
