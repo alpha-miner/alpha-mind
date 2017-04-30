@@ -7,10 +7,11 @@ Created on 2017-4-25
 
 import numpy as np
 from numpy.linalg import solve
+from typing import Tuple
 from alphamind.aggregate import groupby
 
 
-def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None) -> Tuple[np.ndarray, np.ndarray]:
     if groups is not None:
         res = np.zeros(y.shape)
         groups_ids = groupby(groups)
@@ -36,10 +37,15 @@ def ls_res(x: np.ndarray, y: np.ndarray, b: np.ndarray) -> np.ndarray:
     return y - x @ b
 
 
+def ls_explained(x: np.ndarray, y: np.ndarray, b: np.ndarray) -> np.ndarray:
+    pass
+
+
 if __name__ == '__main__':
 
     x = np.random.randn(3000, 3)
     y = np.random.randn(3000, 2)
     groups = np.random.randint(30, size=3000)
 
-    print(neutralize(x, y, groups))
+    b = ls_fit(x, y)
+    ls_explained(x, y, b)

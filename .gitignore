@@ -1,2 +1,9 @@
 *.pyc
 .idea/*
+build/*
+dist/*
+Alpha_Mind.egg-info/*
+*.pyd
+*.c
+*.cpp
+*.html
