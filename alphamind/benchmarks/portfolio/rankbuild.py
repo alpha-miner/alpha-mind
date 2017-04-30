@@ -32,7 +32,7 @@ def benchmark_build_rank(n_samples: int, n_loops: int, n_included: int) -> None:
         exp_weights = np.zeros((len(x), n_portfolio))
         choosed_index = (-x).argsort(axis=0).argsort(axis=0) < n_included
         for j in range(n_portfolio):
-            exp_weights[choosed_index[:, j], j] = 1. / n_included
+            exp_weights[choosed_index[:, j], j] = 1.
     benchmark_model_time = dt.datetime.now() - start
 
     np.testing.assert_array_almost_equal(calc_weights, exp_weights)
@@ -63,7 +63,7 @@ def benchmark_build_rank_with_group(n_samples: int, n_loops: int, n_included: in
         exp_weights = np.zeros((len(x), n_portfolio))
         masks = (grouped_ordering <= n_included).values
         for j in range(n_portfolio):
-            exp_weights[masks[:, j], j] = 1. / np.sum(masks[:, j])
+            exp_weights[masks[:, j], j] = 1.
     benchmark_model_time = dt.datetime.now() - start
 
     np.testing.assert_array_almost_equal(calc_weights, exp_weights)

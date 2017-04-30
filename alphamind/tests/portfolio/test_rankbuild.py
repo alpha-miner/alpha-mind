@@ -29,7 +29,7 @@ class TestRankBuild(unittest.TestCase):
             masks = (-x).argsort(axis=0).argsort(axis=0) < n_included
 
             for j in range(x.shape[1]):
-                expected_weights[masks[:, j], j] = 1. / n_included
+                expected_weights[masks[:, j], j] = 1.
 
             np.testing.assert_array_almost_equal(calc_weights, expected_weights)
 
@@ -51,9 +51,8 @@ class TestRankBuild(unittest.TestCase):
             grouped_ordering = pd.DataFrame(-x).groupby(groups).rank()
             expected_weights = np.zeros((len(x), n_portfolio))
             masks = (grouped_ordering <= n_include).values
-            choosed = masks.sum(axis=0)
             for j in range(x.shape[1]):
-                expected_weights[masks[:, j], j] = 1. / choosed[j]
+                expected_weights[masks[:, j], j] = 1.
 
             np.testing.assert_array_almost_equal(calc_weights, expected_weights)
 

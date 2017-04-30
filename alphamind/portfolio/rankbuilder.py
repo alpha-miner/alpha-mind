@@ -25,10 +25,10 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
             for current_index in group_ids:
                 current_ordering = neg_er[current_index].argsort()
                 masks[current_index[current_ordering[:use_rank]]] = True
-            weights[masks] = 1. / masks.sum()
+            weights[masks] = 1.
         else:
             ordering = neg_er.argsort()
-            weights[ordering[:use_rank]] = 1. / use_rank
+            weights[ordering[:use_rank]] = 1.
         return weights
     else:
         length = er.shape[0]
@@ -43,13 +43,12 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
                 current_ordering = neg_er[current_index].argsort(axis=0)
                 total_index = current_index[current_ordering[:use_rank]]
                 set_value_bool(masks.view(dtype=np.uint8), total_index)
-            choosed = masks.sum(axis=0)
 
             for j in range(width):
-                weights[masks[:, j], j] = 1. / choosed[j]
+                weights[masks[:, j], j] = 1.
         else:
             ordering = neg_er.argsort(axis=0)
-            set_value_double(weights, ordering[:use_rank], 1. / use_rank)
+            set_value_double(weights, ordering[:use_rank], 1.)
         return weights
 
 
@@ -57,6 +56,8 @@ if __name__ == '__main__':
     n_sample = 6
     n_groups = 3
 
+    x = np.random.randn(n_sample)
     groups = np.array([1, 1, 2, 1, 0, 2])
     print(groups)
     print(groupby(groups))
+    print(rank_build(x, 1, groups))
