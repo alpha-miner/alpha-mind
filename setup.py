@@ -42,7 +42,8 @@ def generate_extensions(ext_modules, line_trace=False):
     for pyxfile in ext_modules:
         ext = Extension(name='.'.join(pyxfile.split('/'))[:-4],
                         sources=[pyxfile],
-                        define_macros=define_macros)
+                        define_macros=define_macros,
+                        extra_compile_args=['-std=c++11'])
         extensions.append(ext)
     return extensions
 
