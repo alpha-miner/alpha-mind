@@ -42,6 +42,6 @@ if __name__ == '__main__':
     benchmark_simple_settle(3000, 10, 1000)
     benchmark_simple_settle_with_group(3000, 10, 1000, 30)
     benchmark_simple_settle(30, 10, 50000)
-    benchmark_simple_settle_with_group(30, 10, 5000, 5)
+    benchmark_simple_settle_with_group(30, 10, 50000, 5)
     benchmark_simple_settle(50000, 50, 20)
     benchmark_simple_settle_with_group(50000, 50, 20, 50)
