@@ -51,7 +51,7 @@ cpdef list groupby(long[:] groups):
             deref(it).second.push_back(i)
 
     for v in group_ids.values():
-        res.append(array(v))
+        res.append(array(v, dtype=np.int64))
 
     return res
 
