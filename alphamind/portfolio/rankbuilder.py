@@ -54,19 +54,9 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
 
 
 if __name__ == '__main__':
-    # n_samples = 4000
-    # n_include = 100
-    # n_groups = 20
-    #
-    # x = np.random.randn(n_samples, 2)
-    # groups = np.random.randint(n_groups, size=n_samples)
-    #
-    # for i in range(10000):
-    #     rank_build(x, n_include, groups)
+    n_sample = 6
+    n_groups = 3
 
-    from alphamind.portfolio.impl import set_value
-
-    x = np.zeros((3, 2), dtype=np.bool)
-    index = np.array([[1, 0], [2, 1]])
-    set_value(x.view(dtype=np.uint8), index)
-    print(x)
+    groups = np.array([1, 1, 2, 1, 0, 2])
+    print(groups)
+    print(groupby(groups))

@@ -14,9 +14,7 @@ from libc.math cimport fabs
 from libc.stdlib cimport calloc
 from libc.stdlib cimport free
 from numpy import array
-from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
-from cpython.ref cimport PyObject
-from cpython.list cimport PyList_Append
+from libcpp.vector cimport vector as cpp_vector
 from libcpp.unordered_map cimport unordered_map as cpp_map
 from cython.operator cimport dereference as deref
 
@@ -25,15 +23,7 @@ np.import_array()
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
-
-cdef inline object _groupby_core(dict d, object key, object item):
-    cdef PyObject *obj = PyDict_GetItem(d, key)
-    if obj is NULL:
-        val = []
-        PyList_Append(val, item)
-        PyDict_SetItem(d, key, val)
-    else:
-        PyList_Append(<object>obj, item)
+ctypedef long long int64_t
 
 
 @cython.boundscheck(False)
@@ -41,15 +31,29 @@ cdef inline object _groupby_core(dict d, object key, object item):
 @cython.initializedcheck(False)
 cpdef list groupby(long[:] groups):
 
-    cdef size_t length = groups.shape[0]
-    cdef dict group_ids = {}
-    cdef size_t i
+    cdef long long length = groups.shape[0]
+    cdef cpp_map[long, cpp_vector[int64_t]] group_ids
+    cdef long long i
     cdef long curr_tag
+    cdef cpp_map[long, cpp_vector[int64_t]].iterator it
+    cdef list res = []
+    cdef np.ndarray[long long, ndim=1] npy_array
+    cdef cpp_vector[int64_t] v
+    cdef long long* arr_ptr
 
     for i in range(length):
-        _groupby_core(group_ids, groups[i], i)
+        curr_tag = groups[i]
+        it = group_ids.find(curr_tag)
 
-    return [array(v, dtype=np.int64) for v in group_ids.values()]
+        if it == group_ids.end():
+            group_ids[curr_tag] = [i]
+        else:
+            deref(it).second.push_back(i)
+
+    for v in group_ids.values():
+        res.append(array(v))
+
+    return res
 
 
 @cython.boundscheck(False)
@@ -58,36 +62,23 @@ cpdef list groupby(long[:] groups):
 cdef long* group_mapping(long* groups, size_t length, size_t* max_g):
     cdef long *res_ptr = <long*>calloc(length, sizeof(int))
     cdef cpp_map[long, long] current_hold
-    cdef long curr_g
-    cdef long running_g = -1
+    cdef long curr_tag
+    cdef long running_tag = -1
     cdef size_t i = 0
     cdef cpp_map[long, long].iterator it
 
     for i in range(length):
-        curr_g = groups[i]
-        it = current_hold.find(curr_g)
+        curr_tag = groups[i]
+        it = current_hold.find(curr_tag)
         if it == current_hold.end():
-            running_g += 1
-            res_ptr[i] = running_g
-            current_hold[curr_g] = running_g
+            running_tag += 1
+            res_ptr[i] = running_tag
+            current_hold[curr_tag] = running_tag
         else:
             res_ptr[i] = deref(it).second
 
-    max_g[0] = running_g
+    max_g[0] = running_tag
     return res_ptr
-
-
-cpdef group_mapping_test(long[:] groups):
-    cdef size_t length = groups.shape[0]
-    cdef size_t* max_g = <size_t*>calloc(1, sizeof(size_t))
-    cdef size_t g_max
-    cdef long* mapped_groups = group_mapping(&groups[0], length, max_g)
-
-    res = np.PyArray_SimpleNewFromData(1, [length], np.NPY_INT32, mapped_groups)
-    PyArray_ENABLEFLAGS(res, np.NPY_OWNDATA)
-    g_max = max_g[0]
-    free(max_g)
-    return res, g_max
 
 
 @cython.boundscheck(False)
