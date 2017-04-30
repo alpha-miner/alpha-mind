@@ -57,7 +57,7 @@ def benchmark_simple_settle_with_group(n_samples: int, n_portfolios: int, n_loop
     ret_series.shape = -1, 1
     for _ in range(n_loops):
         ret_mat = weights * ret_series
-        exp_ret = pd.DataFrame(ret_mat).groupby(groups).sum().values
+        exp_ret = pd.DataFrame(ret_mat).groupby(groups, sort=False).sum().values
     benchmark_model_time = dt.datetime.now() - start
 
     np.testing.assert_array_almost_equal(calc_ret, exp_ret)

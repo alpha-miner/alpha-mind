@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# distutils: language = c++
 """
 Created on 2017-4-26
 
@@ -16,6 +17,8 @@ from numpy import array
 from cpython.dict cimport PyDict_GetItem, PyDict_SetItem
 from cpython.ref cimport PyObject
 from cpython.list cimport PyList_Append
+from libcpp.unordered_map cimport unordered_map as cpp_map
+from cython.operator cimport dereference as deref
 
 np.import_array()
 
@@ -54,19 +57,21 @@ cpdef list groupby(long[:] groups):
 @cython.initializedcheck(False)
 cdef long* group_mapping(long* groups, size_t length, size_t* max_g):
     cdef long *res_ptr = <long*>calloc(length, sizeof(int))
-    cdef dict current_hold = {}
+    cdef cpp_map[long, long] current_hold
     cdef long curr_g
     cdef long running_g = -1
     cdef size_t i = 0
+    cdef cpp_map[long, long].iterator it
 
     for i in range(length):
         curr_g = groups[i]
-        if curr_g not in current_hold:
+        it = current_hold.find(curr_g)
+        if it == current_hold.end():
             running_g += 1
             res_ptr[i] = running_g
             current_hold[curr_g] = running_g
         else:
-            res_ptr[i] = current_hold[curr_g]
+            res_ptr[i] = deref(it).second
 
     max_g[0] = running_g
     return res_ptr
