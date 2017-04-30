@@ -22,10 +22,8 @@ def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarra
 
 
 if __name__ == '__main__':
-    weights = np.random.randn(200, 3)
-    ret_series = np.random.randn(200)
-    groups = np.random.randint(10, size=200)
+    from alphamind.aggregate import group_mapping_test
 
-    res = simple_settle(weights, ret_series, groups)
-
-    print(res)
+    s = np.random.randint(2, 5, size=6)
+    print(s)
+    print(group_mapping_test(s))
