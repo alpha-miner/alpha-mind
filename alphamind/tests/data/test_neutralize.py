@@ -40,7 +40,9 @@ class TestNeutralize(unittest.TestCase):
             curr_y = y[groups == i]
             model.fit(curr_x, curr_y)
             exp_res = curr_y - curr_x @ model.coef_.T
-            np.testing.assert_array_almost_equal(calc_res[groups ==i ], exp_res)
+            np.testing.assert_array_almost_equal(calc_res[groups ==i
+
+                                                 ], exp_res)
 
 
 if __name__ == '__main__':
