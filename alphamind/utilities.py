@@ -19,7 +19,7 @@ alpha_logger.addHandler(ch)
 alpha_logger.setLevel(logging.INFO)
 
 
-def add_parent_path(name, level):
+def add_parent_path(name: str, level: int) -> None:
     current_path = os.path.abspath(name)
     sys.path.append(os.path.sep.join(current_path.split(os.path.sep)[:-level]))
 
