@@ -6,11 +6,12 @@ Created on 2017-4-25
 """
 
 import numpy as np
-
+from numpy import ascontiguousarray
 from alphamind.aggregate import transform
 
 
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:
+    x = ascontiguousarray(x)
 
     if groups is not None:
         mean_values = transform(groups, x, 'mean')

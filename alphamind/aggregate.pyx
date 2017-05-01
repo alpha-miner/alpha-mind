@@ -13,7 +13,6 @@ from libc.math cimport sqrt
 from libc.math cimport fabs
 from libc.stdlib cimport malloc
 from libc.stdlib cimport free
-from numpy import array
 from libcpp.vector cimport vector as cpp_vector
 from libcpp.unordered_map cimport unordered_map as cpp_map
 from cython.operator cimport dereference as deref
@@ -220,6 +219,8 @@ cpdef np.ndarray[double, ndim=2] transform(long[:] groups, double[:, :] x, str f
     cdef size_t loop_idx1
     cdef size_t loop_idx2
 
+    x = np.ascontiguousarray(x)
+
     try:
         if func == 'mean':
             value_data_ptr = agg_mean(mapped_groups, max_g[0], &x[0, 0], length, width)
@@ -257,6 +258,8 @@ cpdef np.ndarray[double, ndim=2] aggregate(long[:] groups, double[:, :] x, str f
     cdef long* mapped_groups = group_mapping(&groups[0], length, max_g)
     cdef double* value_data_ptr
     cdef np.ndarray[double, ndim=2] res
+
+    x = np.ascontiguousarray(x)
 
     try:
         if func == 'mean':

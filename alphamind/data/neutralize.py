@@ -50,13 +50,13 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
 
         if output_explained:
             explained = ls_explain(x, b)
-        elif output_exposure:
+        if output_exposure:
             exposure = b
 
     output_dict = {}
     if output_explained:
         output_dict['explained'] = explained
-    elif output_exposure:
+    if output_exposure:
         output_dict['exposure'] = exposure
 
     if output_dict:
@@ -95,5 +95,4 @@ if __name__ == '__main__':
     y = np.random.randn(3000, 2)
     groups = np.random.randint(30, size=3000)
 
-    b = ls_fit(x, y)
-    ls_explained(x, y, b)
+    print(neutralize(x, y, groups, output_explained=True, output_exposure=True))
