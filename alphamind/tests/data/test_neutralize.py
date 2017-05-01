@@ -18,7 +18,7 @@ class TestNeutralize(unittest.TestCase):
         y = np.random.randn(3000, 4)
         x = np.random.randn(3000, 10)
 
-        calc_res = neutralize(x, y)
+        calc_res, _ = neutralize(x, y)
 
         model = LinearRegression(fit_intercept=False)
         model.fit(x, y)
@@ -46,7 +46,7 @@ class TestNeutralize(unittest.TestCase):
         y = np.random.randn(3000)
         x = np.random.randn(3000, 10)
 
-        calc_res, calc_explained = neutralize(x, y, output_explained=True)
+        calc_res, (b, calc_explained) = neutralize(x, y, output_explained=True)
 
         model = LinearRegression(fit_intercept=False)
         model.fit(x, y)
@@ -60,7 +60,7 @@ class TestNeutralize(unittest.TestCase):
         y = np.random.randn(3000, 4)
         x = np.random.randn(3000, 10)
 
-        calc_res, calc_explained = neutralize(x, y, output_explained=True)
+        calc_res, (b, calc_explained) = neutralize(x, y, output_explained=True)
 
         model = LinearRegression(fit_intercept=False)
         model.fit(x, y)
@@ -77,7 +77,7 @@ class TestNeutralize(unittest.TestCase):
         x = np.random.randn(3000, 10)
         groups = np.random.randint(30, size=3000)
 
-        calc_res, calc_explained = neutralize(x, y, groups, output_explained=True)
+        calc_res, (b, calc_explained) = neutralize(x, y, groups, output_explained=True)
 
         model = LinearRegression(fit_intercept=False)
         for i in range(30):
@@ -92,7 +92,7 @@ class TestNeutralize(unittest.TestCase):
         y = np.random.randn(3000, 4)
         x = np.random.randn(3000, 10)
 
-        calc_res, calc_explained = neutralize(x, y, groups, output_explained=True)
+        calc_res, (b, calc_explained) = neutralize(x, y, groups, output_explained=True)
 
         model = LinearRegression(fit_intercept=False)
         for i in range(30):

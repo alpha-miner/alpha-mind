@@ -14,14 +14,18 @@ from alphamind.aggregate import groupby
 
 
 def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_explained=False) \
-        -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+        -> Tuple[np.ndarray, Tuple[Union[np.ndarray, np.ndarray]]]:
     if groups is not None:
         res = zeros(y.shape)
 
-        if y.ndim == 2 and output_explained:
-            explained = zeros(x.shape + (y.shape[1],))
+        if y.ndim == 2:
+            if output_explained:
+                explained = zeros(x.shape + (y.shape[1],))
+            exposure = zeros(x.shape + (y.shape[1],))
         else:
             explained = zeros(x.shape)
+            exposure = zeros(x.shape)
+
         groups_ids = groupby(groups)
 
         for curr_idx in groups_ids:
@@ -29,18 +33,24 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
             curr_y = y[curr_idx]
             b = ls_fit(x[curr_idx], y[curr_idx])
             res[curr_idx] = ls_res(curr_x, curr_y, b)
+            if exposure.ndim == 3:
+                for i in range(exposure.shape[2]):
+                    exposure[curr_idx, :, i] = b[:, i]
+            else:
+                exposure[curr_idx] = b
             if output_explained:
                 explained[curr_idx] = ls_explain(curr_x, b)
+
         if output_explained:
-            return res, explained
+            return res, (exposure, explained)
         else:
-            return res
+            return res, (exposure,)
     else:
         b = ls_fit(x, y)
         if output_explained:
-            return ls_res(x, y, b), ls_explain(x, b)
+            return ls_res(x, y, b), (b, ls_explain(x, b))
         else:
-            return ls_res(x, y, b)
+            return ls_res(x, y, b), (b,)
 
 
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:

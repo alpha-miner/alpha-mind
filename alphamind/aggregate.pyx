@@ -29,17 +29,14 @@ ctypedef long long int64_t
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cpdef list groupby(long[:] groups):
+cpdef groupby(long[:] groups):
 
     cdef long long length = groups.shape[0]
     cdef cpp_map[long, cpp_vector[int64_t]] group_ids
     cdef long long i
     cdef long curr_tag
     cdef cpp_map[long, cpp_vector[int64_t]].iterator it
-    cdef list res = []
     cdef np.ndarray[long long, ndim=1] npy_array
-    cdef cpp_vector[int64_t] v
-    cdef long long* arr_ptr
 
     for i in range(length):
         curr_tag = groups[i]
@@ -50,10 +47,7 @@ cpdef list groupby(long[:] groups):
         else:
             deref(it).second.push_back(i)
 
-    for v in group_ids.values():
-        res.append(v)
-
-    return res
+    return group_ids.values()
 
 
 @cython.boundscheck(False)
@@ -156,10 +150,9 @@ cdef double* agg_mean(long* groups, size_t max_g, double* x, size_t length, size
 
         for i in range(max_g+1):
             curr = bin_count_ptr[i]
-            if curr != 0:
-                loop_idx1 = i*width
-                for j in range(width):
-                    res_ptr[loop_idx1 + j] /= curr
+            loop_idx1 = i*width
+            for j in range(width):
+                res_ptr[loop_idx1 + j] /= curr
     finally:
         free(bin_count_ptr)
     return res_ptr
@@ -202,10 +195,9 @@ cdef double* agg_std(long* groups, size_t max_g, double* x, size_t length, size_
         for i in range(max_g+1):
             curr = bin_count_ptr[i]
             loop_idx1 = i * width
-            if curr != 0:
-                for j in range(width):
-                    loop_idx2 = loop_idx1 + j
-                    running_sum_square_ptr[loop_idx2] = sqrt((running_sum_square_ptr[loop_idx2] - running_sum_ptr[loop_idx2] * running_sum_ptr[loop_idx2] / curr) / (curr - ddof))
+            for j in range(width):
+                loop_idx2 = loop_idx1 + j
+                running_sum_square_ptr[loop_idx2] = sqrt((running_sum_square_ptr[loop_idx2] - running_sum_ptr[loop_idx2] * running_sum_ptr[loop_idx2] / curr) / (curr - ddof))
     finally:
         free(running_sum_ptr)
         free(bin_count_ptr)
