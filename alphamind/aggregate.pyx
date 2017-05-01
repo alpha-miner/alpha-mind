@@ -59,7 +59,7 @@ cpdef list groupby(long[:] groups):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cdef long* group_mapping(long* groups, size_t length, size_t* max_g):
+cdef long* group_mapping(long* groups, size_t length, size_t* max_g) nogil:
     cdef long *res_ptr = <long*>malloc(length*sizeof(long))
     cdef cpp_map[long, long] current_hold
     cdef long curr_tag
@@ -85,7 +85,7 @@ cdef long* group_mapping(long* groups, size_t length, size_t* max_g):
 @cython.wraparound(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-cdef double* agg_sum(long* groups, size_t max_g, double* x, size_t length, size_t width):
+cdef double* agg_sum(long* groups, size_t max_g, double* x, size_t length, size_t width) nogil:
     cdef double* res_ptr = <double*>malloc((max_g+1)*width*sizeof(double))
     cdef size_t i
     cdef size_t j
@@ -108,7 +108,7 @@ cdef double* agg_sum(long* groups, size_t max_g, double* x, size_t length, size_
 @cython.wraparound(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-cdef double* agg_abssum(long* groups, size_t max_g, double* x, size_t length, size_t width):
+cdef double* agg_abssum(long* groups, size_t max_g, double* x, size_t length, size_t width) nogil:
     cdef double* res_ptr = <double*>malloc((max_g+1)*width*sizeof(double))
     cdef size_t i
     cdef size_t j
@@ -131,7 +131,7 @@ cdef double* agg_abssum(long* groups, size_t max_g, double* x, size_t length, si
 @cython.wraparound(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-cdef double* agg_mean(long* groups, size_t max_g, double* x, size_t length, size_t width):
+cdef double* agg_mean(long* groups, size_t max_g, double* x, size_t length, size_t width) nogil:
     cdef double* res_ptr = <double*>malloc((max_g+1)*width*sizeof(double))
     cdef long* bin_count_ptr = <long*>malloc((max_g+1)*sizeof(long))
     cdef size_t i
@@ -169,7 +169,7 @@ cdef double* agg_mean(long* groups, size_t max_g, double* x, size_t length, size
 @cython.wraparound(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-cdef double* agg_std(long* groups, size_t max_g, double* x, size_t length, size_t width, long ddof=1):
+cdef double* agg_std(long* groups, size_t max_g, double* x, size_t length, size_t width, long ddof=1) nogil:
     cdef double* running_sum_square_ptr = <double*>malloc((max_g+1)*width*sizeof(double))
     cdef double* running_sum_ptr = <double*>malloc((max_g+1)*width*sizeof(double))
     cdef long* bin_count_ptr = <long*>malloc((max_g+1)*sizeof(long))
