@@ -6,6 +6,7 @@ Created on 2017-4-25
 """
 
 from alphamind.benchmarks.data.neutralize import benchmark_neutralize
+from alphamind.benchmarks.data.neutralize import benchmark_neutralize_with_groups
 from alphamind.benchmarks.data.standardize import benchmark_standardize
 from alphamind.benchmarks.data.standardize import benchmark_standardize_with_group
 from alphamind.benchmarks.data.winsorize import benchmark_winsorize_normal
@@ -19,8 +20,11 @@ from alphamind.benchmarks.settlement.simplesettle import benchmark_simple_settle
 if __name__ == '__main__':
 
     benchmark_neutralize(3000, 10, 1000)
-    benchmark_neutralize(30, 10, 50000)
+    benchmark_neutralize_with_groups(3000, 10, 1000, 30)
+    benchmark_neutralize(30, 3, 50000)
+    benchmark_neutralize_with_groups(30, 3, 50000, 3)
     benchmark_neutralize(50000, 50, 20)
+    benchmark_neutralize_with_groups(50000, 50, 20, 50)
     benchmark_standardize(3000, 10, 1000)
     benchmark_standardize_with_group(3000, 10, 1000, 30)
     benchmark_standardize(30, 10, 50000)
