@@ -10,21 +10,25 @@ from numpy import zeros
 from numpy.linalg import solve
 from typing import Tuple
 from typing import Union
+from typing import Dict
 from alphamind.aggregate import groupby
 
 
-def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_explained=False) \
-        -> Tuple[np.ndarray, Tuple[Union[np.ndarray, np.ndarray]]]:
+def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_explained=False, output_exposure=False) \
+        -> Union[np.ndarray, Tuple[np.ndarray, Dict]]:
     if groups is not None:
         res = zeros(y.shape)
 
         if y.ndim == 2:
             if output_explained:
                 explained = zeros(x.shape + (y.shape[1],))
-            exposure = zeros(x.shape + (y.shape[1],))
+            if output_exposure:
+                exposure = zeros(x.shape + (y.shape[1],))
         else:
-            explained = zeros(x.shape)
-            exposure = zeros(x.shape)
+            if output_explained:
+                explained = zeros(x.shape)
+            if output_exposure:
+                exposure = zeros(x.shape)
 
         groups_ids = groupby(groups)
 
@@ -33,24 +37,32 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
             curr_y = y[curr_idx]
             b = ls_fit(x[curr_idx], y[curr_idx])
             res[curr_idx] = ls_res(curr_x, curr_y, b)
-            if exposure.ndim == 3:
+            if output_exposure and exposure.ndim == 3:
                 for i in range(exposure.shape[2]):
                     exposure[curr_idx, :, i] = b[:, i]
-            else:
+            elif output_exposure:
                 exposure[curr_idx] = b
             if output_explained:
                 explained[curr_idx] = ls_explain(curr_x, b)
-
-        if output_explained:
-            return res, (exposure, explained)
-        else:
-            return res, (exposure,)
     else:
         b = ls_fit(x, y)
+        res = ls_res(x, y, b)
+
         if output_explained:
-            return ls_res(x, y, b), (b, ls_explain(x, b))
-        else:
-            return ls_res(x, y, b), (b,)
+            explained = ls_explain(x, b)
+        elif output_exposure:
+            exposure = b
+
+    output_dict = {}
+    if output_explained:
+        output_dict['explained'] = explained
+    elif output_exposure:
+        output_dict['exposure'] = exposure
+
+    if output_dict:
+        return res, output_dict
+    else:
+        return res
 
 
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
