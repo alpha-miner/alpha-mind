@@ -16,6 +16,10 @@ from alphamind.groupby import groupby
 
 def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_explained=False, output_exposure=False) \
         -> Union[np.ndarray, Tuple[np.ndarray, Dict]]:
+
+    if y.ndim == 1:
+        y = y.reshape((-1, 1))
+
     if groups is not None:
         res = zeros(y.shape)
 
@@ -42,8 +46,7 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
                     exposure[curr_idx, :, i] = b[:, i]
             if output_explained:
                 for i in range(explained.shape[2]):
-                    b
-                    explained[curr_idx, :, i] = ls_explain(curr_x, b)
+                    explained[curr_idx] = ls_explain(curr_x, b)
     else:
         b = ls_fit(x, y)
         res = ls_res(x, y, b)
@@ -76,17 +79,10 @@ def ls_res(x: np.ndarray, y: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 def ls_explain(x: np.ndarray, b: np.ndarray) -> np.ndarray:
-    if b.ndim == 1:
-        return b * x
-    else:
-        n_samples = x.shape[0]
-        to_explain = b.shape[1]
-        factors = x.shape[1]
-        explained = zeros((n_samples, factors, to_explain))
-
-        for i in range(to_explain):
-            explained[:, :, i] = b[:, i] * x
-        return explained
+    explained = np.zeros(x.shape + (b.shape[1],))
+    for i in range(b.shape[1]):
+        explained[:, :, i] = b[:, i] * x
+    return explained
 
 
 if __name__ == '__main__':

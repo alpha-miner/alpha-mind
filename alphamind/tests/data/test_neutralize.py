@@ -54,8 +54,8 @@ class TestNeutralize(unittest.TestCase):
         exp_res = y - x @ model.coef_.T
         exp_explained = x * model.coef_.T
 
-        np.testing.assert_array_almost_equal(calc_res, exp_res)
-        np.testing.assert_array_almost_equal(other_stats['explained'], exp_explained)
+        np.testing.assert_array_almost_equal(calc_res, exp_res.reshape(-1, 1))
+        np.testing.assert_array_almost_equal(other_stats['explained'][:, :, 0], exp_explained)
 
         y = np.random.randn(3000, 4)
         x = np.random.randn(3000, 10)
@@ -86,8 +86,8 @@ class TestNeutralize(unittest.TestCase):
             model.fit(curr_x, curr_y)
             exp_res = curr_y - curr_x @ model.coef_.T
             exp_explained = curr_x * model.coef_.T
-            np.testing.assert_array_almost_equal(calc_res[groups == i], exp_res)
-            np.testing.assert_array_almost_equal(other_stats['explained'][groups == i], exp_explained)
+            np.testing.assert_array_almost_equal(calc_res[groups == i], exp_res.reshape(-1, 1))
+            np.testing.assert_array_almost_equal(other_stats['explained'][groups == i, :, 0], exp_explained)
 
         y = np.random.randn(3000, 4)
         x = np.random.randn(3000, 10)

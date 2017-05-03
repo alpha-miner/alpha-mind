@@ -38,11 +38,16 @@ def generate_extensions(ext_modules, line_trace=False):
     else:
         define_macros = []
 
+    if platform.system() != "Windows":
+        extra_compile_args = ['-O3', '-std=c++11']
+    else:
+        extra_compile_args = ['/Ox']
+
     for pyxfile in ext_modules:
         ext = Extension(name='.'.join(pyxfile.split('/'))[:-4],
                         sources=[pyxfile],
                         define_macros=define_macros,
-                        extra_compile_args=['-std=c++11'])
+                        extra_compile_args=extra_compile_args)
         extensions.append(ext)
     return extensions
 

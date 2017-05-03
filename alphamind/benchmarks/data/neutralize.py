@@ -74,3 +74,4 @@ def benchmark_neutralize_with_groups(n_samples: int, n_features: int, n_loops: i
 if __name__ == '__main__':
     benchmark_neutralize(3000, 10, 1000)
     benchmark_neutralize_with_groups(3000, 10, 1000, 30)
+
