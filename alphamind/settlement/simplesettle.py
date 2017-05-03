@@ -6,8 +6,8 @@ Created on 2017-4-28
 """
 
 import numpy as np
-from alphamind.aggregate import group_mapping
-from alphamind.impl import aggregate
+from alphamind.groupby import group_mapping
+from alphamind.aggregate import aggregate
 
 
 def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarray=None) -> np.ndarray:

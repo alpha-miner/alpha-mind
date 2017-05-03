@@ -11,7 +11,7 @@ from numpy.linalg import solve
 from typing import Tuple
 from typing import Union
 from typing import Dict
-from alphamind.aggregate import groupby
+from alphamind.groupby import groupby
 
 
 def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_explained=False, output_exposure=False) \

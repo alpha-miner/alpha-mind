@@ -8,7 +8,7 @@ Created on 2017-4-26
 import numpy as np
 import numba as nb
 from numpy import zeros
-from alphamind.aggregate import groupby
+from alphamind.groupby import groupby
 
 
 @nb.njit

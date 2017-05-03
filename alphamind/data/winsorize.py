@@ -6,8 +6,8 @@ Created on 2017-4-25
 """
 
 import numpy as np
-from alphamind.aggregate import group_mapping
-from alphamind.impl import transform
+from alphamind.groupby import group_mapping
+from alphamind.aggregate import transform
 
 
 def winsorize_normal(x: np.ndarray, num_stds: int=3, groups: np.ndarray=None) -> np.ndarray:

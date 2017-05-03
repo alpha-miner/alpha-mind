@@ -25,7 +25,7 @@ else:
     line_trace = False
 
 
-ext_modules = ['alphamind/aggregate.pyx']
+ext_modules = ['alphamind/groupby.pyx']
 
 
 def generate_extensions(ext_modules, line_trace=False):
