@@ -6,10 +6,27 @@ Created on 2017-4-26
 """
 
 import numpy as np
+import numba as nb
 from numpy import zeros
 from alphamind.aggregate import groupby
-from alphamind.portfolio.impl import set_value_bool
-from alphamind.portfolio.impl import set_value_double
+
+
+@nb.njit
+def set_value_bool(mat, used_level, to_fill):
+    length, width = used_level.shape
+    for i in range(length):
+        for j in range(width):
+            k = used_level[i, j]
+            mat[k, j] = to_fill
+
+
+@nb.njit
+def set_value_double(mat, used_level, to_fill):
+    length, width = used_level.shape
+    for i in range(length):
+        for j in range(width):
+            k = used_level[i, j]
+            mat[k, j] = to_fill
 
 
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
@@ -25,7 +42,7 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
             for current_index in group_ids:
                 current_ordering = neg_er[current_index].argsort()
                 current_ordering.shape = -1, 1
-                set_value_bool(masks.view(dtype=np.uint8), current_index, current_ordering[:use_rank])
+                set_value_bool(masks, current_index[current_ordering[:use_rank]], True)
             weights[masks] = 1.
         else:
             ordering = neg_er.argsort()
@@ -42,7 +59,7 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
             masks = zeros((length, width), dtype=bool)
             for current_index in group_ids:
                 current_ordering = neg_er[current_index].argsort(axis=0)
-                set_value_bool(masks.view(dtype=np.uint8), current_index, current_ordering[:use_rank])
+                set_value_bool(masks, current_index[current_ordering[:use_rank]], True)
             for j in range(width):
                 weights[masks[:, j], j] = 1.
         else:

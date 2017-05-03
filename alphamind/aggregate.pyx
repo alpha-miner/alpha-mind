@@ -46,7 +46,7 @@ cpdef groupby(long[:] groups):
         else:
             deref(it).second.push_back(i)
 
-    return group_ids.values()
+    return [np.array(v) for v in group_ids.values()]
 
 
 @cython.boundscheck(False)

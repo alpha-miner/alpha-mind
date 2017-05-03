@@ -18,7 +18,7 @@ class TestRankBuild(unittest.TestCase):
         n_samples = 3000
         n_included = 300
 
-        n_portfolios = range(10)
+        n_portfolios = range(1, 10)
 
         for n_portfolio in n_portfolios:
             x = np.random.randn(n_samples, n_portfolio)
@@ -39,7 +39,7 @@ class TestRankBuild(unittest.TestCase):
         n_include = 10
         n_groups = 30
 
-        n_portfolios = range(10)
+        n_portfolios = range(1, 10)
 
         for n_portfolio in n_portfolios:
 
