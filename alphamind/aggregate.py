@@ -75,16 +75,18 @@ def agg_std(groups, x, ddof=1):
 
 
 @nb.njit
-def set_value(groups, source, destinantion):
-    length, width = destinantion.shape
+def copy_value(groups, source):
+    length = groups.shape[0]
+    width = source.shape[1]
+    destination = np.zeros((length, width))
     for i in range(length):
         k = groups[i]
         for j in range(width):
-            destinantion[i, j] = source[k, j]
+            destination[i, j] = source[k, j]
+    return destination
 
 
 def transform(groups, x, func):
-    res = np.zeros_like(x)
 
     if func == 'mean':
         value_data = agg_mean(groups, x)
@@ -97,8 +99,7 @@ def transform(groups, x, func):
     else:
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
-    set_value(groups, value_data, res)
-    return res
+    return copy_value(groups, value_data)
 
 
 def aggregate(groups, x, func):
