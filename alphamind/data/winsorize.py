@@ -9,9 +9,11 @@ import numpy as np
 import numba as nb
 from alphamind.groupby import group_mapping
 from alphamind.aggregate import transform
+from alphamind.aggregate import simple_mean
+from alphamind.aggregate import simple_std
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def mask_values_2d(x: np.ndarray,
                    mean_values: np.ndarray,
                    std_values: np.ndarray,
@@ -31,7 +33,7 @@ def mask_values_2d(x: np.ndarray,
     return res
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def mask_values_1d(x: np.ndarray,
                    mean_values: np.ndarray,
                    std_values: np.ndarray,
@@ -57,10 +59,9 @@ def winsorize_normal(x: np.ndarray, num_stds: int = 3, groups: np.ndarray = None
         std_values = transform(groups, x, 'std')
         res = mask_values_2d(x, mean_values, std_values, num_stds)
     else:
-        std_values = x.std(axis=0)
-        mean_values = x.mean(axis=0)
+        std_values = simple_std(x, axis=0)
+        mean_values = simple_mean(x, axis=0)
         res = mask_values_1d(x, mean_values, std_values, num_stds)
-
     return res
 
 

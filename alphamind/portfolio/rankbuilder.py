@@ -12,7 +12,7 @@ from numpy import zeros_like
 from alphamind.groupby import groupby
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def set_value(mat, used_level, to_fill):
     length, width = used_level.shape
     for i in range(length):

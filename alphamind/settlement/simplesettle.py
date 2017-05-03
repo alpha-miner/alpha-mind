@@ -8,19 +8,20 @@ Created on 2017-4-28
 import numpy as np
 from alphamind.groupby import group_mapping
 from alphamind.aggregate import aggregate
+from alphamind.aggregate import simple_sum
 
 
 def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
 
-    if ret_series.ndim > 1:
-        ret_series = ret_series.flatten()
+    if ret_series.ndim == 1:
+        ret_series = ret_series.reshape((-1, 1))
 
-    ret_mat = (ret_series * weights.T).T
+    ret_mat = weights * ret_series
     if groups is not None:
         groups = group_mapping(groups)
         return aggregate(groups, ret_mat, 'sum')
     else:
-        return ret_mat.sum(axis=0)
+        return simple_sum(ret_mat, axis=0)
 
 
 if __name__ == '__main__':

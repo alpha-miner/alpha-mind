@@ -20,7 +20,7 @@ class TestWinsorize(unittest.TestCase):
 
         calc_winsorized = winsorize_normal(x, num_stds)
 
-        std_values = x.std(axis=0)
+        std_values = x.std(axis=0, ddof=1)
         mean_value = x.mean(axis=0)
 
         lower_bound = mean_value - num_stds * std_values
@@ -42,7 +42,7 @@ class TestWinsorize(unittest.TestCase):
         cal_winsorized = winsorize_normal(x, num_stds, groups)
 
         def impl(x):
-            std_values = x.std(axis=0)
+            std_values = x.std(axis=0, ddof=1)
             mean_value = x.mean(axis=0)
 
             lower_bound = mean_value - num_stds * std_values

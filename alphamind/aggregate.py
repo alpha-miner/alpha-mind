@@ -10,7 +10,68 @@ import numpy as np
 import numba as nb
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
+def simple_sum(x, axis=0):
+    length, width = x.shape
+
+    if axis == 0:
+        res = np.zeros(width)
+        for i in range(length):
+            for j in range(width):
+                res[j] += x[i, j]
+
+    elif axis == 1:
+        res = np.zeros(length)
+        for i in range(length):
+            for j in range(width):
+                res[i] += x[i, j]
+    return res
+
+
+@nb.njit(nogil=True, cache=True)
+def simple_mean(x, axis=0):
+    length, width = x.shape
+
+    if axis == 0:
+        res = np.zeros(width)
+        for j in range(width):
+            for i in range(length):
+                res[j] += x[i, j]
+            res[j] /= length
+
+    elif axis == 1:
+        res = np.zeros(length)
+        for i in range(length):
+            for j in range(width):
+                res[i] += x[i, j]
+            res[i] /= width
+    return res
+
+
+@nb.njit(nogil=True, cache=True)
+def simple_std(x, axis=0, ddof=1):
+    length, width = x.shape
+
+    if axis == 0:
+        res = np.zeros(width)
+        sum_mat = np.zeros(width)
+        for j in range(width):
+            for i in range(length):
+                res[j] += x[i, j] * x[i, j]
+                sum_mat[j] += x[i, j]
+            res[j] = math.sqrt((res[j] - sum_mat[j] * sum_mat[j] / length) / (length - ddof))
+    elif axis == 1:
+        res = np.zeros(length)
+        sum_mat = np.zeros(width)
+        for i in range(length):
+            for j in range(width):
+                res[i] += x[i, j] * x[i, j]
+                sum_mat[i] += x[i, j]
+            res[i] = math.sqrt((res[i] - sum_mat[i] * sum_mat[i] / width) / (width - ddof))
+    return res
+
+
+@nb.njit(nogil=True, cache=True)
 def agg_sum(groups, x):
     max_g = groups.max()
     length, width = x.shape
@@ -22,7 +83,7 @@ def agg_sum(groups, x):
     return res
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def agg_abssum(groups, x):
     max_g = groups.max()
     length, width = x.shape
@@ -34,7 +95,7 @@ def agg_abssum(groups, x):
     return res
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def agg_mean(groups, x):
     max_g = groups.max()
     length, width = x.shape
@@ -53,7 +114,7 @@ def agg_mean(groups, x):
     return res
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def agg_std(groups, x, ddof=1):
     max_g = groups.max()
     length, width = x.shape
@@ -74,7 +135,7 @@ def agg_std(groups, x, ddof=1):
     return res
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def copy_value(groups, source):
     length = groups.shape[0]
     width = source.shape[1]
@@ -86,12 +147,12 @@ def copy_value(groups, source):
     return destination
 
 
-def transform(groups, x, func):
+def transform(groups, x, func, ddof=1):
 
     if func == 'mean':
         value_data = agg_mean(groups, x)
     elif func == 'std':
-        value_data = agg_std(groups, x, ddof=1)
+        value_data = agg_std(groups, x, ddof=ddof)
     elif func == 'sum':
         value_data = agg_sum(groups, x)
     elif func =='abssum':
@@ -102,11 +163,11 @@ def transform(groups, x, func):
     return copy_value(groups, value_data)
 
 
-def aggregate(groups, x, func):
+def aggregate(groups, x, func, ddof=1):
     if func == 'mean':
         value_data = agg_mean(groups, x)
     elif func == 'std':
-        value_data = agg_std(groups, x, ddof=1)
+        value_data = agg_std(groups, x, ddof=ddof)
     elif func == 'sum':
         value_data = agg_sum(groups, x)
     elif func =='abssum':

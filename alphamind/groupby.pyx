@@ -45,9 +45,9 @@ cpdef groupby(long[:] groups):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-cpdef np.ndarray[int, ndim=1] group_mapping(long[:] groups):
+cpdef np.ndarray[long, ndim=1] group_mapping(long[:] groups):
     cdef size_t length = groups.shape[0]
-    cdef np.ndarray[int, ndim=1] res= zeros(length, dtype=int)
+    cdef np.ndarray[long, ndim=1] res= zeros(length, dtype=long)
     cdef cpp_map[long, long] current_hold
     cdef long curr_tag
     cdef long running_tag = -1

@@ -69,19 +69,19 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
         return res
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     x_bar = x.T
     b = solve(x_bar @ x, x_bar @ y)
     return b
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def ls_res(x: np.ndarray, y: np.ndarray, b: np.ndarray) -> np.ndarray:
     return y - x @ b
 
 
-@nb.njit
+@nb.njit(nogil=True, cache=True)
 def ls_explain(x: np.ndarray, b: np.ndarray) -> np.ndarray:
     explained = np.zeros(x.shape + (b.shape[1],))
     for i in range(b.shape[1]):

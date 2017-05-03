@@ -19,7 +19,7 @@ class TestStandardize(unittest.TestCase):
         x = np.random.randn(3000, 10)
 
         calc_zscore = standardize(x)
-        exp_zscore = zscore(x)
+        exp_zscore = zscore(x, ddof=1)
 
         np.testing.assert_array_almost_equal(calc_zscore, exp_zscore)
         
@@ -28,7 +28,7 @@ class TestStandardize(unittest.TestCase):
         groups = np.random.randint(10, 30, size=3000)
 
         calc_zscore = standardize(x, groups)
-        exp_zscore = pd.DataFrame(x).groupby(groups).transform(lambda s: (s - s.mean(axis=0)) / s.std(axis=0))
+        exp_zscore = pd.DataFrame(x).groupby(groups).transform(lambda s: (s - s.mean(axis=0)) / s.std(axis=0, ddof=1))
         np.testing.assert_array_almost_equal(calc_zscore, exp_zscore)
 
 
