@@ -6,6 +6,7 @@ Created on 2017-4-25
 """
 
 import numpy as np
+import numba as nb
 from numpy import zeros
 from numpy.linalg import solve
 from typing import Tuple
@@ -68,16 +69,19 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
         return res
 
 
+@nb.njit
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     x_bar = x.T
     b = solve(x_bar @ x, x_bar @ y)
     return b
 
 
+@nb.njit
 def ls_res(x: np.ndarray, y: np.ndarray, b: np.ndarray) -> np.ndarray:
     return y - x @ b
 
 
+@nb.njit
 def ls_explain(x: np.ndarray, b: np.ndarray) -> np.ndarray:
     explained = np.zeros(x.shape + (b.shape[1],))
     for i in range(b.shape[1]):
