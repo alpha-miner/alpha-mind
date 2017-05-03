@@ -8,11 +8,8 @@ Created on 2017-4-26
 
 import numpy as np
 from numpy import zeros
-from numpy import max as nmax
 cimport numpy as np
 cimport cython
-from libc.math cimport sqrt
-from libc.math cimport fabs
 from libcpp.vector cimport vector as cpp_vector
 from libcpp.unordered_map cimport unordered_map as cpp_map
 from cython.operator cimport dereference as deref

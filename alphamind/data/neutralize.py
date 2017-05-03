@@ -26,9 +26,9 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
                 exposure = zeros(x.shape + (y.shape[1],))
         else:
             if output_explained:
-                explained = zeros(x.shape)
+                explained = zeros(x.shape + (1,))
             if output_exposure:
-                exposure = zeros(x.shape)
+                exposure = zeros(x.shape + (1,))
 
         groups_ids = groupby(groups)
 
@@ -37,13 +37,13 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
             curr_y = y[curr_idx]
             b = ls_fit(x[curr_idx], y[curr_idx])
             res[curr_idx] = ls_res(curr_x, curr_y, b)
-            if output_exposure and exposure.ndim == 3:
+            if output_exposure:
                 for i in range(exposure.shape[2]):
                     exposure[curr_idx, :, i] = b[:, i]
-            elif output_exposure:
-                exposure[curr_idx] = b
             if output_explained:
-                explained[curr_idx] = ls_explain(curr_x, b)
+                for i in range(explained.shape[2]):
+                    b
+                    explained[curr_idx, :, i] = ls_explain(curr_x, b)
     else:
         b = ls_fit(x, y)
         res = ls_res(x, y, b)
@@ -80,11 +80,11 @@ def ls_explain(x: np.ndarray, b: np.ndarray) -> np.ndarray:
         return b * x
     else:
         n_samples = x.shape[0]
-        dependends = b.shape[1]
+        to_explain = b.shape[1]
         factors = x.shape[1]
-        explained = zeros((n_samples, factors, dependends))
+        explained = zeros((n_samples, factors, to_explain))
 
-        for i in range(dependends):
+        for i in range(to_explain):
             explained[:, :, i] = b[:, i] * x
         return explained
 
