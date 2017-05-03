@@ -6,7 +6,8 @@ Created on 2017-4-28
 """
 
 import numpy as np
-from alphamind.aggregate import aggregate
+from alphamind.aggregate import group_mapping
+from alphamind.impl import aggregate
 
 
 def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
@@ -16,6 +17,7 @@ def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarra
 
     ret_mat = (ret_series * weights.T).T
     if groups is not None:
+        groups = group_mapping(groups)
         return aggregate(groups, ret_mat, 'sum')
     else:
         return ret_mat.sum(axis=0)
