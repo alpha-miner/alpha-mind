@@ -10,6 +10,14 @@ import numpy as np
 import numba as nb
 
 
+def groupby(groups):
+    a = np.arange(groups.shape[0])
+    order_group_idx = groups.argsort()
+    counts = np.bincount(groups)
+    ret = np.split(a[order_group_idx], np.cumsum(counts)[:-1])
+    return ret
+
+
 @nb.njit(nogil=True, cache=True)
 def simple_sum(x, axis=0):
     length, width = x.shape

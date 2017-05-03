@@ -9,7 +9,7 @@ import numpy as np
 import numba as nb
 from numpy import zeros
 from numpy import zeros_like
-from alphamind.groupby import groupby
+from alphamind.aggregate import groupby
 
 
 @nb.njit(nogil=True, cache=True)
