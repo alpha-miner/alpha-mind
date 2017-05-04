@@ -6,19 +6,10 @@ Created on 2017-4-26
 """
 
 import numpy as np
-import numba as nb
 from numpy import zeros
 from numpy import zeros_like
 from alphamind.cyimpl import groupby
-
-
-@nb.njit(nogil=True, cache=True)
-def set_value(mat, used_level, to_fill):
-    length, width = used_level.shape
-    for i in range(length):
-        for j in range(width):
-            k = used_level[i, j]
-            mat[k, j] = to_fill
+from alphamind.utilities import set_value
 
 
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:

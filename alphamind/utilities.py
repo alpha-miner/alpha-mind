@@ -53,6 +53,15 @@ class TestRunner(object):
 
 
 @nb.njit(nogil=True, cache=True)
+def set_value(mat, used_level, to_fill):
+    length, width = used_level.shape
+    for i in range(length):
+        for j in range(width):
+            k = used_level[i, j]
+            mat[k, j] = to_fill
+
+
+@nb.njit(nogil=True, cache=True)
 def group_mapping(groups: np.ndarray) -> np.ndarray:
     length = groups.shape[0]
     order = groups.argsort()
