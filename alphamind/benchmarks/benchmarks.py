@@ -13,6 +13,8 @@ from alphamind.benchmarks.data.winsorize import benchmark_winsorize_normal
 from alphamind.benchmarks.data.winsorize import benchmark_winsorize_normal_with_group
 from alphamind.benchmarks.portfolio.rankbuild import benchmark_build_rank
 from alphamind.benchmarks.portfolio.rankbuild import benchmark_build_rank_with_group
+from alphamind.benchmarks.portfolio.percentbuild import benchmark_build_percent
+from alphamind.benchmarks.portfolio.percentbuild import benchmark_build_percent_with_group
 from alphamind.benchmarks.settlement.simplesettle import benchmark_simple_settle
 from alphamind.benchmarks.settlement.simplesettle import benchmark_simple_settle_with_group
 
@@ -43,6 +45,12 @@ if __name__ == '__main__':
     benchmark_build_rank_with_group(30, 50000, 1, 3)
     benchmark_build_rank(50000, 20, 3000)
     benchmark_build_rank_with_group(50000, 20, 10, 300)
+    benchmark_build_percent(3000, 1000, 0.1)
+    benchmark_build_percent_with_group(3000, 1000, 0.1, 30)
+    benchmark_build_percent(30, 50000, 0.1)
+    benchmark_build_percent_with_group(30, 50000, 0.1, 3)
+    benchmark_build_percent(50000, 20, 0.1)
+    benchmark_build_percent_with_group(50000, 20, 0.1, 300)
     benchmark_simple_settle(3000, 10, 1000)
     benchmark_simple_settle_with_group(3000, 10, 1000, 30)
     benchmark_simple_settle(30, 10, 50000)
