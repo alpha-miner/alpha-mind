@@ -48,7 +48,7 @@ class TestSimpleSettle(unittest.TestCase):
 
         ret_series.shape = -1, 1
         ret_mat = weights * ret_series
-        expected_ret = pd.DataFrame(ret_mat).groupby(groups, sort=False).sum().values
+        expected_ret = pd.DataFrame(ret_mat).groupby(groups).sum().values
 
         np.testing.assert_array_almost_equal(calc_ret, expected_ret)
 
@@ -57,7 +57,7 @@ class TestSimpleSettle(unittest.TestCase):
         calc_ret = simple_settle(weights, ret_series, groups)
 
         ret_mat = weights * ret_series
-        expected_ret = pd.DataFrame(ret_mat).groupby(groups, sort=False).sum().values
+        expected_ret = pd.DataFrame(ret_mat).groupby(groups).sum().values
 
         np.testing.assert_array_almost_equal(calc_ret, expected_ret)
 

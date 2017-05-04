@@ -11,11 +11,40 @@ import numba as nb
 
 
 def groupby(groups):
-    a = np.arange(groups.shape[0])
     order_group_idx = groups.argsort()
     counts = np.bincount(groups)
-    ret = np.split(a[order_group_idx], np.cumsum(counts)[:-1])
-    return ret
+    nonzero_idx = counts.nonzero()[0]
+
+    start = 0
+    res = []
+
+    for i in nonzero_idx:
+        num_g = counts[i]
+        res.append(order_group_idx[start:start+num_g])
+        start += num_g
+    return res
+
+
+@nb.njit(nogil=True, cache=True)
+def group_mapping(groups):
+    length = groups.shape[0]
+    order = groups.argsort()
+    res = np.zeros(length, dtype=order.dtype)
+
+    start = 0
+    res[order[0]] = start
+    previous = groups[order[0]]
+
+    for i in range(1, length):
+        curr_idx = order[i]
+        curr_val = groups[curr_idx]
+        if curr_val != previous:
+            start += 1
+            res[curr_idx] = start
+        else:
+            res[curr_idx] = start
+        previous = curr_val
+    return res
 
 
 @nb.njit(nogil=True, cache=True)

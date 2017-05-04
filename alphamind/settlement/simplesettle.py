@@ -6,7 +6,7 @@ Created on 2017-4-28
 """
 
 import numpy as np
-from alphamind.groupby import group_mapping
+from alphamind.aggregate import group_mapping
 from alphamind.aggregate import aggregate
 from alphamind.aggregate import simple_sum
 

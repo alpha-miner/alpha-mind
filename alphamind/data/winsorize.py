@@ -7,7 +7,7 @@ Created on 2017-4-25
 
 import numpy as np
 import numba as nb
-from alphamind.groupby import group_mapping
+from alphamind.aggregate import group_mapping
 from alphamind.aggregate import transform
 from alphamind.aggregate import simple_mean
 from alphamind.aggregate import simple_std
