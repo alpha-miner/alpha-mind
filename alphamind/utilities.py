@@ -52,21 +52,6 @@ class TestRunner(object):
             sys.exit(0)
 
 
-def groupby(groups: np.ndarray) -> List[np.ndarray]:
-    order_group_idx = groups.argsort()
-    counts = np.bincount(groups)
-    nonzero_idx = counts.nonzero()[0]
-
-    start = 0
-    res = []
-
-    for i in nonzero_idx:
-        num_g = counts[i]
-        res.append(order_group_idx[start:start+num_g])
-        start += num_g
-    return res
-
-
 @nb.njit(nogil=True, cache=True)
 def group_mapping(groups: np.ndarray) -> np.ndarray:
     length = groups.shape[0]
