@@ -6,9 +6,9 @@ Created on 2017-4-28
 """
 
 import numpy as np
-from alphamind.aggregate import group_mapping
-from alphamind.aggregate import aggregate
-from alphamind.aggregate import simple_sum
+from alphamind.utilities import group_mapping
+from alphamind.utilities import aggregate
+from alphamind.utilities import simple_sum
 
 
 def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
