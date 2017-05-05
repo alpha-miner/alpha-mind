@@ -43,6 +43,7 @@ def generate_extensions(ext_modules, line_trace=False):
         extensions.append(ext)
     return extensions
 
+
 if platform.system() != "Windows":
     import multiprocessing
     n_cpu = multiprocessing.cpu_count()
