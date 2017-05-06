@@ -6,6 +6,7 @@ Created on 2017-5-5
 """
 
 import numpy as np
+from typing import Tuple
 import cvxpy
 from cvxopt import solvers
 
@@ -13,7 +14,13 @@ from cvxopt import solvers
 solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}
 
 
-def linear_build(er, lbound, ubound, risk_exposure, bm, risk_target=None, solver=None):
+def linear_build(er: np.np.ndarray,
+                 lbound: np.ndarray,
+                 ubound: np.ndarray,
+                 risk_exposure: np.ndarray,
+                 bm: np.ndarray,
+                 risk_target: np.ndarray=None,
+                 solver: str=None) -> Tuple[str, np.ndarray, np.ndarray]:
     n, m = risk_exposure.shape
     w = cvxpy.Variable(n)
 

@@ -15,14 +15,14 @@ from alphamind.portfolio.linearbuilder import linear_build
 solvers.options['show_progress'] = False
 
 
-def benchmark_build_linear(n_samples: int, n_risks: int, n_inds, n_loop: int) -> None:
+def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
     print("-" * 60)
     print("Starting portfolio construction by linear programming")
-    print("Parameters(n_samples: {0}, n_risks: {1}, n_inds: {2})".format(n_samples, n_risks, n_inds))
+    print("Parameters(n_samples: {0}, n_risks: {1}, n_loop: {2})".format(n_samples, n_risks, n_loop))
 
     er = np.random.randn(n_samples)
     risk_exp = np.random.randn(n_samples, n_risks)
-    bm = np.random.randint(n_inds, size=n_samples).astype(float)
+    bm = np.random.rand(n_samples)
     bm /= bm.sum()
 
     lbound = -0.04
@@ -62,4 +62,4 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_inds, n_loop: int) ->
 
 
 if __name__ == '__main__':
-    benchmark_build_linear(1000, 30, 30, 1)
+    benchmark_build_linear(500, 30, 10)
