@@ -5,9 +5,11 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
-from alphamind.utilities import add_parent_path
+import os
+import sys
 
-add_parent_path(__file__, 3)
+current_path = os.path.abspath(__file__)
+sys.path.append(os.path.sep.join(current_path.split(os.path.sep)[:-3]))
 
 from alphamind.tests.data.test_neutralize import TestNeutralize
 from alphamind.tests.data.test_standardize import TestStandardize

@@ -32,7 +32,7 @@ def generate_extensions(ext_modules, line_trace=False):
     else:
         define_macros = []
     if platform.system() != "Windows":
-        extra_compile_args = ['-O3', '-std=c++0x']
+        extra_compile_args = ['-O3', '-std=c++11']
     else:
         extra_compile_args = ['/Ox']
     for pyxfile in ext_modules:
