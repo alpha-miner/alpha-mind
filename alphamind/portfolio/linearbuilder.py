@@ -14,7 +14,7 @@ from cvxopt import solvers
 solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}
 
 
-def linear_build(er: np.np.ndarray,
+def linear_build(er: np.ndarray,
                  lbound: np.ndarray,
                  ubound: np.ndarray,
                  risk_exposure: np.ndarray,
