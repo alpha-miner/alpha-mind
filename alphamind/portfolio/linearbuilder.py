@@ -51,7 +51,7 @@ if __name__ == '__main__':
     bm = np.ones(300) * 0.00333333333
     risk_exposure = np.random.randn(300, 10)
 
-    s, v, x = linear_build(er, 0., 0.01, risk_exposure, bm, [-0.01*np.ones(10), 0.01*np.ones(10)])
+    s, v, x = linear_build(er, 0., 0.01, risk_exposure, bm, (-0.01*np.ones(10), 0.01*np.ones(10)))
     print(s)
     print(x.sum())
     print(x.min(), ',', x.max())
