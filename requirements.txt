@@ -5,4 +5,5 @@ numpy >= 1.12.1
 numba >= 0.30.0
 scikit-learn >= 0.18.1
 scipy >= 0.19.0
+simpleutils >= 0.1.0
 pandas >= 0.19.2

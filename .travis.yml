@@ -40,6 +40,7 @@ install:
   - pip install coveralls
   - pip install cvxopt
   - pip install cvxpy
+  - pip install simpleutils
 # command to run tests
 script:
   - python setup.py build_ext --inplace

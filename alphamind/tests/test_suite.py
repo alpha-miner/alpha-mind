@@ -5,12 +5,12 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
-import os
-import sys
+from simpleutils import add_parent_path
 
-current_path = os.path.abspath(__file__)
-sys.path.append(os.path.sep.join(current_path.split(os.path.sep)[:-3]))
+add_parent_path(__file__, 3)
 
+from simpleutils import TestRunner
+from alphamind.utilities import alpha_logger
 from alphamind.tests.data.test_neutralize import TestNeutralize
 from alphamind.tests.data.test_standardize import TestStandardize
 from alphamind.tests.data.test_winsorize import TestWinsorize
@@ -18,8 +18,6 @@ from alphamind.tests.portfolio.test_rankbuild import TestRankBuild
 from alphamind.tests.portfolio.test_percentbuild import TestPercentBuild
 from alphamind.tests.portfolio.test_linearbuild import TestLinearBuild
 from alphamind.tests.settlement.test_simplesettle import TestSimpleSettle
-from alphamind.utilities import alpha_logger
-from alphamind.utilities import TestRunner
 
 
 if __name__ == '__main__':

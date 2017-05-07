@@ -58,7 +58,7 @@ setup(
     version=VERSION,
     packages=find_packages(),
     url='',
-    license='',
+    license='MIT',
     author='wegamekinglc',
     author_email='',
     ext_modules=ext_modules_settings,
