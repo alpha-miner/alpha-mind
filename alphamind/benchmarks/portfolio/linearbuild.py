@@ -62,4 +62,4 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
 
 
 if __name__ == '__main__':
-    benchmark_build_linear(500, 30, 10)
+    benchmark_build_linear(2000, 30, 10)
