@@ -24,11 +24,3 @@ def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarra
         if ret_mat.ndim == 1:
             ret_mat = ret_mat.reshape((-1, 1))
         return simple_sum(ret_mat, axis=0)
-
-
-if __name__ == '__main__':
-    from alphamind.aggregate import group_mapping_test
-
-    s = np.random.randint(2, 5, size=6)
-    print(s)
-    print(group_mapping_test(s))

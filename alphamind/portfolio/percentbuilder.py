@@ -46,4 +46,3 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
             use_rank = int(percent * len(neg_er))
             set_value(weights, ordering[:use_rank], 1.)
         return weights
-

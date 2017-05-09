@@ -22,13 +22,3 @@ def standardize(x: np.ndarray, groups: np.ndarray=None, ddof=1) -> np.ndarray:
         return (x - mean_values) / std_values
     else:
         return (x - simple_mean(x, axis=0)) / simple_std(x, axis=0)
-
-
-if __name__ == '__main__':
-    import pandas as pd
-
-    df = pd.read_csv('d:/test_data.csv', index_col=0)
-
-    x = df.values
-    groups = df.index.values.astype(int)
-    standardize(x, groups)

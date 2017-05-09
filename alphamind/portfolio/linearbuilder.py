@@ -43,17 +43,3 @@ def linear_build(er: np.ndarray,
     prob = cvxpy.Problem(objective, constraints)
     prob.solve(solver=solver)
     return prob.status, prob.value, np.array(w.value).flatten()
-
-
-if __name__ == '__main__':
-
-    er = np.arange(300)
-    bm = np.ones(300) * 0.00333333333
-    risk_exposure = np.random.randn(300, 10)
-
-    s, v, x = linear_build(er, 0., 0.01, risk_exposure, bm, (-0.01*np.ones(10), 0.01*np.ones(10)))
-    print(s)
-    print(x.sum())
-    print(x.min(), ',', x.max())
-    print((x - bm) @ risk_exposure)
-
