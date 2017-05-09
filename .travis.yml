@@ -37,7 +37,7 @@ install:
   - conda install pandas
   - conda install cython
   - conda install scikit-learn
-  - pip install coveralls
+  - pip install python-coveralls
   - pip install cvxopt
   - pip install cvxpy
   - pip install simpleutils
