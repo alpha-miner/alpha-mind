@@ -64,6 +64,25 @@ def simple_sum(x, axis=0):
 
 
 @nb.njit(nogil=True, cache=True)
+def simple_abssum(x, axis=0):
+
+    length, width = x.shape
+
+    if axis == 0:
+        res = np.zeros(width)
+        for i in range(length):
+            for j in range(width):
+                res[j] += abs(x[i, j])
+
+    elif axis == 1:
+        res = np.zeros(length)
+        for i in range(length):
+            for j in range(width):
+                res[i] += abs(x[i, j])
+    return res
+
+
+@nb.njit(nogil=True, cache=True)
 def simple_mean(x, axis=0):
     length, width = x.shape
 
@@ -182,7 +201,22 @@ def copy_value(groups, source):
     return destination
 
 
-def transform(groups, x, func, ddof=1):
+@nb.njit(nogil=True, cache=True)
+def scale_value(groups, source, x, scale):
+    length, width = x.shape
+    destination = x.copy()
+    for i in range(length):
+        k = groups[i]
+        for j in range(width):
+            destination[i, j] /= source[k, j] / scale
+    return destination
+
+
+def transform(groups: np.ndarray,
+              x: np.ndarray,
+              func: str,
+              ddof: int=1,
+              scale: float=1.) -> np.ndarray:
 
     if func == 'mean':
         value_data = agg_mean(groups, x)
@@ -190,12 +224,15 @@ def transform(groups, x, func, ddof=1):
         value_data = agg_std(groups, x, ddof=ddof)
     elif func == 'sum':
         value_data = agg_sum(groups, x)
-    elif func =='abssum':
+    elif func == 'abssum' or func == 'scale':
         value_data = agg_abssum(groups, x)
     else:
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
-    return copy_value(groups, value_data)
+    if func == 'scale':
+        return scale_value(groups, value_data, x, scale)
+    else:
+        return copy_value(groups, value_data)
 
 
 def aggregate(groups, x, func, ddof=1):
@@ -205,7 +242,7 @@ def aggregate(groups, x, func, ddof=1):
         value_data = agg_std(groups, x, ddof=ddof)
     elif func == 'sum':
         value_data = agg_sum(groups, x)
-    elif func =='abssum':
+    elif func == 'abssum' or func == 'scale':
         value_data = agg_abssum(groups, x)
     else:
         raise ValueError('({0}) is not recognized as valid functor'.format(func))

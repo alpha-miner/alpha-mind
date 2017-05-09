@@ -21,6 +21,8 @@ def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarra
         groups = group_mapping(groups)
         return aggregate(groups, ret_mat, 'sum')
     else:
+        if ret_mat.ndim == 1:
+            ret_mat = ret_mat.reshape((-1, 1))
         return simple_sum(ret_mat, axis=0)
 
 
