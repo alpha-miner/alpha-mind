@@ -42,9 +42,9 @@ install:
   - pip install simpleutils
   - pip install coveralls
 script:
-  - python setup.py build_ext --line_trace --inplace
-  - coverage run --rcfile=./.coveragerc alphamind/tests/test_suite.py
-  - coverage report --rcfile=./.coveragerc -i
-  - coverage html --rcfile=./.coveragerc -i
+  - python setup.py build_ext --inplace
+  - coverage run alphamind/tests/test_suite.py
+  - coverage report
+  - coverage html
 after_success:
   coveralls
