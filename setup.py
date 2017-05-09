@@ -5,6 +5,7 @@ Created on 2017-4-25
 """
 import platform
 import sys
+import io
 from setuptools import setup
 from setuptools import find_packages
 from distutils.extension import Extension
@@ -61,6 +62,7 @@ setup(
     license='MIT',
     author='wegamekinglc',
     author_email='',
+    install_requires=io.open('requirements.txt', encoding='utf8').read(),
     ext_modules=ext_modules_settings,
     include_dirs=[np.get_include()],
     description=''
