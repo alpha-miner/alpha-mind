@@ -34,4 +34,4 @@ cpdef groupby(long[:] groups):
             group_ids[curr_tag] = [i]
         else:
             deref(it).second.push_back(i)
-    return [np.array(v) for v in group_ids.values()]
+    return {k: np.array(v) for k, v in group_ids.items()}

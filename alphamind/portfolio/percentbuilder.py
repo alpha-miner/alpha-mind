@@ -21,7 +21,7 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
         weights = zeros((length, 1))
         if groups is not None:
             group_ids = groupby(groups)
-            for current_index in group_ids:
+            for current_index in group_ids.values():
                 current_ordering = neg_er[current_index].argsort()
                 current_ordering.shape = -1, 1
                 use_rank = int(percent * len(current_index))
@@ -37,7 +37,7 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
 
         if groups is not None:
             group_ids = groupby(groups)
-            for current_index in group_ids:
+            for current_index in group_ids.values():
                 current_ordering = neg_er[current_index].argsort(axis=0)
                 use_rank = int(percent * len(current_index))
                 set_value(weights, current_index[current_ordering[:use_rank]], 1)

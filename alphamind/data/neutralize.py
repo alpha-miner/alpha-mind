@@ -37,7 +37,7 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
 
         groups_ids = groupby(groups)
 
-        for curr_idx in groups_ids:
+        for curr_idx in groups_ids.values():
             curr_x = x[curr_idx]
             curr_y = y[curr_idx]
             b = ls_fit(curr_x, curr_y)

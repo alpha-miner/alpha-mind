@@ -21,7 +21,7 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
         weights = zeros((length, 1))
         if groups is not None:
             group_ids = groupby(groups)
-            for current_index in group_ids:
+            for current_index in group_ids.values():
                 current_ordering = neg_er[current_index].argsort()
                 current_ordering.shape = -1, 1
                 set_value(weights, current_index[current_ordering[:use_rank]], 1.)
@@ -35,7 +35,7 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
 
         if groups is not None:
             group_ids = groupby(groups)
-            for current_index in group_ids:
+            for current_index in group_ids.values():
                 current_ordering = neg_er[current_index].argsort(axis=0)
                 set_value(weights, current_index[current_ordering[:use_rank]], 1)
         else:
