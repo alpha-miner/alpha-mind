@@ -42,14 +42,3 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
             ordering = neg_er.argsort(axis=0)
             set_value(weights, ordering[:use_rank], 1.)
         return weights
-
-
-if __name__ == '__main__':
-    n_sample = 6
-    n_groups = 3
-
-    x = np.random.randn(n_sample)
-    groups = np.array([1, 1, 2, 1, 0, 2])
-    print(groups)
-    print(groupby(groups))
-    print(rank_build(x, 1, groups))

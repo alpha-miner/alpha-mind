@@ -37,13 +37,13 @@ install:
   - conda install pandas
   - conda install cython
   - conda install scikit-learn
-  - pip install coveralls
   - pip install cvxopt
   - pip install cvxpy
   - pip install simpleutils
-# command to run tests
+  - pip install coveralls
 script:
-  - python setup.py build_ext --inplace
+  - export NUMBA_DISABLE_JIT=1
+  - python setup.py build_ext --line_trace --inplace
   - coverage run --rcfile=./.coveragerc alphamind/tests/test_suite.py
   - coverage report --rcfile=./.coveragerc -i
   - coverage html --rcfile=./.coveragerc -i
