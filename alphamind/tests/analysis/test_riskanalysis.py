@@ -13,7 +13,8 @@ from alphamind.analysis.riskanalysis import risk_analysis
 
 class TestRiskAnalysis(unittest.TestCase):
 
-    def test_risk_analysis(self):
+    @classmethod
+    def test_risk_analysis(cls):
         n_samples = 36000
         n_dates = 20
         n_risk_factors = 35
@@ -26,7 +27,7 @@ class TestRiskAnalysis(unittest.TestCase):
                                   columns=list(range(n_risk_factors)),
                                   index=dates)
 
-        explained_table, exposure_table = risk_analysis(weights_series - bm_series,
+        explained_table, _ = risk_analysis(weights_series - bm_series,
                                                         next_bar_return_series,
                                                         risk_table)
 

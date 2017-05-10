@@ -13,20 +13,20 @@ from alphamind.portfolio.rankbuilder import rank_build
 
 class TestRankBuild(unittest.TestCase):
 
+    def setUp(self):
+        self.n_samples = 3000
+        self.n_included = 300
+        self.n_groups = 30
+        self.n_portfolio = range(1, 10)
+
     def test_rank_build(self):
+        for n_portfolio in self.n_portfolio:
+            x = np.random.randn(self.n_samples, n_portfolio)
 
-        n_samples = 3000
-        n_included = 300
-
-        n_portfolios = range(1, 10)
-
-        for n_portfolio in n_portfolios:
-            x = np.random.randn(n_samples, n_portfolio)
-
-            calc_weights = rank_build(x, n_included)
+            calc_weights = rank_build(x, self.n_included)
 
             expected_weights = np.zeros((len(x), n_portfolio))
-            masks = (-x).argsort(axis=0).argsort(axis=0) < n_included
+            masks = (-x).argsort(axis=0).argsort(axis=0) < self.n_included
 
             for j in range(x.shape[1]):
                 expected_weights[masks[:, j], j] = 1.
@@ -34,17 +34,12 @@ class TestRankBuild(unittest.TestCase):
             np.testing.assert_array_almost_equal(calc_weights, expected_weights)
 
     def test_rank_build_with_group(self):
+        n_include = int(self.n_included / self.n_groups)
 
-        n_samples = 3000
-        n_include = 10
-        n_groups = 30
+        for n_portfolio in self.n_portfolio:
 
-        n_portfolios = range(1, 10)
-
-        for n_portfolio in n_portfolios:
-
-            x = np.random.randn(n_samples, n_portfolio)
-            groups = np.random.randint(n_groups, size=n_samples)
+            x = np.random.randn(self.n_samples, n_portfolio)
+            groups = np.random.randint(self.n_groups, size=self.n_samples)
 
             calc_weights = rank_build(x, n_include, groups)
 

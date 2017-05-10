@@ -15,7 +15,7 @@ from alphamind.utilities import set_value
 def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.ndarray:
 
     if er.ndim == 1 or (er.shape[0] == 1 or er.shape[1] == 1):
-        """ fast path methods for single column er"""
+        # fast path methods for single column er
         neg_er = -er.flatten()
         length = len(neg_er)
         weights = zeros((length, 1))
