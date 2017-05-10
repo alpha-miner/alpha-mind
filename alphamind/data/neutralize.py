@@ -38,10 +38,7 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
         groups_ids = groupby(groups)
 
         for curr_idx in groups_ids.values():
-            curr_x = x[curr_idx]
-            curr_y = y[curr_idx]
-            b = ls_fit(curr_x, curr_y)
-            res[curr_idx] = ls_res(curr_x, curr_y, b)
+            curr_x, b = _sub_step(x, y, curr_idx, res)
             if output_exposure:
                 for i in range(exposure.shape[2]):
                     exposure[curr_idx, :, i] = b[:, i]
@@ -67,6 +64,15 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
         return res, output_dict
     else:
         return res
+
+
+@nb.njit(nogil=True, cache=True)
+def _sub_step(x, y, curr_idx, res):
+    curr_x = x[curr_idx]
+    curr_y = y[curr_idx]
+    b = ls_fit(curr_x, curr_y)
+    res[curr_idx] = ls_res(curr_x, curr_y, b)
+    return curr_x, b
 
 
 @nb.njit(nogil=True, cache=True)
