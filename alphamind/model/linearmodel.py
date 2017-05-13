@@ -5,10 +5,11 @@ Created on 2017-5-10
 @author: cheng.li
 """
 
+from typing import Tuple
 from typing import Union
 import numpy as np
 import numba as nb
-from alphamind.cyimpl import groupby
+from alphamind.utilities import groupby
 from alphamind.data.neutralize import ls_fit
 
 
@@ -21,13 +22,9 @@ class LinearModel(object):
         self.model_parameter = _train(x, y, groups)
 
     def predict(self, x, groups=None):
-        if groups is not None and isinstance(self.model_parameter, dict):
+        if groups is not None and isinstance(self.model_parameter, tuple):
             names = np.unique(groups)
-            pred_v = np.zeros(x.shape[0])
-            for name in names:
-                this_param = self.model_parameter[name]
-                _prediction_group(name, groups, this_param, x, pred_v)
-            return pred_v
+            return _prediction_impl(self.model_parameter[0], self.model_parameter[1], groups, names, x)
         elif self.model_parameter is None:
             raise ValueError("linear model is not calibrated yet")
         elif groups is None:
@@ -37,22 +34,35 @@ class LinearModel(object):
 
 
 @nb.njit(nogil=True, cache=True)
-def _prediction_group(name, groups, this_param, x, pred_v):
-    idx = groups == name
-    pred_v[idx] = x[idx] @ this_param
+def _prediction_impl(calibrated_names, model_parameter, groups, names, x):
+    places = np.searchsorted(calibrated_names, names)
+    pred_v = np.zeros(x.shape[0])
+    for k, name in zip(places, names):
+        this_param = model_parameter[k]
+        idx = groups == name
+        pred_v[idx] = x[idx] @ this_param
+    return pred_v
 
 
-def _train(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+def _train(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     if groups is None:
         return ls_fit(x, y)
     else:
-        groups_ids = groupby(groups)
-        res_beta = {}
+        index_diff, order = groupby(groups)
+        res_beta = _train_loop(index_diff, order, x, y)
+        return np.unique(groups), res_beta
 
-        for k, curr_idx in groups_ids.items():
-            res_beta[k] = _train_sub_group(x, y, curr_idx)
 
-        return res_beta
+@nb.njit(nogil=True, cache=True)
+def _train_loop(index_diff, order, x, y):
+    res_beta = np.zeros((len(index_diff)+1, x.shape[1]))
+    start = 0
+    for k, diff_loc in enumerate(index_diff):
+        res_beta[k] = _train_sub_group(x, y, order[start:diff_loc + 1])
+        start = diff_loc + 1
+
+    res_beta[k + 1] = _train_sub_group(x, y, order[start:])
+    return res_beta
 
 
 @nb.njit(nogil=True, cache=True)
@@ -60,25 +70,3 @@ def _train_sub_group(x, y, curr_idx):
     curr_x = x[curr_idx]
     curr_y = y[curr_idx]
     return ls_fit(curr_x, curr_y)
-
-
-if __name__ == '__main__':
-    import datetime as dt
-    x = np.random.randn(3000, 10)
-    y = np.random.randn(3000)
-    groups = np.random.randint(30, size=3000)
-
-    to_x = np.random.randn(100, 10)
-    to_groups = np.random.randint(30, size=100)
-
-    model = LinearModel()
-
-    start = dt.datetime.now()
-    for i in range(5000):
-        model.calibrate(x, y, groups)
-    print(dt.datetime.now() - start)
-
-    start = dt.datetime.now()
-    for i in range(50000):
-        model.predict(to_x, to_groups)
-    print(dt.datetime.now() - start)

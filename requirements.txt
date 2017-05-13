@@ -1,6 +1,5 @@
 cvxopt >= 1.1.9
 cvxpy >= 0.4.9
-cython >= 0.25.2
 numpy >= 1.12.1
 numba >= 0.30.0
 scikit-learn >= 0.18.1

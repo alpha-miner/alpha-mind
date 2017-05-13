@@ -14,6 +14,13 @@ import numba as nb
 alpha_logger = CustomLogger('ALPHA_MIND', 'info')
 
 
+def groupby(groups):
+    order = groups.argsort()
+    t = groups[order]
+    index_diff = np.where(np.diff(t))[0]
+    return index_diff, order
+
+
 @nb.njit(nogil=True, cache=True)
 def set_value(mat, used_level, to_fill):
     length, width = used_level.shape

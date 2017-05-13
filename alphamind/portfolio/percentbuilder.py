@@ -8,7 +8,7 @@ Created on 2017-5-4
 import numpy as np
 from numpy import zeros
 from numpy import zeros_like
-from alphamind.cyimpl import groupby
+from alphamind.utilities import groupby
 from alphamind.utilities import set_value
 
 
@@ -20,12 +20,21 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
         length = len(neg_er)
         weights = zeros((length, 1))
         if groups is not None:
-            group_ids = groupby(groups)
-            for current_index in group_ids.values():
+            index_diff, order = groupby(groups)
+            start = 0
+            for diff_loc in index_diff:
+                current_index = order[start:diff_loc+1]
                 current_ordering = neg_er[current_index].argsort()
                 current_ordering.shape = -1, 1
                 use_rank = int(percent * len(current_index))
                 set_value(weights, current_index[current_ordering[:use_rank]], 1.)
+                start = diff_loc + 1
+
+            current_index = order[start:]
+            current_ordering = neg_er[current_index].argsort()
+            current_ordering.shape = -1, 1
+            use_rank = int(percent * len(current_index))
+            set_value(weights, current_index[current_ordering[:use_rank]], 1.)
         else:
             ordering = neg_er.argsort()
             use_rank = int(percent * len(neg_er))
@@ -36,11 +45,18 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
         weights = zeros_like(er)
 
         if groups is not None:
-            group_ids = groupby(groups)
-            for current_index in group_ids.values():
+            index_diff, order = groupby(groups)
+            start = 0
+            for diff_loc in index_diff:
+                current_index = order[start:diff_loc + 1]
                 current_ordering = neg_er[current_index].argsort(axis=0)
                 use_rank = int(percent * len(current_index))
                 set_value(weights, current_index[current_ordering[:use_rank]], 1)
+                start = diff_loc + 1
+            current_index = order[start:]
+            current_ordering = neg_er[current_index].argsort(axis=0)
+            use_rank = int(percent * len(current_index))
+            set_value(weights, current_index[current_ordering[:use_rank]], 1)
         else:
             ordering = neg_er.argsort(axis=0)
             use_rank = int(percent * len(neg_er))

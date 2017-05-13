@@ -35,7 +35,6 @@ install:
   - conda install numba
   - conda install scipy
   - conda install pandas
-  - conda install cython
   - conda install scikit-learn
   - pip install cvxopt
   - pip install cvxpy
@@ -43,9 +42,9 @@ install:
   - pip install coveralls
 script:
   - export NUMBA_DISABLE_JIT=1
-  - python setup.py build_ext --line_trace --inplace
-  - coverage run --rcfile=./.coveragerc alphamind/tests/test_suite.py
-  - coverage report --rcfile=./.coveragerc -i
-  - coverage html --rcfile=./.coveragerc -i
+  - python setup.py build_ext --inplace
+  - coverage run alphamind/tests/test_suite.py
+  - coverage report
+  - coverage html
 after_success:
   - coveralls

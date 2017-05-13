@@ -25,13 +25,13 @@ def risk_analysis(net_weight_series: pd.Series,
                                             output_exposure=True,
                                             output_explained=True)
 
-    systemetic = other_stats['explained']
+    systematic = other_stats['explained']
     exposure = other_stats['exposure']
 
-    explained_table = np.hstack((idiosyncratic, systemetic[:, :, 0]))
+    explained_table = np.hstack((idiosyncratic, systematic[:, :, 0]))
     cols = ['idiosyncratic']
     cols.extend(risk_factor_cols)
 
-    explained_table = pd.DataFrame(explained_table * net_pos , columns=cols, index=net_weight_series.index)
+    explained_table = pd.DataFrame(explained_table * net_pos, columns=cols, index=net_weight_series.index)
     exposure_table = pd.DataFrame(exposure[:, :, 0] * net_pos, columns=risk_factor_cols, index=net_weight_series.index)
     return explained_table, exposure_table.groupby(level=0).first()
