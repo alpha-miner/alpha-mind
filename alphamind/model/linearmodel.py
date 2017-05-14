@@ -60,8 +60,6 @@ def _train_loop(index_diff, order, x, y):
     for k, diff_loc in enumerate(index_diff):
         res_beta[k] = _train_sub_group(x, y, order[start:diff_loc + 1])
         start = diff_loc + 1
-
-    res_beta[k + 1] = _train_sub_group(x, y, order[start:])
     return res_beta
 
 

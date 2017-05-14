@@ -46,15 +46,6 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
                 for i in range(explained.shape[2]):
                     explained[curr_idx] = ls_explain(curr_x, b)
             start = diff_loc + 1
-
-        curr_idx = order[start:]
-        curr_x, b = _sub_step(x, y, curr_idx, res)
-        if output_exposure:
-            for i in range(exposure.shape[2]):
-                exposure[curr_idx, :, i] = b[:, i]
-        if output_explained:
-            for i in range(explained.shape[2]):
-                explained[curr_idx] = ls_explain(curr_x, b)
     else:
         b = ls_fit(x, y)
         res = ls_res(x, y, b)

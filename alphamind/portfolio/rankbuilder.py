@@ -28,11 +28,6 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
                 current_ordering.shape = -1, 1
                 set_value(weights, current_index[current_ordering[:use_rank]], 1.)
                 start = diff_loc + 1
-
-            current_index = order[start:]
-            current_ordering = neg_er[current_index].argsort()
-            current_ordering.shape = -1, 1
-            set_value(weights, current_index[current_ordering[:use_rank]], 1.)
         else:
             ordering = neg_er.argsort()
             weights[ordering[:use_rank]] = 1.
@@ -49,10 +44,6 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None) -> np.nda
                 current_ordering = neg_er[current_index].argsort(axis=0)
                 set_value(weights, current_index[current_ordering[:use_rank]], 1)
                 start = diff_loc + 1
-
-            current_index = order[start:]
-            current_ordering = neg_er[current_index].argsort(axis=0)
-            set_value(weights, current_index[current_ordering[:use_rank]], 1)
         else:
             ordering = neg_er.argsort(axis=0)
             set_value(weights, ordering[:use_rank], 1.)

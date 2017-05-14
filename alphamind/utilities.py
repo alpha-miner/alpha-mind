@@ -18,7 +18,7 @@ def groupby(groups):
     order = groups.argsort()
     t = groups[order]
     index_diff = np.where(np.diff(t))[0]
-    return index_diff, order
+    return np.concatenate([index_diff, [len(groups)]]), order
 
 
 @nb.njit(nogil=True, cache=True)

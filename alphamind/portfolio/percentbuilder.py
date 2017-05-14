@@ -29,12 +29,6 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
                 use_rank = int(percent * len(current_index))
                 set_value(weights, current_index[current_ordering[:use_rank]], 1.)
                 start = diff_loc + 1
-
-            current_index = order[start:]
-            current_ordering = neg_er[current_index].argsort()
-            current_ordering.shape = -1, 1
-            use_rank = int(percent * len(current_index))
-            set_value(weights, current_index[current_ordering[:use_rank]], 1.)
         else:
             ordering = neg_er.argsort()
             use_rank = int(percent * len(neg_er))
@@ -53,10 +47,6 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np
                 use_rank = int(percent * len(current_index))
                 set_value(weights, current_index[current_ordering[:use_rank]], 1)
                 start = diff_loc + 1
-            current_index = order[start:]
-            current_ordering = neg_er[current_index].argsort(axis=0)
-            use_rank = int(percent * len(current_index))
-            set_value(weights, current_index[current_ordering[:use_rank]], 1)
         else:
             ordering = neg_er.argsort(axis=0)
             use_rank = int(percent * len(neg_er))
