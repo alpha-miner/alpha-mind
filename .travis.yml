@@ -42,7 +42,6 @@ install:
   - pip install coveralls
 script:
   - export NUMBA_DISABLE_JIT=1
-  - python setup.py build_ext --inplace
   - coverage run alphamind/tests/test_suite.py
   - coverage report
   - coverage html
