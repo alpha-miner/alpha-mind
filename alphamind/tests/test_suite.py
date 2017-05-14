@@ -20,6 +20,7 @@ from alphamind.tests.portfolio.test_percentbuild import TestPercentBuild
 from alphamind.tests.portfolio.test_linearbuild import TestLinearBuild
 from alphamind.tests.settlement.test_simplesettle import TestSimpleSettle
 from alphamind.tests.analysis.test_riskanalysis import TestRiskAnalysis
+from alphamind.tests.analysis.test_perfanalysis import TestPerformanceAnalysis
 
 
 if __name__ == '__main__':
@@ -31,6 +32,7 @@ if __name__ == '__main__':
                          TestPercentBuild,
                          TestLinearBuild,
                          TestSimpleSettle,
-                         TestRiskAnalysis],
+                         TestRiskAnalysis,
+                         TestPerformanceAnalysis],
                         alpha_logger)
     runner.run()

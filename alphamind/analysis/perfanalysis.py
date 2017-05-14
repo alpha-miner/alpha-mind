@@ -16,5 +16,3 @@ def perf_attribution_by_pos(net_weight_series: pd.Series,
                                        next_bar_return_series,
                                        benchmark_table)
     return explained_table.groupby(level=0).sum()
-
-

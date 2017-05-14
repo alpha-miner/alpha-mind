@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on 2017-5-8
+Created on 2017-5-12
 
 @author: cheng.li
 """
@@ -8,12 +8,13 @@ Created on 2017-5-8
 import unittest
 import numpy as np
 import pandas as pd
-from alphamind.analysis.riskanalysis import risk_analysis
+from alphamind.analysis.perfanalysis import perf_attribution_by_pos
 
 
-class TestRiskAnalysis(unittest.TestCase):
+class TestPerformanceAnalysis(unittest.TestCase):
 
-    def test_risk_analysis(self):
+    @classmethod
+    def test_perf_attribution_by_pos(cls):
         n_samples = 36000
         n_dates = 20
         n_risk_factors = 35
@@ -26,14 +27,15 @@ class TestRiskAnalysis(unittest.TestCase):
                                   columns=list(range(n_risk_factors)),
                                   index=dates)
 
-        explained_table, _ = risk_analysis(weights_series - bm_series,
+        explained_table = perf_attribution_by_pos(weights_series - bm_series,
                                            next_bar_return_series,
                                            risk_table)
 
         to_explain = (weights_series - bm_series).multiply(next_bar_return_series, axis=0)
-        aggregated = explained_table.sum(axis=1)
+        aggregated_to_explain = pd.Series(to_explain).groupby(dates).sum()
+        aggregated_explained = explained_table.sum(axis=1)
 
-        np.testing.assert_array_almost_equal(to_explain.values, aggregated.values)
+        np.testing.assert_array_almost_equal(aggregated_to_explain.values, aggregated_explained.values)
 
 
 if __name__ == '__main__':

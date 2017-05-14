@@ -7,12 +7,10 @@ Created on 2017-4-25
 
 import numpy as np
 import numba as nb
-from numpy import zeros
-from numpy.linalg import solve
 from typing import Tuple
 from typing import Union
 from typing import Dict
-from alphamind.utilities import groupby
+import alphamind.utilities as utils
 
 
 def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_explained=False, output_exposure=False) \
@@ -22,20 +20,20 @@ def neutralize(x: np.ndarray, y: np.ndarray, groups: np.ndarray=None, output_exp
         y = y.reshape((-1, 1))
 
     if groups is not None:
-        res = zeros(y.shape)
+        res = np.zeros(y.shape)
 
         if y.ndim == 2:
             if output_explained:
-                explained = zeros(x.shape + (y.shape[1],))
+                explained = np.zeros(x.shape + (y.shape[1],))
             if output_exposure:
-                exposure = zeros(x.shape + (y.shape[1],))
+                exposure = np.zeros(x.shape + (y.shape[1],))
         else:
             if output_explained:
-                explained = zeros(x.shape + (1,))
+                explained = np.zeros(x.shape + (1,))
             if output_exposure:
-                exposure = zeros(x.shape + (1,))
+                exposure = np.zeros(x.shape + (1,))
 
-        index_diff, order = groupby(groups)
+        index_diff, order = utils.groupby(groups)
 
         start = 0
         for diff_loc in index_diff:
@@ -90,7 +88,7 @@ def _sub_step(x, y, curr_idx, res):
 @nb.njit(nogil=True, cache=True)
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     x_bar = x.T
-    b = solve(x_bar @ x, x_bar @ y)
+    b = np.linalg.solve(x_bar @ x, x_bar @ y)
     return b
 
 
@@ -107,11 +105,3 @@ def ls_explain(x: np.ndarray, b: np.ndarray) -> np.ndarray:
         explained[:, :, i] = b[:, i] * x
     return explained
 
-
-if __name__ == '__main__':
-
-    x = np.random.randn(3000, 3)
-    y = np.random.randn(3000, 2)
-    groups = np.random.randint(30, size=3000)
-
-    print(neutralize(x, y, groups, output_explained=True, output_exposure=True))
