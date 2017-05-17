@@ -21,7 +21,7 @@ class TestLinearBuild(unittest.TestCase):
         bm = self.bm / self.bm.sum()
         eplson = 1e-6
 
-        status, value, w = linear_build(self.er, 0., 0.01, self.risk_exp, bm)
+        status, _, w = linear_build(self.er, 0., 0.01, self.risk_exp, bm)
         self.assertEqual(status, 'optimal')
         self.assertAlmostEqual(np.sum(w), 1.)
         self.assertTrue(np.all(w <= 0.01 + eplson))
@@ -35,7 +35,7 @@ class TestLinearBuild(unittest.TestCase):
         bm = self.bm / self.bm.sum()
         eplson = 1e-6
 
-        status, value, w = linear_build(self.er,
+        status, _, w = linear_build(self.er,
                                         0.,
                                         0.01,
                                         self.risk_exp,
