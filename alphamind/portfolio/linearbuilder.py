@@ -21,6 +21,8 @@ def linear_build(er: np.ndarray,
                  risk_exposure: np.ndarray,
                  bm: np.ndarray,
                  risk_target: Tuple[np.ndarray, np.ndarray]=None,
+                 exchange_flag: np.ndarray=None,
+                 exchange_limit: Tuple[float, float]=None,
                  solver: str=None) -> Tuple[str, np.ndarray, np.ndarray]:
     n, m = risk_exposure.shape
     w = cvxpy.Variable(n)
@@ -39,6 +41,10 @@ def linear_build(er: np.ndarray,
                        curr_risk_exposure >= risk_target[0] * np.abs(risk_exposure.T @ bm),
                        curr_risk_exposure <= risk_target[1] * np.abs(risk_exposure.T @ bm),
                        cvxpy.sum_entries(w) == 1.]
+
+    if exchange_flag is not None:
+        constraints.append(exchange_flag @ w <= exchange_limit[1])
+        constraints.append(exchange_flag @ w >= exchange_limit[0])
 
     objective = cvxpy.Minimize(-w.T * er)
     prob = cvxpy.Problem(objective, constraints)
