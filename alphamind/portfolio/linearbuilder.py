@@ -34,13 +34,13 @@ def linear_build(er: np.ndarray,
         constraints = [w >= lbound,
                        w <= ubound,
                        curr_risk_exposure == risk_eq_target,
-                       cvxpy.sum_entries(w) == 1.]
+                       cvxpy.sum_entries(w) == bm.sum()]
     else:
         constraints = [w >= lbound,
                        w <= ubound,
                        curr_risk_exposure >= risk_target[0] * np.abs(risk_exposure.T @ bm),
                        curr_risk_exposure <= risk_target[1] * np.abs(risk_exposure.T @ bm),
-                       cvxpy.sum_entries(w) == 1.]
+                       cvxpy.sum_entries(w) == bm.sum()]
 
     if exchange_flag is not None:
         constraints.append(exchange_flag @ w <= exchange_limit[1])

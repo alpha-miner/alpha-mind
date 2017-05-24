@@ -82,7 +82,7 @@ else:
                               'industry': total_data['申万一级行业'].values,
                               'zz500': total_data[index_components].values}, index=total_data.Code)
 
-    portfolio.to_csv(r'\\10.63.6.71\sharespace\personal\licheng\portfolio\{0}.csv'.format(ref_date))
+    portfolio.to_csv(r'\\10.63.6.71\sharespace\personal\licheng\portfolio\zz500\{0}.csv'.format(ref_date))
 
 
 
