@@ -8,7 +8,7 @@ Created on 2017-5-18
 import pandas as pd
 
 
-def calculate_turn_over(pos_table):
+def calculate_turn_over(pos_table: pd.DataFrame) -> pd.DataFrame:
     turn_over_table = {}
     total_factors = pos_table.columns.difference(['Code'])
     pos_table.reset_index()
