@@ -21,6 +21,7 @@ from alphamind.tests.portfolio.test_linearbuild import TestLinearBuild
 from alphamind.tests.settlement.test_simplesettle import TestSimpleSettle
 from alphamind.tests.analysis.test_riskanalysis import TestRiskAnalysis
 from alphamind.tests.analysis.test_perfanalysis import TestPerformanceAnalysis
+from alphamind.tests.analysis.test_factoranalysis import TestFactorAnalysis
 
 
 if __name__ == '__main__':
@@ -33,6 +34,7 @@ if __name__ == '__main__':
                          TestLinearBuild,
                          TestSimpleSettle,
                          TestRiskAnalysis,
-                         TestPerformanceAnalysis],
+                         TestPerformanceAnalysis,
+                         TestFactorAnalysis],
                         alpha_logger)
     runner.run()
