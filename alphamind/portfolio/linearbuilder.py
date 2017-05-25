@@ -19,32 +19,21 @@ def linear_build(er: np.ndarray,
                  lbound: Union[np.ndarray, float],
                  ubound: Union[np.ndarray, float],
                  risk_exposure: np.ndarray,
-                 bm: np.ndarray,
-                 risk_target: Tuple[np.ndarray, np.ndarray]=None,
-                 exchange_flag: np.ndarray=None,
-                 exchange_limit: Tuple[float, float]=None,
+                 risk_target: Tuple[np.ndarray, np.ndarray],
                  solver: str=None) -> Tuple[str, np.ndarray, np.ndarray]:
     n, m = risk_exposure.shape
     w = cvxpy.Variable(n)
 
-    curr_risk_exposure = risk_exposure.T @ (w - bm)
+    curr_risk_exposure = risk_exposure.T @ w
 
     if not risk_target:
-        risk_eq_target = np.zeros(m)
         constraints = [w >= lbound,
-                       w <= ubound,
-                       curr_risk_exposure == risk_eq_target,
-                       cvxpy.sum_entries(w) == bm.sum()]
+                       w <= ubound]
     else:
         constraints = [w >= lbound,
                        w <= ubound,
-                       curr_risk_exposure >= risk_target[0] * np.abs(risk_exposure.T @ bm),
-                       curr_risk_exposure <= risk_target[1] * np.abs(risk_exposure.T @ bm),
-                       cvxpy.sum_entries(w) == bm.sum()]
-
-    if exchange_flag is not None:
-        constraints.append(exchange_flag @ w <= exchange_limit[1])
-        constraints.append(exchange_flag @ w >= exchange_limit[0])
+                       curr_risk_exposure >= risk_target[0],
+                       curr_risk_exposure <= risk_target[1]]
 
     objective = cvxpy.Minimize(-w.T * er)
     prob = cvxpy.Problem(objective, constraints)

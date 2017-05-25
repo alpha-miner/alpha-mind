@@ -28,9 +28,18 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
     lbound = -0.04
     ubound = 0.05
 
+    risk_lbound = bm @ risk_exp
+    risk_ubound = bm @ risk_exp
+
     start = dt.datetime.now()
     for _ in range(n_loop):
-        status, v, x = linear_build(er, lbound, ubound, risk_exp, bm, solver='ECOS')
+        status, v, x = linear_build(er,
+                                    lbound,
+                                    ubound,
+                                    risk_exp,
+                                    risk_target=(risk_lbound,
+                                                 risk_ubound),
+                                    solver='ECOS')
     impl_model_time = dt.datetime.now() - start
     print('{0:20s}: {1}'.format('Implemented model (ECOS)', impl_model_time))
 
