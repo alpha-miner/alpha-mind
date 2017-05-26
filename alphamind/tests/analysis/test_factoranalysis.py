@@ -54,7 +54,7 @@ class TestFactorAnalysis(unittest.TestCase):
 
         self.assertEqual(analysis_table['er'].sum() / analysis_table['er'][-1], 2.0)
         np.testing.assert_array_almost_equal(weight @ self.risk_factor, benchmark @ self.risk_factor)
-        self.assertTrue((weight @ self.d1returns)[0] > (benchmark @ self.d1returns)[0])
+        self.assertTrue(weight @ factor_series.values > benchmark @ factor_series.values)
 
 
 if __name__ == '__main__':
