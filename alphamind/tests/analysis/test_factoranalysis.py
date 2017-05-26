@@ -8,6 +8,7 @@ Created on 2017-5-25
 
 import unittest
 import numpy as np
+import pandas as pd
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
 from alphamind.data.neutralize import neutralize
@@ -42,7 +43,10 @@ class TestFactorAnalysis(unittest.TestCase):
         benchmark = np.random.randint(50, size=1000)
         benchmark = benchmark / benchmark.sum()
         industry = np.random.randint(30, size=1000)
-        weight, analysis_table = factor_analysis(self.raw_factor,
+
+        factor_series = pd.Series(self.raw_factor.flatten(), index=range(len(self.raw_factor)))
+
+        weight, analysis_table = factor_analysis(factor_series,
                                                  d1returns=self.d1returns,
                                                  industry=industry,
                                                  benchmark=benchmark,

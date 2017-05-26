@@ -67,7 +67,7 @@ class FDataPack(object):
                  risk_exp: Optional[np.ndarray]=None,
                  risk_names: List[str]=None):
 
-        self.raw_factor = raw_factor
+        self.raw_factor = raw_factor.reshape((-1, 1))
         self.d1returns = d1returns.flatten()
         if factor_name:
             self.factor_name = factor_name
@@ -145,14 +145,14 @@ class FDataPack(object):
                             index=self.codes)
 
 
-def factor_analysis(factor_values,
-                    industry,
-                    d1returns,
+def factor_analysis(factors: pd.Series,
+                    industry: np.ndarray,
+                    d1returns: np.ndarray,
                     detail_analysis=True,
                     benchmark: Optional[np.ndarray]=None,
-                    risk_exp: Optional[np.ndarray]=None) -> Tuple[np.ndarray, Optional[pd.DataFrame]]:
+                    risk_exp: Optional[np.ndarray]=None) -> Tuple[pd.Series, Optional[pd.DataFrame]]:
 
-    data_pack = FDataPack(raw_factor=factor_values,
+    data_pack = FDataPack(raw_factor=factors.values,
                           d1returns=d1returns,
                           groups=industry,
                           benchmark=benchmark,
@@ -187,28 +187,7 @@ def factor_analysis(factor_values,
         analysis = data_pack.settle(weights)
     else:
         analysis = None
-    return weights, analysis
-
-
-if __name__ == '__main__':
-    raw_factor = np.random.randn(1000, 1)
-    d1returns = np.random.randn(1000, 1)
-    groups = np.random.randint(30, size=1000)
-    benchmark = np.random.randn(1000, 1)
-    risk_exp = np.random.randn(1000, 3)
-    codes = list(range(1, 1001))
-
-    data_pack = FDataPack(raw_factor,
-                          d1returns,
-                          'cfinc1',
-                          codes=codes,
-                          groups=groups,
-                          benchmark=benchmark,
-                          risk_exp=risk_exp,
-                          risk_names=['market', 'size', 'growth'])
-
-    weights = np.random.randn(1000)
-    print(data_pack.settle(weights))
+    return pd.Series(weights, index=factors.index), analysis
 
 
 
