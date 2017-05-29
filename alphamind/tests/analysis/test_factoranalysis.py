@@ -5,7 +5,6 @@ Created on 2017-5-25
 @author: cheng.li
 """
 
-
 import unittest
 import numpy as np
 import pandas as pd
@@ -17,7 +16,6 @@ from alphamind.analysis.factoranalysis import factor_analysis
 
 
 class TestFactorAnalysis(unittest.TestCase):
-
     def setUp(self):
         self.raw_factor = np.random.randn(1000, 1)
         self.risk_factor = np.random.randn(1000, 3)
@@ -46,11 +44,13 @@ class TestFactorAnalysis(unittest.TestCase):
 
         factor_series = pd.Series(self.raw_factor.flatten(), index=range(len(self.raw_factor)))
 
-        weight, analysis_table = factor_analysis(factor_series,
-                                                 d1returns=self.d1returns,
-                                                 industry=industry,
-                                                 benchmark=benchmark,
-                                                 risk_exp=self.risk_factor)
+        weight_table, analysis_table = factor_analysis(factor_series,
+                                                       d1returns=self.d1returns,
+                                                       industry=industry,
+                                                       benchmark=benchmark,
+                                                       risk_exp=self.risk_factor)
+
+        weight = weight_table.weight
 
         self.assertEqual(analysis_table['er'].sum() / analysis_table['er'][-1], 2.0)
         np.testing.assert_array_almost_equal(weight @ self.risk_factor, benchmark @ self.risk_factor)

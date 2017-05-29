@@ -42,11 +42,11 @@ def build_portfolio(er: np.ndarray,
     builder = builder.lower()
 
     if builder == 'ls' or builder == 'long_short':
-        return long_short_build(er, **kwargs)
+        return long_short_build(er, **kwargs).flatten()
     elif builder == 'rank':
-        return rank_build(er, **kwargs)
+        return rank_build(er, **kwargs).flatten()
     elif builder == 'percent':
-        return percent_build(er, **kwargs)
+        return percent_build(er, **kwargs).flatten()
     elif builder == 'linear_prog' or builder == 'linear':
         status, _, weight = linear_build(er, **kwargs)
         if status != 'optimal':
@@ -75,7 +75,10 @@ class FDataPack(object):
             self.factor_name = 'factor'
         self.codes = codes
         self.groups = groups.flatten()
-        self.benchmark = benchmark.flatten()
+        if benchmark is not None:
+            self.benchmark = benchmark.flatten()
+        else:
+            self.benchmark = None
         self.risk_exp = risk_exp
         self.risk_names = risk_names
 
@@ -150,7 +153,8 @@ def factor_analysis(factors: pd.Series,
                     d1returns: np.ndarray,
                     detail_analysis=True,
                     benchmark: Optional[np.ndarray]=None,
-                    risk_exp: Optional[np.ndarray]=None) -> Tuple[pd.Series, Optional[pd.DataFrame]]:
+                    risk_exp: Optional[np.ndarray]=None,
+                    is_tradable: Optional[np.ndarray]=None) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
     data_pack = FDataPack(raw_factor=factors.values,
                           d1returns=d1returns,
@@ -165,6 +169,9 @@ def factor_analysis(factors: pd.Series,
         benchmark = benchmark.flatten()
         lbound = 0.
         ubound = 0.01 + benchmark
+
+        if is_tradable is not None:
+            ubound[~is_tradable] = 0.
 
         risk_lbound = benchmark @ risk_exp
         risk_ubound = benchmark @ risk_exp
@@ -187,7 +194,10 @@ def factor_analysis(factors: pd.Series,
         analysis = data_pack.settle(weights)
     else:
         analysis = None
-    return pd.Series(weights, index=factors.index), analysis
+    return pd.DataFrame({'weight': weights,
+                         'industry': industry},
+                        index=factors.index),\
+           analysis
 
 
 
