@@ -59,9 +59,17 @@
 
 根据$\bar Y$计算得到预期收益$r$。
 
-## 计算股票协方差举证
+## 计算股票协方差矩阵
 
-根据对应的``risk_model``，从``risk_cov_*``表中取出对应的风险因子协方差矩阵，根据对应的``risk_exposure``，计算得到股票协方差矩阵$C$。
+根据对应的``risk_model``，从``risk_cov_*``表中取出对应的风险因子协方差矩阵，根据对应的``risk_exposure``以及``specific_risk_*``计算得到股票协方差矩阵$C$：
+
+$$ C = E^T \times RC \times E + SR $$
+
+其中:
+
+* $E$为股票的``risk_exposure``;
+* $RC$为风险因子的协方差矩阵；
+* $SR$为股票的``specific_risk``。
 
 ## 计算组合
 
