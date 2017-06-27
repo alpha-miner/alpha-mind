@@ -29,7 +29,7 @@ class TestMeanVarianceBuild(unittest.TestCase):
                                   [1., 0., 1.]]).T
         risk_target = (np.array([bm.sum(), 0.3]), np.array([bm.sum(), 0.7]))
 
-        status, value, x = mean_variance_builder(er, cov, bm, lbound, ubound, risk_exposure, risk_target)
+        status, _, x = mean_variance_builder(er, cov, bm, lbound, ubound, risk_exposure, risk_target)
 
         self.assertTrue(status == 'optimal')
         self.assertAlmostEqual(x.sum(), bm.sum())
