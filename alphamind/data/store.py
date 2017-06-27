@@ -101,25 +101,33 @@ def fetch_data(factors: Iterable[str],
     total_risk_factors = risk_styles + industry_styles
     risk_str = ','.join('risk_exposure.' + f for f in total_risk_factors)
 
+    special_risk_table = 'specific_risk_' + risk_model
+
     if code_str:
-        sql = "select factors.Date, factors.Code, {0}, {3}, market.chgPct, market.isOpen" \
+        sql = "select factors.Date, factors.Code, {0}, {3}, market.isOpen, daily_return.d1, {5}.SRISK" \
               " from (factors INNER JOIN" \
               " risk_exposure on factors.Date = risk_exposure.Date and factors.Code = risk_exposure.Code)" \
               " INNER JOIN market on factors.Date = market.Date and factors.Code = market.Code" \
+              " INNER JOIN daily_return on factors.Date = daily_return.Date and factors.Code = daily_return.Code" \
+              " INNER JOIN {5} on factors.Date = {5}.Date and factors.Code = {5}.Code" \
               " where factors.Date >= '{1}' and factors.Date <= '{2}' and factors.Code in ({4})".format(factor_str,
                                                                                                         start_date,
                                                                                                         end_date,
                                                                                                         risk_str,
-                                                                                                        code_str)
+                                                                                                        code_str,
+                                                                                                        special_risk_table)
     else:
-        sql = "select factors.Date, factors.Code, {0}, {3}, market.chgPct, market.isOpen" \
+        sql = "select factors.Date, factors.Code, {0}, {3}, market.isOpen, daily_return.d1, {4}.SRISK" \
               " from (factors INNER JOIN" \
               " risk_exposure on factors.Date = risk_exposure.Date and factors.Code = risk_exposure.Code)" \
               " INNER JOIN market on factors.Date = market.Date and factors.Code = market.Code" \
+              " INNER JOIN daily_return on factors.Date = daily_return.Date and factors.Code = daily_return.Code" \
+              " INNER JOIN {4} on factors.Date = {4}.Date and factors.Code = {4}.Code" \
               " where factors.Date >= '{1}' and factors.Date <= '{2}'".format(factor_str,
                                                                               start_date,
                                                                               end_date,
-                                                                              risk_str)
+                                                                              risk_str,
+                                                                              special_risk_table)
 
     factor_data = pd.read_sql(sql, engine)
 
