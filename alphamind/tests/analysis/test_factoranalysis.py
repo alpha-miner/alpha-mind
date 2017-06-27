@@ -42,9 +42,11 @@ class TestFactorAnalysis(unittest.TestCase):
         benchmark = benchmark / benchmark.sum()
         industry = np.random.randint(30, size=1000)
 
-        factor_series = pd.Series(self.raw_factor.flatten(), index=range(len(self.raw_factor)))
+        factor_df = pd.DataFrame(self.raw_factor.flatten(), index=range(len(self.raw_factor)))
+        factor_weights = np.array([1.])
 
-        weight_table, analysis_table = factor_analysis(factor_series,
+        weight_table, analysis_table = factor_analysis(factor_df,
+                                                       factor_weights,
                                                        d1returns=self.d1returns,
                                                        industry=industry,
                                                        benchmark=benchmark,
@@ -54,7 +56,25 @@ class TestFactorAnalysis(unittest.TestCase):
 
         self.assertEqual(analysis_table['er'].sum() / analysis_table['er'][-1], 2.0)
         np.testing.assert_array_almost_equal(weight @ self.risk_factor, benchmark @ self.risk_factor)
-        self.assertTrue(weight @ factor_series.values > benchmark @ factor_series.values)
+        self.assertTrue(weight @ factor_df.values > benchmark @ factor_df.values)
+
+    def test_factor_analysis_with_several_factors(self):
+        benchmark = np.random.randint(50, size=1000)
+        benchmark = benchmark / benchmark.sum()
+        industry = np.random.randint(30, size=1000)
+
+        factor_df = pd.DataFrame(np.random.randn(1000, 2), index=range(len(self.raw_factor)))
+        factor_weights = np.array([0.2, 0.8])
+        weight_table, analysis_table = factor_analysis(factor_df,
+                                                       factor_weights,
+                                                       d1returns=self.d1returns,
+                                                       industry=industry,
+                                                       benchmark=benchmark,
+                                                       risk_exp=self.risk_factor)
+
+        weight = weight_table.weight
+        self.assertEqual(analysis_table['er'].sum() / analysis_table['er'][-1], 2.0)
+        np.testing.assert_array_almost_equal(weight @ self.risk_factor, benchmark @ self.risk_factor)
 
 
 if __name__ == '__main__':
