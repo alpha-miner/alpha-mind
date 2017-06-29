@@ -32,8 +32,8 @@ dag = DAG(
 )
 
 
-_ = uqer.Client(token='')
-engine = sqlalchemy.create_engine('')
+_ = uqer.Client(token='f1b9bea1d0b4e489c5ab9b69c3e2326a1bee6057af858067dbd1546453f428b2')
+engine = sqlalchemy.create_engine('mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha')
 
 
 def process_date(ds):
