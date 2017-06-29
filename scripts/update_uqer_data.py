@@ -43,8 +43,8 @@ def process_date(ds):
     return ref_date, this_date
 
 
-def format_data(df):
-    df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
+def format_data(df, format='%Y%m%d'):
+    df['Date'] = pd.to_datetime(df['Date'], format=format)
 
 
 def data_info_log(df, table):
@@ -68,7 +68,7 @@ def update_uqer_factors(ds, **kwargs):
 
     engine.execute("delete from {0} where Date = '{1}';".format(table, ref_date))
 
-    data_info_log(df, table)
+    data_info_log(df, table, format='%Y-%m-%d')
     format_data(df)
     df.to_sql(table, engine, index=False, if_exists='append')
 
@@ -85,7 +85,7 @@ def update_uqer_market(ds, **kwargs):
     engine.execute("delete from {0} where Date = '{1}';".format(table, ref_date))
 
     data_info_log(df, table)
-    format_data(df)
+    format_data(df, format='%Y-%m-%d')
     df.to_sql(table, engine, index=False, if_exists='append')
 
 
@@ -113,7 +113,7 @@ def update_uqer_universe_hs300(ds, **kwargs):
     table = 'universe'
     engine.execute("delete from {0} where Date = '{1}' and universe = 'hs300';".format(table, ref_date))
 
-    df = pd.read_sql("select Date, Code from index_components where Date = '{0}' and indexCode = 300".format(ref_date), engine2)
+    df = pd.read_sql("select Date, Code from index_components where Date = '{0}' and indexCode = 300".format(ref_date), engine)
     df['universe'] = 'hs300'
 
     data_info_log(df, table)
@@ -127,7 +127,7 @@ def update_uqer_universe_zz500(ds, **kwargs):
     table = 'universe'
     engine.execute("delete from {0} where Date = '{1}' and universe = 'zz500';".format(table, ref_date))
 
-    df = pd.read_sql("select Date, Code from index_components where Date = '{0}' and indexCode = 905".format(ref_date), engine2)
+    df = pd.read_sql("select Date, Code from index_components where Date = '{0}' and indexCode = 905".format(ref_date), engine)
     df['universe'] = 'zz500'
 
     data_info_log(df, table)
