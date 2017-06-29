@@ -16,7 +16,7 @@ def initdb(args):
     alpha_logger.info('DB: ' + args.url)
     engine = create_engine(args.url)
     models.Base.metadata.create_all(engine)
-    alpha_logger.info('DB initialization finished.')
+    alpha_logger.info('DB: initialization finished.')
 
 
 Arg = namedtuple(
