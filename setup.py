@@ -27,6 +27,7 @@ setup(
     license='MIT',
     author='wegamekinglc',
     author_email='',
+    scripts=['alphamind/bin/alphamind'],
     install_requires=io.open('requirements.txt', encoding='utf8').read(),
     include_dirs=[np.get_include()],
     description=''

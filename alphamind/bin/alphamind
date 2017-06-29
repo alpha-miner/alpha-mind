@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+Created on 2017-6-29
+
+@author: cheng.li
+"""
+
+
+from alphamind.bin.cli import CLIFactory
+
+
+if __name__ == '__main__':
+
+    parser = CLIFactory.get_parser()
+    args = parser.parse_args()
+    args.func(args)
