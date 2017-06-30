@@ -262,6 +262,25 @@ def update_uqer_daily_return(ds, **kwargs):
     df = pd.read_sql("select Code, chgPct as d1 from market where Date = '{0}'".format(this_date), engine)
     df['Date'] = previous_date
     engine.execute("delete from {0} where Date = '{1}'".format(table, previous_date))
+    data_info_log(df, table)
+    df.to_sql(table, engine, index=False, if_exists='append')
+
+
+def update_stratgy_table(ds, **kwargs):
+    strategy_date = kwargs['next_execution_date']
+
+    df = pd.DataFrame({'strategyName': ['mutual_fund', 'mutual_fund', 'mutual_fund', 'prod', 'prod'],
+                       'factor': ['BDTO', 'CFinc1', 'DivP', 'EPSAfterNonRecurring', 'RVOL', 'CoppockCurve', 'EPS'],
+                       'weight': [0.1002, 0.2314, 0.1764, 0.3739, 0.1181, -0.3333, 0.6666],
+                       'source': ['tiny', 'tiny', 'tiny', 'tiny', 'tiny', 'uqer', 'uqer']})
+
+    table = 'strategy'
+
+    df['Date'] = strategy_date
+
+    engine.execute("delete from {0} where Date = '{1}'".format(table, strategy_date.strftime('%Y-%m-%d')))
+    data_info_log(df, table)
+    format_data(df)
     df.to_sql(table, engine, index=False, if_exists='append')
 
 
@@ -328,6 +347,14 @@ _ = PythonOperator(
     task_id='update_uqer_halt_list',
     provide_context=True,
     python_callable=update_uqer_halt_list,
+    dag=dag
+)
+
+
+task = PythonOperator(
+    task_id='update_stratgy_table',
+    provide_context=True,
+    python_callable=update_stratgy_table,
     dag=dag
 )
 
