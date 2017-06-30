@@ -20,7 +20,8 @@ def mean_variance_builder(er: np.ndarray,
                           lbound: Union[np.ndarray, float],
                           ubound: Union[np.ndarray, float],
                           risk_exposure: np.ndarray,
-                          risk_target: Tuple[np.ndarray, np.ndarray]):
+                          risk_target: Tuple[np.ndarray, np.ndarray],
+                          lam: float=1.) -> Tuple[str, float, np.ndarray]:
 
     lbound = lbound - bm
     ubound = ubound - bm
@@ -30,7 +31,7 @@ def mean_variance_builder(er: np.ndarray,
     # set up problem for net position
     n = len(er)
 
-    P = matrix(cov)
+    P = lam * matrix(cov)
     q = -matrix(er)
 
     G1 = np.zeros((2*n, n))
