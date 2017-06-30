@@ -269,7 +269,7 @@ def update_uqer_daily_return(ds, **kwargs):
 def update_stratgy_table(ds, **kwargs):
     strategy_date = kwargs['next_execution_date']
 
-    df = pd.DataFrame({'strategyName': ['mutual_fund', 'mutual_fund', 'mutual_fund', 'prod', 'prod'],
+    df = pd.DataFrame({'strategyName': ['mutual_fund', 'mutual_fund', 'mutual_fund', 'mutual_fund', 'mutual_fund', 'prod', 'prod'],
                        'factor': ['BDTO', 'CFinc1', 'DivP', 'EPSAfterNonRecurring', 'RVOL', 'CoppockCurve', 'EPS'],
                        'weight': [0.1002, 0.2314, 0.1764, 0.3739, 0.1181, -0.3333, 0.6666],
                        'source': ['tiny', 'tiny', 'tiny', 'tiny', 'tiny', 'uqer', 'uqer']})
