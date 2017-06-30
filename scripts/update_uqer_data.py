@@ -64,7 +64,7 @@ def update_uqer_factors(ds, **kwargs):
     df.Code = df.Code.astype(int)
     del df['secID']
 
-    table = 'factors'
+    table = 'uqer'
 
     engine.execute("delete from {0} where Date = '{1}';".format(table, ref_date))
 

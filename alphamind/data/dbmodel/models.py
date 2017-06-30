@@ -24,10 +24,10 @@ class DailyReturn(Base):
     d1 = Column(Float)
 
 
-class Factor(Base):
-    __tablename__ = 'factors'
+class Uqer(Base):
+    __tablename__ = 'uqer'
     __table_args__ = (
-        Index('factors_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('uqer_Date_Code_uindex', 'Date', 'Code', unique=True),
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
@@ -839,7 +839,7 @@ class Strategy(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     strategyName = Column(String(20), primary_key=True, nullable=False)
-    factor = Column(String(20), primary_key=True, nullable=False)
+    factor = Column(String(50), primary_key=True, nullable=False)
     weight = Column(Float)
     source = Column(String(20))
 
