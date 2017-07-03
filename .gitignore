@@ -7,3 +7,6 @@ Alpha_Mind.egg-info/*
 *.c
 *.cpp
 *.html
+*.nbc
+*.nbi
+/notebooks/.ipynb_checkpoints

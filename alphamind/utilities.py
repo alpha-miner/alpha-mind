@@ -219,6 +219,21 @@ def scale_value(groups, source, x, scale):
     return destination
 
 
+@nb.njit(nogil=True, cache=True)
+def array_index(array, items):
+    to_look_length = items.shape[0]
+    arr_length = array.shape[0]
+
+    res = np.zeros(to_look_length, dtype=array.dtype)
+
+    for i in range(to_look_length):
+        for j in range(arr_length):
+            if items[i] == array[j]:
+                res[i] = j
+                break
+    return res
+
+
 def transform(groups: np.ndarray,
               x: np.ndarray,
               func: str,
@@ -255,3 +270,15 @@ def aggregate(groups, x, func, ddof=1):
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
     return value_data
+
+
+if __name__ == '__main__':
+
+    x1 = np.random.randint(30, size=1000)
+    array = np.unique(x1)
+
+    x2 = np.random.randint(30, size=1000)
+
+    res = array_index(array, x2)
+
+    print(res)
