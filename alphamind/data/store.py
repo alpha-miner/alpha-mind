@@ -12,12 +12,12 @@ import numpy as np
 import pandas as pd
 
 db_settings = {
-    'uqer':
+    'alpha':
         {
-            'user': 'sa',
-            'password': 'We051253524522',
-            'host': 'rm-bp1psdz5615icqc0yo.mysql.rds.aliyuncs.com',
-            'db': 'uqer',
+            'user': 'licheng',
+            'password': 'A12345678!',
+            'host': '10.63.6.220',
+            'db': 'alpha',
             'charset': 'utf8'
         }
 }
@@ -31,7 +31,8 @@ risk_styles = ['BETA',
                'BTOP',
                'LEVERAGE',
                'LIQUIDTY',
-               'SIZENL']
+               'SIZENL',
+               'COUNTRY']
 
 industry_styles = [
     'Bank',
@@ -82,8 +83,9 @@ def fetch_codes(codes: Union[str, Iterable[int]], start_date, end_date, engine):
     return code_table, code_str
 
 
-def industry_mapping(industry_arr, industry_dummies):
-    return [industry_arr[row][0] for row in industry_dummies]
+def industry_mapping(industry_arr, industry_codes, industry_dummies):
+    return [industry_arr[row][0] for row in industry_dummies], \
+           [industry_codes[row][0] for row in industry_dummies],
 
 
 def fetch_data(factors: Iterable[str],
@@ -92,10 +94,10 @@ def fetch_data(factors: Iterable[str],
                codes: Union[str, Iterable[int]] = None,
                benchmark: int = None,
                risk_model: str = 'day') -> dict:
-    engine = sa.create_engine('mysql+mysqldb://{user}:{password}@{host}/{db}?charset={charset}'
-                              .format(**db_settings['uqer']))
+    engine = sa.create_engine('mssql+pymssql://{user}:{password}@{host}/{db}?charset={charset}'
+                              .format(**db_settings['alpha']))
 
-    factor_str = ','.join('factors.' + f for f in factors)
+    factor_str = ','.join('uqer.' + f for f in factors)
     code_table, code_str = fetch_codes(codes, start_date, end_date, engine)
 
     total_risk_factors = risk_styles + industry_styles
@@ -104,30 +106,30 @@ def fetch_data(factors: Iterable[str],
     special_risk_table = 'specific_risk_' + risk_model
 
     if code_str:
-        sql = "select factors.Date, factors.Code, {0}, {3}, market.isOpen, daily_return.d1, {5}.SRISK" \
-              " from (factors INNER JOIN" \
-              " risk_exposure on factors.Date = risk_exposure.Date and factors.Code = risk_exposure.Code)" \
-              " INNER JOIN market on factors.Date = market.Date and factors.Code = market.Code" \
-              " INNER JOIN daily_return on factors.Date = daily_return.Date and factors.Code = daily_return.Code" \
-              " INNER JOIN {5} on factors.Date = {5}.Date and factors.Code = {5}.Code" \
-              " where factors.Date >= '{1}' and factors.Date <= '{2}' and factors.Code in ({4})".format(factor_str,
-                                                                                                        start_date,
-                                                                                                        end_date,
-                                                                                                        risk_str,
-                                                                                                        code_str,
-                                                                                                        special_risk_table)
+        sql = "select uqer.Date, uqer.Code, {0}, {3}, market.isOpen, daily_return.d1, {5}.SRISK" \
+              " from (uqer INNER JOIN" \
+              " risk_exposure on uqer.Date = risk_exposure.Date and uqer.Code = risk_exposure.Code)" \
+              " INNER JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
+              " INNER JOIN daily_return on uqer.Date = daily_return.Date and uqer.Code = daily_return.Code" \
+              " INNER JOIN {5} on uqer.Date = {5}.Date and uqer.Code = {5}.Code" \
+              " where uqer.Date >= '{1}' and uqer.Date <= '{2}' and uqer.Code in ({4})".format(factor_str,
+                                                                                               start_date,
+                                                                                               end_date,
+                                                                                               risk_str,
+                                                                                               code_str,
+                                                                                               special_risk_table)
     else:
-        sql = "select factors.Date, factors.Code, {0}, {3}, market.isOpen, daily_return.d1, {4}.SRISK" \
-              " from (factors INNER JOIN" \
-              " risk_exposure on factors.Date = risk_exposure.Date and factors.Code = risk_exposure.Code)" \
-              " INNER JOIN market on factors.Date = market.Date and factors.Code = market.Code" \
-              " INNER JOIN daily_return on factors.Date = daily_return.Date and factors.Code = daily_return.Code" \
-              " INNER JOIN {4} on factors.Date = {4}.Date and factors.Code = {4}.Code" \
-              " where factors.Date >= '{1}' and factors.Date <= '{2}'".format(factor_str,
-                                                                              start_date,
-                                                                              end_date,
-                                                                              risk_str,
-                                                                              special_risk_table)
+        sql = "select uqer.Date, uqer.Code, {0}, {3}, market.isOpen, daily_return.d1, {4}.SRISK" \
+              " from (uqer INNER JOIN" \
+              " risk_exposure on uqer.Date = risk_exposure.Date and uqer.Code = risk_exposure.Code)" \
+              " INNER JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
+              " INNER JOIN daily_return on uqer.Date = daily_return.Date and uqer.Code = daily_return.Code" \
+              " INNER JOIN {4} on uqer.Date = {4}.Date and uqer.Code = {4}.Code" \
+              " where uqer.Date >= '{1}' and uqer.Date <= '{2}'".format(factor_str,
+                                                                        start_date,
+                                                                        end_date,
+                                                                        risk_str,
+                                                                        special_risk_table)
 
     factor_data = pd.read_sql(sql, engine)
 
@@ -147,7 +149,7 @@ def fetch_data(factors: Iterable[str],
     total_data = {'factor': factor_data, 'risk_cov': risk_cov_data}
 
     if benchmark:
-        sql = "select Date, Code, weight from index_components " \
+        sql = "select Date, Code, weight / 100. as weight from index_components " \
               "where Date >= '{0}' and Date <= '{1}' and indexCode = {2}".format(start_date,
                                                                                  end_date,
                                                                                  benchmark)
@@ -156,9 +158,10 @@ def fetch_data(factors: Iterable[str],
         total_data['benchmark'] = benchmark_data
 
     industry_arr = np.array(industry_styles)
+    industry_codes = np.arange(len(industry_styles), dtype=int)
     industry_dummies = factor_data[industry_styles].values.astype(bool)
 
-    factor_data['industry'] = industry_mapping(industry_arr, industry_dummies)
+    factor_data['industry'], factor_data['industry_code'] = industry_mapping(industry_arr, industry_codes, industry_dummies)
 
     return total_data
 

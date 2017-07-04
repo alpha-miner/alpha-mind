@@ -162,7 +162,8 @@ def factor_analysis(factors: pd.DataFrame,
                     detail_analysis=True,
                     benchmark: Optional[np.ndarray]=None,
                     risk_exp: Optional[np.ndarray]=None,
-                    is_tradable: Optional[np.ndarray]=None) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+                    is_tradable: Optional[np.ndarray]=None,
+                    method='risk_neutral') -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
     data_pack = FDataPack(raw_factors=factors.values,
                           d1returns=d1returns,
@@ -172,7 +173,7 @@ def factor_analysis(factors: pd.DataFrame,
 
     er = data_pack.factor_processing([winsorize_normal, standardize]) @ factor_weights
 
-    if benchmark is not None and risk_exp is not None:
+    if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
         # using linear programming portfolio builder
         benchmark = benchmark.flatten()
         lbound = 0.
