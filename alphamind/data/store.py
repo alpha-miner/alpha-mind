@@ -88,6 +88,14 @@ def industry_mapping(industry_arr, industry_codes, industry_dummies):
            [industry_codes[row][0] for row in industry_dummies],
 
 
+def append_industry_info(df):
+    industry_arr = np.array(industry_styles)
+    industry_codes = np.arange(len(industry_styles), dtype=int)
+    industry_dummies = df[industry_styles].values.astype(bool)
+
+    df['industry'], df['industry_code'] = industry_mapping(industry_arr, industry_codes, industry_dummies)
+
+
 def fetch_data(factors: Iterable[str],
                start_date: str,
                end_date: str,
@@ -157,12 +165,7 @@ def fetch_data(factors: Iterable[str],
         benchmark_data = pd.read_sql(sql, engine)
         total_data['benchmark'] = benchmark_data
 
-    industry_arr = np.array(industry_styles)
-    industry_codes = np.arange(len(industry_styles), dtype=int)
-    industry_dummies = factor_data[industry_styles].values.astype(bool)
-
-    factor_data['industry'], factor_data['industry_code'] = industry_mapping(industry_arr, industry_codes, industry_dummies)
-
+    append_industry_info(factor_data)
     return total_data
 
 
