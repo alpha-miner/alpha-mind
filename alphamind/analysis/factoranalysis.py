@@ -163,7 +163,8 @@ def factor_analysis(factors: pd.DataFrame,
                     benchmark: Optional[np.ndarray]=None,
                     risk_exp: Optional[np.ndarray]=None,
                     is_tradable: Optional[np.ndarray]=None,
-                    method='risk_neutral') -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+                    method='risk_neutral',
+                    **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
     data_pack = FDataPack(raw_factors=factors.values,
                           d1returns=d1returns,
@@ -191,13 +192,13 @@ def factor_analysis(factors: pd.DataFrame,
                                   lbound=lbound,
                                   ubound=ubound,
                                   risk_target=(risk_lbound, risk_ubound),
-                                  solver='GLPK')
+                                  **kwargs)
 
     else:
         # using rank builder
         weights = build_portfolio(er,
                                   builder='rank',
-                                  use_rank=100) / 100.
+                                  **kwargs) / kwargs['use_rank']
 
     if detail_analysis:
         analysis = data_pack.settle(weights)
