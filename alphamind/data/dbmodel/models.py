@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -30,11 +30,11 @@ class FactorMaster(Base):
         Index('factor_meta_factor_source_pk', 'factor', 'source', unique=True),
     )
 
-    factor = Column(String(30, 'Chinese_PRC_CI_AS'), nullable=False)
-    source = Column(String(30, 'Chinese_PRC_CI_AS'), nullable=False)
-    alias = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True)
+    factor = Column(String(30, 'utf8_general_ci'), nullable=False)
+    source = Column(String(30, 'utf8_general_ci'), nullable=False)
+    alias = Column(String(50, 'utf8_general_ci'), primary_key=True)
     updateTime = Column(DateTime, nullable=False)
-    description = Column(Text(2147483647, 'Chinese_PRC_CI_AS'))
+    description = Column(Text(2147483647, 'utf8_general_ci'))
 
 
 class HaltList(Base):
@@ -47,11 +47,11 @@ class HaltList(Base):
     Code = Column(Integer, primary_key=True, nullable=False)
     haltBeginTime = Column(DateTime)
     haltEndTime = Column(DateTime)
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
-    listStatusCD = Column(String(4, 'Chinese_PRC_CI_AS'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    listStatusCD = Column(String(4, 'utf8_general_ci'))
     delistDate = Column(DateTime)
-    assetClass = Column(String(4, 'Chinese_PRC_CI_AS'))
+    assetClass = Column(String(4, 'utf8_general_ci'))
 
 
 class IndexComponent(Base):
@@ -63,10 +63,10 @@ class IndexComponent(Base):
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
     effDate = Column(DateTime)
-    indexShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
+    indexShortName = Column(String(20, 'utf8_general_ci'))
     indexCode = Column(Integer, primary_key=True, nullable=False)
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
     weight = Column(Float(53))
 
 
@@ -78,17 +78,17 @@ class Industry(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    industry = Column(String(30, 'Chinese_PRC_CI_AS'), nullable=False)
+    industry = Column(String(30, 'utf8_general_ci'), nullable=False)
     industryID = Column(BigInteger, primary_key=True, nullable=False)
-    industrySymbol = Column(String(20, 'Chinese_PRC_CI_AS'))
+    industrySymbol = Column(String(20, 'utf8_general_ci'))
     industryID1 = Column(BigInteger, nullable=False)
-    industryName1 = Column(String(50, 'Chinese_PRC_CI_AS'))
+    industryName1 = Column(String(50, 'utf8_general_ci'))
     industryID2 = Column(BigInteger)
-    industryName2 = Column(String(50, 'Chinese_PRC_CI_AS'))
+    industryName2 = Column(String(50, 'utf8_general_ci'))
     industryID3 = Column(BigInteger)
-    industryName3 = Column(String(50, 'Chinese_PRC_CI_AS'))
+    industryName3 = Column(String(50, 'utf8_general_ci'))
     IndustryID4 = Column(BigInteger)
-    IndustryName4 = Column(String(50, 'Chinese_PRC_CI_AS'))
+    IndustryName4 = Column(String(50, 'utf8_general_ci'))
 
 
 class Market(Base):
@@ -99,8 +99,8 @@ class Market(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    secShortName = Column(String(10, 'Chinese_PRC_CI_AS'))
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
+    secShortName = Column(String(10, 'utf8_general_ci'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
     preClosePrice = Column(Float(53))
     actPreClosePrice = Column(Float(53))
     openPrice = Column(Float(53))
@@ -129,11 +129,11 @@ class Performance(Base):
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
-    type = Column(String(20, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
-    portfolio = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
-    industry = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
-    source = Column(String(20, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
-    universe = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
+    type = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
+    portfolio = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    industry = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    source = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
+    universe = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
     er = Column(Float(53), nullable=False)
     turn_over = Column(Float(53))
     ic = Column(Float(53))
@@ -148,7 +148,7 @@ class RiskCovDay(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
-    Factor = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
+    Factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -200,7 +200,7 @@ class RiskCovLong(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
-    Factor = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
+    Factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -252,7 +252,7 @@ class RiskCovShort(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
-    Factor = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
+    Factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -303,8 +303,8 @@ class RiskExposure(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -401,8 +401,8 @@ class SpecificReturn(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
     spret = Column(Float(53))
     updateTime = Column(DateTime)
 
@@ -415,8 +415,8 @@ class SpecificRiskDay(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
     SRISK = Column(Float(53))
     updateTime = Column(DateTime)
 
@@ -429,8 +429,8 @@ class SpecificRiskLong(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
     updateTime = Column(DateTime)
     SRISK = Column(Float(53))
 
@@ -443,8 +443,8 @@ class SpecificRiskShort(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'Chinese_PRC_CI_AS'))
-    secShortName = Column(String(20, 'Chinese_PRC_CI_AS'))
+    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20, 'utf8_general_ci'))
     SRISK = Column(Float(53))
     updateTime = Column(DateTime)
 
@@ -456,21 +456,25 @@ class Strategy(Base):
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
-    strategyName = Column(String(20, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
-    factor = Column(String(50, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
+    strategyName = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
+    factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
     weight = Column(Float(53))
-    source = Column(String(20, 'Chinese_PRC_CI_AS'))
+    source = Column(String(20, 'utf8_general_ci'))
 
 
 class Tiny(Base):
     __tablename__ = 'tiny'
 
-    Date = Column(DateTime, primary_key=True, nullable=False, server_default=text("(NULL)"))
-    Code = Column(Integer, primary_key=True, nullable=False, server_default=text("(NULL)"))
-    CFinc1 = Column(Float(53), server_default=text("(NULL)"))
-    BDTO = Column(Float(53), server_default=text("(NULL)"))
-    RVOL = Column(Float(53), server_default=text("(NULL)"))
-    CHV = Column(Float(53), server_default=text("(NULL)"))
+    __table_args__ = (
+        Index('tiny_Date_Code_uindex', 'Date', 'Code', unique=True),
+    )
+
+    Date = Column(DateTime, primary_key=True, nullable=False)
+    Code = Column(Integer, primary_key=True, nullable=False)
+    CFinc1 = Column(Float(53))
+    BDTO = Column(Float(53))
+    RVOL = Column(Float(53))
+    CHV = Column(Float(53))
     VAL = Column(Float(53))
     EPSAfterNonRecurring = Column(Float(53))
     DivP = Column(Float(53))
@@ -484,7 +488,7 @@ class Universe(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    universe = Column(String(20, 'Chinese_PRC_CI_AS'), primary_key=True, nullable=False)
+    universe = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
 
 
 class Uqer(Base):
