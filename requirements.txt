@@ -8,3 +8,4 @@ scipy >= 0.19.0
 simpleutils >= 0.1.0
 sqlalchemy >= 1.1.9
 pandas >= 0.19.2
+Finance-Python >= 0.5.5
