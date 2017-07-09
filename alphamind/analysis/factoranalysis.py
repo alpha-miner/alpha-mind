@@ -197,7 +197,7 @@ def factor_analysis(factors: pd.DataFrame,
                                   risk_target=(risk_lbound, risk_ubound),
                                   **kwargs)
 
-    else:
+    elif method == 'rank':
         # using rank builder
         weights = build_portfolio(er,
                                   builder='rank',
