@@ -52,14 +52,14 @@ def mask_values_1d(x: np.ndarray,
     return res
 
 
-def winsorize_normal(x: np.ndarray, num_stds: int = 3, groups: np.ndarray = None) -> np.ndarray:
+def winsorize_normal(x: np.ndarray, num_stds: int = 3, ddof=1, groups: np.ndarray = None) -> np.ndarray:
     if groups is not None:
         groups = group_mapping(groups)
         mean_values = transform(groups, x, 'mean')
         std_values = transform(groups, x, 'std')
         res = mask_values_2d(x, mean_values, std_values, num_stds)
     else:
-        std_values = simple_std(x, axis=0)
+        std_values = simple_std(x, axis=0, ddof=ddof)
         mean_values = simple_mean(x, axis=0)
         res = mask_values_1d(x, mean_values, std_values, num_stds)
     return res

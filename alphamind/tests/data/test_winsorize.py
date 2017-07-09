@@ -36,7 +36,7 @@ class TestWinsorize(unittest.TestCase):
             np.testing.assert_array_almost_equal(col_data, calculated_col)
 
     def test_winsorize_normal_with_group(self):
-        cal_winsorized = winsorize_normal(self.x, self.num_stds, self.groups)
+        cal_winsorized = winsorize_normal(self.x, self.num_stds, groups=self.groups)
 
         def impl(x):
             std_values = x.std(axis=0, ddof=1)

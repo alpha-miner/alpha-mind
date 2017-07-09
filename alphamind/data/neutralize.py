@@ -87,8 +87,8 @@ def _sub_step(x, y, w, curr_idx, res):
 
 @nb.njit(nogil=True, cache=True)
 def ls_fit(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> np.ndarray:
-    x_bar = x.T
-    b = np.linalg.solve(x_bar * w @ x, x_bar * w @ y)
+    x_bar = x.T * w
+    b = np.linalg.solve(x_bar @ x, x_bar @ y)
     return b
 
 
