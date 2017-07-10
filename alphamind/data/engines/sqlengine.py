@@ -112,7 +112,7 @@ class SqlEngine(object):
             factor_list = ','.join("'" + f + "'" for f in factors)
             sql = "select factor, source from factor_master where factor in ({factor_list})".format(factor_list=factor_list)
             results = self.engine.execute(sql).fetchall()
-            return ','.join(r[1].strip() + '.' + r[0].strip() for r in results)
+            return ','.join(r[1].strip() + '.' + r[0].strip()  + ' as ' + r[1].strip() + '$' + r[0].strip() for r in results)
 
         factor_str = mapping_factors(factors)
 
