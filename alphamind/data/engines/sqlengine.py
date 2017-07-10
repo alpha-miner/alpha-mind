@@ -110,9 +110,11 @@ class SqlEngine(object):
 
         def mapping_factors(factors):
             factor_list = ','.join("'" + f + "'" for f in factors)
-            sql = "select distinct factor, source from factor_master where factor in ({factor_list})".format(factor_list=factor_list)
+            sql = "select factor, source from factor_master where factor in ({factor_list})".format(factor_list=factor_list)
             results = self.engine.execute(sql).fetchall()
-            return ','.join(r[1].strip() + '.' + r[0].strip() for r in results)
+
+            all_factors = {r[0].strip(): r[1].strip() for r in results}
+            return ','.join(all_factors[k] + '.' + k for k in all_factors)
 
         factor_str = mapping_factors(factors)
 
