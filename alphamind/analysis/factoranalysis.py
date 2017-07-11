@@ -33,7 +33,7 @@ def factor_processing(raw_factors: np.ndarray,
     if risk_factors is not None:
         new_factors = neutralize(risk_factors, new_factors)
 
-    return new_factors
+    return standardize(new_factors)
 
 
 def build_portfolio(er: np.ndarray,

@@ -174,13 +174,17 @@ if __name__ == '__main__':
     engine = SqlEngine(db_url)
     ref_date = '2017-07-04'
 
+    factors = engine.fetch_factors_meta()[['factor', 'source']]
+    factors['factor'] = factors.factor.str.strip()
+    factors['source'] = factors.source.str.strip()
+
     import datetime as dt
 
     start = dt.datetime.now()
-    for i in range(10):
+    for i in range(1):
         factors = engine.fetch_factors_meta()
         codes = engine.fetch_codes('2017-07-04', universe)
-        total_data = engine.fetch_data(ref_date, ['EPS', 'DROEAfterNonRecurring'], [1, 5], 905)
+        total_data = engine.fetch_data(ref_date, factors.factor.tolist(), [1, 5], 905)
 
     print(dt.datetime.now() - start)
 
