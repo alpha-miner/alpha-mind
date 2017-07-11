@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 from alphamind.data.engines.universe import Universe
+from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
                'MOMENTUM',
@@ -102,10 +103,21 @@ class SqlEngine(object):
 
         return sorted(codes_set)
 
-    def fetch_d1_return(self, ref_date, codes):
+    def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=1):
+
+        start_date = ref_date
+
+        if not expiry_date and horizon:
+            end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon) + 'b').strftime('%Y%m%d')
+        elif expiry_date:
+            end_date = expiry_date
+
         codes_str = ','.join(str(c) for c in codes)
-        sql = "select Code, d1 from daily_return where Date = '{ref_date}' and Code in ({codes})".format(ref_date=ref_date,
-                                                                                                   codes=codes_str)
+        sql = "select Code, sum(d1) as dx from daily_return " \
+              "where Date >= '{start_date}' and Date < '{end_date}'" \
+              " and Code in ({codes}) GROUP BY Code".format(start_date=start_date,
+                                                            end_date=end_date,
+                                                            codes=codes_str)
         return pd.read_sql(sql, self.engine)
 
     def fetch_data(self, ref_date,
