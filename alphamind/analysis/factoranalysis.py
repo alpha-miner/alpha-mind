@@ -71,7 +71,6 @@ class FDataPack(object):
 
     def __init__(self,
                  raw_factors: np.ndarray,
-                 d1returns=None,
                  factor_names: List[str]=None,
                  codes: List=None,
                  groups: Optional[np.ndarray]=None,
@@ -80,11 +79,6 @@ class FDataPack(object):
                  risk_names: List[str]=None):
 
         self.raw_factors = raw_factors
-
-        if d1returns is not None:
-            self.d1returns = d1returns.flatten()
-        else:
-            self.d1returns = None
 
         if factor_names:
             self.factor_names = factor_names
@@ -100,21 +94,19 @@ class FDataPack(object):
         self.risk_names = risk_names
 
     def benchmark_risk_exp(self) -> np.ndarray:
-        return self.risk_exp @ self.benchmark
+        return self.benchmark @ self.risk_exp
 
-    def settle(self, weights: np.ndarray) -> pd.DataFrame:
-
-        if self.d1returns is None:
-            raise ValueError("No return is offered")
+    def settle(self, weights: np.ndarray, dx_return: np.ndarray) -> pd.DataFrame:
 
         weights = weights.flatten()
+        dx_return = dx_return.flatten()
 
         if self.benchmark is not None:
             net_pos = weights - self.benchmark
         else:
             net_pos = weights
 
-        ret_arr = net_pos * self.d1returns
+        ret_arr = net_pos * dx_return
 
         if self.groups is not None:
             ret_agg = pd.Series(ret_arr).groupby(self.groups).sum()
@@ -126,7 +118,7 @@ class FDataPack(object):
         ret_agg.name = 'er'
 
         pos_table = pd.DataFrame(net_pos, columns=['weight'])
-        pos_table['ret'] = self.d1returns
+        pos_table['ret'] = dx_return
 
         if self.groups is not None:
             ic_table = pos_table.groupby(self.groups).corr()['ret'].loc[(slice(None), 'weight')]
@@ -150,26 +142,6 @@ class FDataPack(object):
                                      self.risk_exp,
                                      pos_process)
 
-    def to_df(self) -> pd.DataFrame:
-        cols = self.factor_names
-        to_concat = [self.raw_factors.copy()]
-
-        if self.groups is not None:
-            cols.append('groups')
-            to_concat.append(self.groups.reshape(-1, 1))
-
-        if self.benchmark is not None:
-            cols.append('benchmark')
-            to_concat.append(self.benchmark.reshape(-1, 1))
-
-        if self.risk_exp is not None:
-            cols.extend(self.risk_names)
-            to_concat.append(self.risk_exp)
-
-        return pd.DataFrame(np.concatenate(to_concat, axis=1),
-                            columns=cols,
-                            index=self.codes)
-
 
 def factor_analysis(factors: pd.DataFrame,
                     factor_weights: np.ndarray,
@@ -186,7 +158,6 @@ def factor_analysis(factors: pd.DataFrame,
         risk_exp = risk_exp[:, risk_exp.sum(axis=0) != 0]
 
     data_pack = FDataPack(raw_factors=factors.values,
-                          d1returns=d1returns,
                           groups=industry,
                           benchmark=benchmark,
                           risk_exp=risk_exp)
@@ -206,8 +177,8 @@ def factor_analysis(factors: pd.DataFrame,
             risk_lbound = kwargs['risk_bound'][0]
             risk_ubound = kwargs['risk_bound'][1]
         else:
-            risk_lbound = benchmark @ risk_exp
-            risk_ubound = benchmark @ risk_exp
+            risk_lbound = data_pack.benchmark_risk_exp()
+            risk_ubound = data_pack.benchmark_risk_exp()
 
         weights = build_portfolio(er,
                                   builder='linear',
@@ -224,7 +195,7 @@ def factor_analysis(factors: pd.DataFrame,
                                   **kwargs) / kwargs['use_rank']
 
     if detail_analysis:
-        analysis = data_pack.settle(weights)
+        analysis = data_pack.settle(weights, d1returns)
     else:
         analysis = None
     return pd.DataFrame({'weight': weights,
