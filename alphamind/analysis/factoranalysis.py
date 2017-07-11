@@ -22,7 +22,8 @@ from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
 
 def factor_processing(raw_factors: np.ndarray,
                       pre_process: Optional[List]=None,
-                      risk_factors: Optional[np.ndarray]=None) -> np.ndarray:
+                      risk_factors: Optional[np.ndarray]=None,
+                      post_process: Optional[List]=None) -> np.ndarray:
 
     new_factors = raw_factors
 
@@ -33,7 +34,11 @@ def factor_processing(raw_factors: np.ndarray,
     if risk_factors is not None:
         new_factors = neutralize(risk_factors, new_factors)
 
-    return standardize(new_factors)
+    if post_process:
+        for p in pre_process:
+            new_factors = p(new_factors)
+
+    return new_factors
 
 
 def build_portfolio(er: np.ndarray,
@@ -133,15 +138,17 @@ class FDataPack(object):
                              'ic': ic_table.values},
                             index=ret_agg.index)
 
-    def factor_processing(self, pre_process) -> np.ndarray:
+    def factor_processing(self, pre_process, pos_process) -> np.ndarray:
 
         if self.risk_exp is None:
             return factor_processing(self.raw_factors,
-                                     pre_process)
+                                     pre_process,
+                                     pos_process)
         else:
             return factor_processing(self.raw_factors,
                                      pre_process,
-                                     self.risk_exp)
+                                     self.risk_exp,
+                                     pos_process)
 
     def to_df(self) -> pd.DataFrame:
         cols = self.factor_names
@@ -184,7 +191,7 @@ def factor_analysis(factors: pd.DataFrame,
                           benchmark=benchmark,
                           risk_exp=risk_exp)
 
-    er = data_pack.factor_processing([winsorize_normal, standardize]) @ factor_weights
+    er = data_pack.factor_processing([winsorize_normal, standardize], [standardize]) @ factor_weights
 
     if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
         # using linear programming portfolio builder
