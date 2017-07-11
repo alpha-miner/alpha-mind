@@ -66,7 +66,7 @@ class FDataPack(object):
 
     def __init__(self,
                  raw_factors: np.ndarray,
-                 d1returns,
+                 d1returns=None,
                  factor_names: List[str]=None,
                  codes: List=None,
                  groups: Optional[np.ndarray]=None,
@@ -75,7 +75,13 @@ class FDataPack(object):
                  risk_names: List[str]=None):
 
         self.raw_factors = raw_factors
-        self.d1returns = d1returns.flatten()
+
+
+        if d1returns is not None:
+            self.d1returns = d1returns.flatten()
+        else:
+            self.d1returns = None
+
         if factor_names:
             self.factor_names = factor_names
         else:
@@ -93,6 +99,10 @@ class FDataPack(object):
         return self.risk_exp @ self.benchmark
 
     def settle(self, weights: np.ndarray) -> pd.DataFrame:
+
+        if self.d1returns is None:
+            raise ValueError("No return is offered")
+
         weights = weights.flatten()
 
         if self.benchmark is not None:
@@ -158,7 +168,7 @@ class FDataPack(object):
 def factor_analysis(factors: pd.DataFrame,
                     factor_weights: np.ndarray,
                     industry: np.ndarray,
-                    d1returns: np.ndarray,
+                    d1returns: np.ndarray=None,
                     detail_analysis=True,
                     benchmark: Optional[np.ndarray]=None,
                     risk_exp: Optional[np.ndarray]=None,
@@ -208,7 +218,8 @@ def factor_analysis(factors: pd.DataFrame,
     else:
         analysis = None
     return pd.DataFrame({'weight': weights,
-                         'industry': industry},
+                         'industry': industry,
+                         'er': er},
                         index=factors.index),\
            analysis
 

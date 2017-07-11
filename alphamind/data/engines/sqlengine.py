@@ -102,6 +102,12 @@ class SqlEngine(object):
 
         return sorted(codes_set)
 
+    def fetch_d1_return(self, ref_date, codes):
+        codes_str = ','.join(str(c) for c in codes)
+        sql = "select Code, d1 from daily_return where Date = '{ref_date}' and Code in ({codes})".format(ref_date=ref_date,
+                                                                                                   codes=codes_str)
+        return pd.read_sql(sql, self.engine)
+
     def fetch_data(self, ref_date,
                    factors: Iterable[str],
                    codes: Iterable[int],
@@ -124,13 +130,12 @@ class SqlEngine(object):
         special_risk_table = 'specific_risk_' + risk_model
         codes_str = ','.join(str(c) for c in codes)
 
-        sql = "select uqer.Code, {factors}, {risks}, market.isOpen, daily_return.d1, {risk_table}.SRISK" \
+        sql = "select uqer.Code, {factors}, {risks}, market.isOpen, {risk_table}.SRISK" \
               " from (uqer INNER JOIN" \
               " risk_exposure on uqer.Date = risk_exposure.Date and uqer.Code = risk_exposure.Code)" \
               " INNER JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
               " LEFT JOIN tiny on uqer.Date = tiny.Date and uqer.Code = tiny.Code" \
               " LEFT JOIN legacy_factor on uqer.Date = legacy_factor.Date and uqer.Code = legacy_factor.Code" \
-              " INNER JOIN daily_return on uqer.Date = daily_return.Date and uqer.Code = daily_return.Code" \
               " INNER JOIN {risk_table} on uqer.Date = {risk_table}.Date and uqer.Code = {risk_table}.Code" \
               " where uqer.Date = '{ref_date}' and uqer.Code in ({codes})".format(factors=factor_str,
                                                                                   ref_date=ref_date,
