@@ -76,7 +76,6 @@ class FDataPack(object):
 
         self.raw_factors = raw_factors
 
-
         if d1returns is not None:
             self.d1returns = d1returns.flatten()
         else:
@@ -196,8 +195,12 @@ def factor_analysis(factors: pd.DataFrame,
         if is_tradable is not None:
             ubound[~is_tradable] = 0.
 
-        risk_lbound = benchmark @ risk_exp
-        risk_ubound = benchmark @ risk_exp
+        if 'risk_bound' in kwargs:
+            risk_lbound = kwargs['risk_bound'][0]
+            risk_ubound = kwargs['risk_bound'][1]
+        else:
+            risk_lbound = benchmark @ risk_exp
+            risk_ubound = benchmark @ risk_exp
 
         weights = build_portfolio(er,
                                   builder='linear',
