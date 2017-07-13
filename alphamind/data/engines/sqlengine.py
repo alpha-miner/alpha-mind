@@ -75,6 +75,17 @@ class SqlEngine(object):
         sql = "select * from factor_master"
         return pd.read_sql(sql, self.engine)
 
+    def fetch_strategy(self, ref_date: str, strategy: str) -> pd.DataFrame():
+        sql = "select strategyName, factor, weight from strategy " \
+              "where Date = '{ref_date}' and strategyName = '{strategy}'".format(ref_date=ref_date, strategy=strategy)
+        return pd.read_sql(sql, self.engine)
+
+    def fetch_strategy_names(self):
+        sql = "select distinct strategyName from strategy"
+        cursor = self.engine.execute(sql)
+        strategy_names = {c[0] for c in cursor.fetchall()}
+        return strategy_names
+
     def fetch_codes(self, ref_date: str, univ: Universe) -> List[int]:
 
         def get_universe(univ, ref_date):
