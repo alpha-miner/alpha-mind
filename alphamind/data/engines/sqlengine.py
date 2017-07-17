@@ -106,44 +106,9 @@ class SqlEngine(object):
         return strategy_names
 
     def fetch_codes(self, ref_date: str, univ: Universe) -> List[int]:
-
-        def get_universe(univ, ref_date):
-            query = select([UniverseTable.Code]).distinct().where(
-                and_(
-                    UniverseTable.Date == ref_date,
-                    UniverseTable.universe.in_(univ)
-                )
-            )
-
-            cursor = self.engine.execute(query)
-            codes_set = {c[0] for c in cursor.fetchall()}
-            return codes_set
-
-        codes_set = None
-
-        if univ.include_universe:
-            include_codes_set = get_universe(univ.include_universe, ref_date)
-            codes_set = include_codes_set
-
-        if univ.exclude_universe:
-            exclude_codes_set = get_universe(univ.exclude_universe, ref_date)
-            codes_set -= exclude_codes_set
-
-        if univ.include_codes:
-            codes_set = codes_set.union(univ.include_codes)
-
-        if univ.exclude_codes:
-            codes_set -= set(univ.exclude_codes)
-
-        if univ.filter_cond is not None:
-            query = select([UniverseTable.Code]).distinct().where(
-                and_(UniverseTable.Date == ref_date,
-                     univ.filter_cond)
-            )
-
-            cursor = self.engine.execute(query)
-            filtered_codes = {c[0] for c in cursor.fetchall()}
-            codes_set = codes_set.intersection(filtered_codes)
+        query = univ.query(ref_date)
+        cursor = self.engine.execute(query)
+        codes_set = {c[0] for c in cursor.fetchall()}
 
         return sorted(codes_set)
 
