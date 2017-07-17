@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, text
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Table, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -27,25 +27,25 @@ class DailyReturn(Base):
 class FactorMaster(Base):
     __tablename__ = 'factor_master'
     __table_args__ = (
-        Index('factor_meta_factor_source_pk', 'factor', 'source', unique=True),
+        Index('factor_master_factor_source_uindex', 'factor', 'source', unique=True),
     )
 
-    factor = Column(String(30, 'utf8_general_ci'), nullable=False)
-    source = Column(String(30, 'utf8_general_ci'), nullable=False)
-    alias = Column(String(50, 'utf8_general_ci'), primary_key=True)
-    updateTime = Column(DateTime, nullable=False)
+    factor = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
+    source = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
+    alias = Column(String(50, 'utf8_general_ci'), nullable=False)
+    updateTime = Column(DateTime)
     description = Column(Text(2147483647, 'utf8_general_ci'))
 
 
 class HaltList(Base):
     __tablename__ = 'halt_list'
     __table_args__ = (
-        Index('halt_list_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('halt_list_Date_Code_haltBeginTime_uindex', 'Date', 'Code', 'haltBeginTime', unique=True),
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    haltBeginTime = Column(DateTime)
+    haltBeginTime = Column(DateTime, primary_key=True, nullable=False)
     haltEndTime = Column(DateTime)
     secShortName = Column(String(20, 'utf8_general_ci'))
     exchangeCD = Column(String(4, 'utf8_general_ci'))
@@ -91,6 +91,82 @@ class Industry(Base):
     IndustryName4 = Column(String(50, 'utf8_general_ci'))
 
 
+class LegacyFactor(Base):
+    __tablename__ = 'legacy_factor'
+    __table_args__ = (
+        Index('legacy_factor_Date_Code_uindex', 'Date', 'Code', unique=True),
+    )
+
+    Date = Column(DateTime, primary_key=True, nullable=False)
+    Code = Column(Integer, primary_key=True, nullable=False)
+    ROEAfterNonRecurring = Column(Float(53))
+    EPSAfterNonRecurring = Column(Float(53))
+    EODPrice = Column(Float(53))
+    LogFloatCap = Column(Float(53))
+    BPS = Column(Float(53))
+    SPS = Column(Float(53))
+    DebtToAsset = Column(Float(53))
+    STOM = Column(Float(53))
+    DROEAfterNonRecurring = Column(Float(53))
+    LogTotalCap = Column(Float(53))
+    BP = Column(Float(53))
+    SP = Column(Float(53))
+    EPAfterNonRecurring = Column(Float(53))
+    DivToB = Column(Float(53))
+    DivP = Column(Float(53))
+    EBITToSales = Column(Float(53))
+    EBITAToSales = Column(Float(53))
+    EVToSales = Column(Float(53))
+    EVToEBIT = Column(Float(53))
+    EVToEBITDA = Column(Float(53))
+    EVToNOPLAT = Column(Float(53))
+    EVToIC = Column(Float(53))
+    ROIC = Column(Float(53))
+    FCFFPS = Column(Float(53))
+    FCFFToEarningAfterNonRecurring = Column(Float(53))
+    FCFFP = Column(Float(53))
+    ProfitToAsset = Column(Float(53))
+    GrossProfitRatio = Column(Float(53))
+    NetProfitRatio = Column(Float(53))
+    LATO = Column(Float(53))
+    FATO = Column(Float(53))
+    TATO = Column(Float(53))
+    EquityTO = Column(Float(53))
+    PayableTO = Column(Float(53))
+    RecievableTO = Column(Float(53))
+    RevenueGrowth = Column(Float(53))
+    GrossProfitGrowth = Column(Float(53))
+    NetProfitGrowth = Column(Float(53))
+    GrossCFToRevenue = Column(Float(53))
+    CFToRevenue = Column(Float(53))
+    CFToProfit = Column(Float(53))
+    CFToAsset = Column(Float(53))
+    GrossCFGrowth = Column(Float(53))
+    CFGrowth = Column(Float(53))
+    ICFGrowth = Column(Float(53))
+    AveAmount60 = Column(Float(53))
+    PeriodReturn60 = Column(Float(53))
+    AmountRatio60to250 = Column(Float(53))
+    CFPS = Column(Float(53))
+    CFP = Column(Float(53))
+    NetCFGrowth = Column(Float(53))
+    NetCFGrowthP = Column(Float(53))
+    NetCash = Column(Float(53))
+    NetCashP = Column(Float(53))
+    BVPSGrowth = Column(Float(53))
+    EquityPSGrowth = Column(Float(53))
+    WholeSales = Column(Float(53))
+    WholeProfitAfterNonRecurring = Column(Float(53))
+    ExpenseRatio = Column(Float(53))
+    CurrentRatio = Column(Float(53))
+    QuickRatio = Column(Float(53))
+    AcidTestRatio = Column(Float(53))
+    TimeInterestEarnedRatio = Column(Float(53))
+    DepositReceivedVsSale = Column(Float(53))
+    DebtRatioExcemptDepRec = Column(Float(53))
+    SNBARatio = Column(Float(53))
+
+
 class Market(Base):
     __tablename__ = 'market'
     __table_args__ = (
@@ -107,9 +183,9 @@ class Market(Base):
     highestPrice = Column(Float(53))
     lowestPrice = Column(Float(53))
     closePrice = Column(Float(53))
-    turnoverVol = Column(Integer)
+    turnoverVol = Column(BigInteger)
     turnoverValue = Column(Float(53))
-    dealAmount = Column(Integer)
+    dealAmount = Column(BigInteger)
     turnoverRate = Column(Float(53))
     accumAdjFactor = Column(Float(53))
     negMarketValue = Column(Float(53))
@@ -134,6 +210,25 @@ class Performance(Base):
     industry = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
     source = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
     universe = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    er = Column(Float(53), nullable=False)
+    turn_over = Column(Float(53))
+    ic = Column(Float(53))
+
+
+class Performance2(Base):
+    __tablename__ = 'performance2'
+    __table_args__ = (
+        Index('performance2_Date_type_portfolio_industry_source_universe_uindex', 'Date', 'type', 'portfolio', 'industry', 'source', 'universe', 'benchmark', unique=True),
+        Index('performance2_type_industry_universe_portfolio_index', 'type', 'industry', 'universe', 'portfolio')
+    )
+
+    Date = Column(DateTime, primary_key=True, nullable=False)
+    type = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
+    portfolio = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    industry = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    source = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
+    universe = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    benchmark = Column(Integer, primary_key=True, nullable=False)
     er = Column(Float(53), nullable=False)
     turn_over = Column(Float(53))
     ic = Column(Float(53))
@@ -194,8 +289,8 @@ class RiskCovDay(Base):
 class RiskCovLong(Base):
     __tablename__ = 'risk_cov_long'
     __table_args__ = (
-        Index('risk_cov_long_Date_Factor_uindex', 'Date', 'Factor', unique=True),
-        Index('risk_cov_long_Date_FactorID_uindex', 'Date', 'FactorID', unique=True)
+        Index('risk_cov_long_Date_FactorID_uindex', 'Date', 'FactorID', unique=True),
+        Index('risk_cov_long_Date_Factor_uindex', 'Date', 'Factor', unique=True)
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
@@ -246,8 +341,8 @@ class RiskCovLong(Base):
 class RiskCovShort(Base):
     __tablename__ = 'risk_cov_short'
     __table_args__ = (
-        Index('risk_cov_short_Date_FactorID_uindex', 'Date', 'FactorID', unique=True),
-        Index('risk_cov_short_Date_Factor_uindex', 'Date', 'Factor', unique=True)
+        Index('risk_cov_short_Date_Factor_uindex', 'Date', 'Factor', unique=True),
+        Index('risk_cov_short_Date_FactorID_uindex', 'Date', 'FactorID', unique=True)
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
@@ -345,6 +440,18 @@ class RiskExposure(Base):
     Conglomerates = Column(BigInteger)
     COUNTRY = Column(BigInteger)
     updateTime = Column(DateTime)
+
+
+t_risk_master = Table(
+    'risk_master', metadata,
+    Column('factor', String(30, 'utf8_general_ci'), nullable=False),
+    Column('source', String(30, 'utf8_general_ci'), nullable=False),
+    Column('alias', String(30, 'utf8_general_ci'), nullable=False),
+    Column('type', String(30, 'utf8_general_ci')),
+    Column('updateTime', DateTime),
+    Column('description', Text(2147483647, 'utf8_general_ci')),
+    Column('factor_id', Integer, nullable=False)
+)
 
 
 class RiskReturn(Base):
@@ -465,16 +572,12 @@ class Strategy(Base):
 class Tiny(Base):
     __tablename__ = 'tiny'
 
-    __table_args__ = (
-        Index('tiny_Date_Code_uindex', 'Date', 'Code', unique=True),
-    )
-
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
-    CFinc1 = Column(Float(53))
-    BDTO = Column(Float(53))
-    RVOL = Column(Float(53))
-    CHV = Column(Float(53))
+    Date = Column(DateTime, primary_key=True, nullable=False, server_default=text("(NULL)"))
+    Code = Column(Integer, primary_key=True, nullable=False, server_default=text("(NULL)"))
+    CFinc1 = Column(Float(53), server_default=text("(NULL)"))
+    BDTO = Column(Float(53), server_default=text("(NULL)"))
+    RVOL = Column(Float(53), server_default=text("(NULL)"))
+    CHV = Column(Float(53), server_default=text("(NULL)"))
     VAL = Column(Float(53))
     EPSAfterNonRecurring = Column(Float(53))
     DivP = Column(Float(53))
