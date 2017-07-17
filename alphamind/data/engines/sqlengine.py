@@ -11,7 +11,16 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
+import sqlalchemy.orm as orm
+from sqlalchemy import select, and_
+from sqlalchemy import MetaData
+from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
+from alphamind.data.dbmodel.models import FactorMaster
+from alphamind.data.dbmodel.models import Strategy
+from alphamind.data.dbmodel.models import DailyReturn
+from alphamind.data.dbmodel.models import IndexComponent
+from alphamind.data.dbmodel.models import Universe as UniverseTable
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -70,29 +79,43 @@ class SqlEngine(object):
     def __init__(self,
                  db_url: str):
         self.engine = sa.create_engine(db_url)
+        self.create_session()
+
+    def create_session(self):
+        Session = orm.sessionmaker(bind=self.engine)
+        self.session = Session()
 
     def fetch_factors_meta(self) -> pd.DataFrame:
-        sql = "select * from factor_master"
-        return pd.read_sql(sql, self.engine)
+        query = self.session.query(FactorMaster)
+        return pd.read_sql(query.statement, query.session.bind)
 
     def fetch_strategy(self, ref_date: str, strategy: str) -> pd.DataFrame():
-        sql = "select strategyName, factor, weight from strategy " \
-              "where Date = '{ref_date}' and strategyName = '{strategy}'".format(ref_date=ref_date, strategy=strategy)
-        return pd.read_sql(sql, self.engine)
+        query = select([Strategy.strategyName, Strategy.factor, Strategy.weight]).where(
+            and_(
+                Strategy.Date == ref_date,
+                Strategy.strategyName == strategy
+            )
+        )
+
+        return pd.read_sql(query, self.session.bind)
 
     def fetch_strategy_names(self):
-        sql = "select distinct strategyName from strategy"
-        cursor = self.engine.execute(sql)
-        strategy_names = {c[0] for c in cursor.fetchall()}
+        query = select([Strategy.strategyName]).distinct()
+        cursor = self.engine.execute(query)
+        strategy_names = {s[0] for s in cursor.fetchall()}
         return strategy_names
 
     def fetch_codes(self, ref_date: str, univ: Universe) -> List[int]:
 
         def get_universe(univ, ref_date):
-            univ_str = ','.join("'" + u + "'" for u in univ)
-            sql = "select distinct Code from universe where Date = '{ref_date}' and universe in ({univ_str})".format(
-                ref_date=ref_date, univ_str=univ_str)
-            cursor = self.engine.execute(sql)
+            query = select([UniverseTable.Code]).distinct().where(
+                and_(
+                    UniverseTable.Date == ref_date,
+                    UniverseTable.universe.in_(univ)
+                )
+            )
+
+            cursor = self.engine.execute(query)
             codes_set = {c[0] for c in cursor.fetchall()}
             return codes_set
 
@@ -115,7 +138,6 @@ class SqlEngine(object):
         return sorted(codes_set)
 
     def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=1):
-
         start_date = ref_date
 
         if not expiry_date and horizon:
@@ -123,13 +145,14 @@ class SqlEngine(object):
         elif expiry_date:
             end_date = expiry_date
 
-        codes_str = ','.join(str(c) for c in codes)
-        sql = "select Code, sum(d1) as dx from daily_return " \
-              "where Date >= '{start_date}' and Date < '{end_date}'" \
-              " and Code in ({codes}) GROUP BY Code".format(start_date=start_date,
-                                                            end_date=end_date,
-                                                            codes=codes_str)
-        return pd.read_sql(sql, self.engine)
+        query = select([DailyReturn.Code, func.sum(DailyReturn.d1).label('dx')]).where(
+            and_(
+                DailyReturn.Date.between(start_date, end_date),
+                DailyReturn.Code.in_(codes)
+            )
+        ).group_by(DailyReturn.Code)
+
+        return pd.read_sql(query, self.session.bind)
 
     def fetch_data(self, ref_date,
                    factors: Iterable[str],
@@ -138,10 +161,9 @@ class SqlEngine(object):
                    risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
 
         def mapping_factors(factors):
-            factor_list = ','.join("'" + f + "'" for f in factors)
-            sql = "select factor, source from factor_master where factor in ({factor_list})".format(factor_list=factor_list)
-            results = self.engine.execute(sql).fetchall()
 
+            query = select([FactorMaster.factor, FactorMaster.source]).where(FactorMaster.factor.in_(factors))
+            results = self.engine.execute(query).fetchall()
             all_factors = {r[0].strip(): r[1].strip() for r in results}
             return ','.join(all_factors[k] + '.' + k for k in all_factors)
 
@@ -169,22 +191,28 @@ class SqlEngine(object):
         factor_data = pd.read_sql(sql, self.engine)
 
         risk_cov_table = 'risk_cov_' + risk_model
-        risk_str = ','.join(risk_cov_table + '.' + f for f in total_risk_factors)
+        meta = MetaData()
+        meta.reflect(self.engine)
+        risk_cov_table = meta.tables[risk_cov_table]
 
-        sql = "select FactorID, Factor, {risks} from {risk_table} where Date = '{ref_date}'".format(ref_date=ref_date,
-                                                                                                    risks=risk_str,
-                                                                                                    risk_table=risk_cov_table)
-
-        risk_cov_data = pd.read_sql(sql, self.engine).sort_values('FactorID')
+        query = select([risk_cov_table.columns['FactorID'],
+                        risk_cov_table.columns['Factor']]
+                       + [risk_cov_table.columns[f] for f in total_risk_factors]).where(
+            risk_cov_table.columns['Date'] == ref_date
+        )
+        risk_cov_data = pd.read_sql(query, self.engine).sort_values('FactorID')
 
         total_data = {'risk_cov': risk_cov_data}
 
         if benchmark:
-            sql = "select Code, weight / 100. as weight from index_components " \
-                  "where Date = '{ref_date}' and indexCode = {benchmakr}".format(ref_date=ref_date,
-                                                                                 benchmakr=benchmark)
+            query = select([IndexComponent.code, (IndexComponent.weight / 100.).lable('weight')]).where(
+                and_(
+                    IndexComponent.Date == ref_date,
+                    IndexComponent.indexCode == benchmark
+                )
+            )
 
-            benchmark_data = pd.read_sql(sql, self.engine)
+            benchmark_data = pd.read_sql(query, self.engine)
             total_data['benchmark'] = benchmark_data
             factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['Code'])
             factor_data['weight'] = factor_data['weight'].fillna(0.)
@@ -202,18 +230,9 @@ if __name__ == '__main__':
     engine = SqlEngine(db_url)
     ref_date = '2017-07-04'
 
-    factors = engine.fetch_factors_meta()[['factor', 'source']]
-    factors['factor'] = factors.factor.str.strip()
-    factors['source'] = factors.source.str.strip()
+    codes = engine.fetch_codes(ref_date, universe)
+    df = engine.fetch_data(ref_date, factors=['EPS', 'CFinc1'], codes=codes)
 
-    import datetime as dt
+    print(df)
 
-    start = dt.datetime.now()
-    for i in range(1):
-        factors = engine.fetch_factors_meta()
-        codes = engine.fetch_codes('2017-07-04', universe)
-        total_data = engine.fetch_data(ref_date, factors.factor.tolist(), [1, 5], 905)
 
-    print(dt.datetime.now() - start)
-
-    print(total_data)

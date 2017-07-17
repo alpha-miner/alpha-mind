@@ -442,16 +442,16 @@ class RiskExposure(Base):
     updateTime = Column(DateTime)
 
 
-t_risk_master = Table(
-    'risk_master', metadata,
-    Column('factor', String(30, 'utf8_general_ci'), nullable=False),
-    Column('source', String(30, 'utf8_general_ci'), nullable=False),
-    Column('alias', String(30, 'utf8_general_ci'), nullable=False),
-    Column('type', String(30, 'utf8_general_ci')),
-    Column('updateTime', DateTime),
-    Column('description', Text(2147483647, 'utf8_general_ci')),
-    Column('factor_id', Integer, nullable=False)
-)
+class RiskMaster(Base):
+    __tablename__ = 'risk_master'
+
+    factor = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
+    source = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
+    alias = Column(String(30, 'utf8_general_ci'), nullable=False)
+    type = Column(String(30, 'utf8_general_ci'))
+    updateTime = Column(DateTime)
+    description = Column(Text(2147483647, 'utf8_general_ci'))
+    FactorID = Column(Integer, nullable=False)
 
 
 class RiskReturn(Base):
