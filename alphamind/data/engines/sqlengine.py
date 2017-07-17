@@ -135,6 +135,16 @@ class SqlEngine(object):
         if univ.exclude_codes:
             codes_set -= set(univ.exclude_codes)
 
+        if univ.filter_cond is not None:
+            query = select([UniverseTable.Code]).distinct().where(
+                and_(UniverseTable.Date == ref_date,
+                     univ.filter_cond)
+            )
+
+            cursor = self.engine.execute(query)
+            filtered_codes = {c[0] for c in cursor.fetchall()}
+            codes_set = codes_set.intersection(filtered_codes)
+
         return sorted(codes_set)
 
     def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=1):
@@ -225,14 +235,34 @@ class SqlEngine(object):
 
 if __name__ == '__main__':
     db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha?charset=utf8'
-    universe = Universe('zz500', ['zz500'])
 
+    from alphamind.data.dbmodel.models import Uqer
+
+    import datetime as dt
+
+    universe = Universe('zz500', ['zz500'], filter_cond=Uqer.BLEV >= 0.1)
     engine = SqlEngine(db_url)
     ref_date = '2017-07-04'
 
     codes = engine.fetch_codes(ref_date, universe)
-    df = engine.fetch_data(ref_date, factors=['EPS', 'CFinc1'], codes=codes)
 
-    print(df)
+    start = dt.datetime.now()
+    for i in range(100):
+        codes = engine.fetch_codes(ref_date, universe)
+    print(dt.datetime.now() - start)
 
+    print(codes)
+    print(len(codes))
+
+    universe = Universe('zz500', ['zz500'])
+    engine = SqlEngine(db_url)
+    ref_date = '2017-07-04'
+
+    start = dt.datetime.now()
+    for i in range(100):
+        codes = engine.fetch_codes(ref_date, universe)
+    print(dt.datetime.now() - start)
+
+    print(codes)
+    print(len(codes))
 

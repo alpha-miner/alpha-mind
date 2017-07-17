@@ -105,3 +105,15 @@ def ls_explain(x: np.ndarray, b: np.ndarray) -> np.ndarray:
         explained[:, :, i] = b[:, i] * x
     return explained
 
+
+if __name__ == '__main__':
+    x = np.random.randn(3000)
+    y = np.random.randn(3000)
+    w = np.ones(3000)
+
+    import datetime as dt
+
+    start = dt.datetime.now()
+    for i in range(1000):
+        ls_fit(x, y, w)
+    print(dt.datetime.now() - start)
