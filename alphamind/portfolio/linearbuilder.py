@@ -18,13 +18,13 @@ solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}
 def linear_build(er: np.ndarray,
                  lbound: Union[np.ndarray, float],
                  ubound: Union[np.ndarray, float],
-                 risk_exposure: np.ndarray,
+                 risk_constraints: np.ndarray,
                  risk_target: Tuple[np.ndarray, np.ndarray],
                  solver: str=None) -> Tuple[str, np.ndarray, np.ndarray]:
-    n, m = risk_exposure.shape
+    n, m = risk_constraints.shape
     w = cvxpy.Variable(n)
 
-    curr_risk_exposure = risk_exposure.T @ w
+    curr_risk_exposure = risk_constraints.T @ w
 
     if not risk_target:
         constraints = [w >= lbound,

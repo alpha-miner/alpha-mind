@@ -75,6 +75,7 @@ class FDataPack(object):
                  codes: List=None,
                  groups: Optional[np.ndarray]=None,
                  benchmark: Optional[np.ndarray]=None,
+                 constraints: Optional[np.ndarray]=None,
                  risk_exp: Optional[np.ndarray]=None,
                  risk_names: List[str]=None):
 
@@ -91,10 +92,11 @@ class FDataPack(object):
         else:
             self.benchmark = None
         self.risk_exp = risk_exp
+        self.constraints = constraints
         self.risk_names = risk_names
 
-    def benchmark_risk_exp(self) -> np.ndarray:
-        return self.benchmark @ self.risk_exp
+    def benchmark_constraints(self) -> np.ndarray:
+        return self.benchmark @ self.constraints
 
     def settle(self, weights: np.ndarray, dx_return: np.ndarray) -> pd.DataFrame:
 
@@ -151,6 +153,7 @@ def factor_analysis(factors: pd.DataFrame,
                     benchmark: Optional[np.ndarray]=None,
                     risk_exp: Optional[np.ndarray]=None,
                     is_tradable: Optional[np.ndarray]=None,
+                    constraints: Optional[np.ndarray]=None,
                     method='risk_neutral',
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
@@ -160,7 +163,8 @@ def factor_analysis(factors: pd.DataFrame,
     data_pack = FDataPack(raw_factors=factors.values,
                           groups=industry,
                           benchmark=benchmark,
-                          risk_exp=risk_exp)
+                          risk_exp=risk_exp,
+                          constraints=constraints)
 
     er = data_pack.factor_processing([winsorize_normal, standardize], [standardize]) @ factor_weights
 
@@ -177,12 +181,12 @@ def factor_analysis(factors: pd.DataFrame,
             risk_lbound = kwargs['risk_bound'][0]
             risk_ubound = kwargs['risk_bound'][1]
         else:
-            risk_lbound = data_pack.benchmark_risk_exp()
-            risk_ubound = data_pack.benchmark_risk_exp()
+            risk_lbound = data_pack.benchmark_constraints()
+            risk_ubound = data_pack.benchmark_constraints()
 
         weights = build_portfolio(er,
                                   builder='linear',
-                                  risk_exposure=risk_exp,
+                                  risk_constraints=constraints,
                                   lbound=lbound,
                                   ubound=ubound,
                                   risk_target=(risk_lbound, risk_ubound),

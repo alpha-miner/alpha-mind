@@ -50,7 +50,8 @@ class TestFactorAnalysis(unittest.TestCase):
                                                        d1returns=self.d1returns,
                                                        industry=industry,
                                                        benchmark=benchmark,
-                                                       risk_exp=self.risk_factor)
+                                                       risk_exp=self.risk_factor,
+                                                       constraints=self.risk_factor)
 
         weight = weight_table.weight
 
@@ -70,7 +71,8 @@ class TestFactorAnalysis(unittest.TestCase):
                                                        d1returns=self.d1returns,
                                                        industry=industry,
                                                        benchmark=benchmark,
-                                                       risk_exp=self.risk_factor)
+                                                       risk_exp=self.risk_factor,
+                                                       constraints=self.risk_factor)
 
         weight = weight_table.weight
         self.assertEqual(analysis_table['er'].sum() / analysis_table['er'][-1], 2.0)

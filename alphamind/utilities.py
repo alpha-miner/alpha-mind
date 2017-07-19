@@ -273,12 +273,4 @@ def aggregate(groups, x, func, ddof=1):
 
 
 if __name__ == '__main__':
-
-    x1 = np.random.randint(30, size=1000)
-    array = np.unique(x1)
-
-    x2 = np.random.randint(30, size=1000)
-
-    res = array_index(array, x2)
-
-    print(res)
+    pass

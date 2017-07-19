@@ -20,7 +20,6 @@ from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import Strategy
 from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
-from alphamind.data.dbmodel.models import Universe as UniverseTable
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -180,7 +179,7 @@ class SqlEngine(object):
         total_data = {'risk_cov': risk_cov_data}
 
         if benchmark:
-            query = select([IndexComponent.code, (IndexComponent.weight / 100.).lable('weight')]).where(
+            query = select([IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
                 and_(
                     IndexComponent.Date == ref_date,
                     IndexComponent.indexCode == benchmark
@@ -205,7 +204,7 @@ if __name__ == '__main__':
 
     import datetime as dt
 
-    universe = Universe('zz500', ['zz500'], filter_cond=Uqer.BLEV >= 0.1)
+    universe = Universe('zz500', ['zz500'], filter_cond=(Uqer.BLEV >= 0.1) & (Uqer.BLEV <= 0.1))
     engine = SqlEngine(db_url)
     ref_date = '2017-07-04'
 
