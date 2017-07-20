@@ -111,15 +111,15 @@ class SqlEngine(object):
 
         return sorted(codes_set)
 
-    def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=1):
+    def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=0):
         start_date = ref_date
 
-        if not expiry_date and horizon:
+        if not expiry_date:
             end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon) + 'b').strftime('%Y%m%d')
-        elif expiry_date:
+        else:
             end_date = expiry_date
 
-        query = select([DailyReturn.Code, func.sum(DailyReturn.d1).label('dx')]).where(
+        query = select([DailyReturn.Code, func.sum(func.log(1. + DailyReturn.d1)).label('dx')]).where(
             and_(
                 DailyReturn.Date.between(start_date, end_date),
                 DailyReturn.Code.in_(codes)
