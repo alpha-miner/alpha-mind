@@ -24,7 +24,8 @@ from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
 def factor_processing(raw_factors: np.ndarray,
                       pre_process: Optional[List]=None,
                       risk_factors: Optional[np.ndarray]=None,
-                      post_process: Optional[List]=None) -> np.ndarray:
+                      post_process: Optional[List]=None,
+                      do_neutralize: Optional[bool]=True) -> np.ndarray:
 
     new_factors = raw_factors
 
@@ -32,7 +33,7 @@ def factor_processing(raw_factors: np.ndarray,
         for p in pre_process:
             new_factors = p(new_factors)
 
-    if risk_factors is not None:
+    if risk_factors is not None and do_neutralize:
         new_factors = neutralize(risk_factors, new_factors)
 
     if post_process:
@@ -133,17 +134,19 @@ class FDataPack(object):
                              'ic': ic_table.values},
                             index=ret_agg.index)
 
-    def factor_processing(self, pre_process, pos_process) -> np.ndarray:
+    def factor_processing(self, pre_process, pos_process, do_neutralize) -> np.ndarray:
 
         if self.risk_exp is None:
             return factor_processing(self.raw_factors,
                                      pre_process,
-                                     pos_process)
+                                     pos_process,
+                                     do_neutralize)
         else:
             return factor_processing(self.raw_factors,
                                      pre_process,
                                      self.risk_exp,
-                                     pos_process)
+                                     pos_process,
+                                     do_neutralize)
 
 
 def factor_analysis(factors: pd.DataFrame,
@@ -156,6 +159,7 @@ def factor_analysis(factors: pd.DataFrame,
                     is_tradable: Optional[np.ndarray]=None,
                     constraints: Optional[Constraints]=None,
                     method='risk_neutral',
+                    do_neutralize=True,
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
     if risk_exp is not None:
@@ -167,7 +171,19 @@ def factor_analysis(factors: pd.DataFrame,
                           risk_exp=risk_exp,
                           constraints=constraints)
 
-    er = data_pack.factor_processing([winsorize_normal, standardize], [standardize]) @ factor_weights
+    if 'pre_process' in kwargs:
+        pre_process = kwargs['pre_process']
+        del kwargs['pre_process']
+    else:
+        pre_process = [winsorize_normal, standardize]
+
+    if 'post_process' in kwargs:
+        post_process = kwargs['post_process']
+        del kwargs['post_process']
+    else:
+        post_process = [standardize]
+
+    er = data_pack.factor_processing(pre_process,  post_process, do_neutralize) @ factor_weights
 
     if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
         # using linear programming portfolio builder
@@ -175,11 +191,13 @@ def factor_analysis(factors: pd.DataFrame,
 
         if 'lbound' in kwargs:
             lbound = kwargs['lbound']
+            del kwargs['lbound']
         else:
             lbound = 0.
 
         if 'ubound' in kwargs:
             ubound = kwargs['ubound']
+            del kwargs['ubound']
         else:
             ubound = 0.01 + benchmark
 
