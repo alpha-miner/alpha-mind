@@ -39,7 +39,7 @@ install:
 script:
   - export NUMBA_DISABLE_JIT=1
   - export LD_LIBRARY_PATH="$PWD/libs/lib/linux:$LD_LIBRARY_PATH"
-  - python build_ext --inplace
+  - python setup.py build_ext --inplace
   - coverage run alphamind/tests/test_suite.py
   - coverage report
   - coverage html
