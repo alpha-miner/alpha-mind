@@ -3,6 +3,14 @@ python:
   - "3.5"
   - "3.6"
 # command to install dependencies
+sudo: false
+addons:
+  apt:
+    packages:
+    - libblas-dev
+    - liblapack-dev
+    - gcc
+    - gfortran
 install:
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
@@ -23,12 +31,15 @@ install:
   - conda install scipy
   - conda install pandas
   - conda install scikit-learn
+  - conda install cython
   - pip install cvxopt
   - pip install cvxpy
   - pip install simpleutils
   - pip install coveralls
 script:
   - export NUMBA_DISABLE_JIT=1
+  - export LD_LIBRARY_PATH="$PWD/libs/lib/linux:$LD_LIBRARY_PATH"
+  - python build_ext --inplace
   - coverage run alphamind/tests/test_suite.py
   - coverage report
   - coverage html
