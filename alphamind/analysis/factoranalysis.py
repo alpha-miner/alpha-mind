@@ -172,8 +172,16 @@ def factor_analysis(factors: pd.DataFrame,
     if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
         # using linear programming portfolio builder
         benchmark = benchmark.flatten()
-        lbound = 0.
-        ubound = 0.01 + benchmark
+
+        if 'lbound' in kwargs:
+            lbound = kwargs['lbound']
+        else:
+            lbound = 0.
+
+        if 'ubound' in kwargs:
+            ubound = kwargs['ubound']
+        else:
+            ubound = 0.01 + benchmark
 
         if is_tradable is not None:
             ubound[~is_tradable] = 0.

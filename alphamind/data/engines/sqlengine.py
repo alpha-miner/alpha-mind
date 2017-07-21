@@ -143,13 +143,17 @@ class SqlEngine(object):
 
         factor_str = mapping_factors(factors)
 
-        total_risk_factors = risk_styles + industry_styles
-        risk_str = ','.join('risk_exposure.' + f for f in total_risk_factors)
+        total_risk_factors = list(set(risk_styles + industry_styles).difference(factors))
+
+        if total_risk_factors:
+            risk_str = ',' + ','.join('risk_exposure.' + f for f in total_risk_factors)
+        else:
+            risk_str = ''
 
         special_risk_table = 'specific_risk_' + risk_model
         codes_str = ','.join(str(c) for c in codes)
 
-        sql = "select uqer.Code, {factors}, {risks}, market.isOpen, {risk_table}.SRISK" \
+        sql = "select uqer.Code, {factors} {risks}, market.isOpen, {risk_table}.SRISK" \
               " from (uqer INNER JOIN" \
               " risk_exposure on uqer.Date = risk_exposure.Date and uqer.Code = risk_exposure.Code)" \
               " INNER JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
