@@ -14,6 +14,7 @@ from alphamind.utilities import alpha_logger
 from alphamind.tests.data.test_neutralize import TestNeutralize
 from alphamind.tests.data.test_standardize import TestStandardize
 from alphamind.tests.data.test_winsorize import TestWinsorize
+from alphamind.tests.portfolio.test_constraints import TestConstraints
 from alphamind.tests.portfolio.test_longshortbuild import TestLongShortBuild
 from alphamind.tests.portfolio.test_rankbuild import TestRankBuild
 from alphamind.tests.portfolio.test_percentbuild import TestPercentBuild
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     runner = TestRunner([TestNeutralize,
                          TestStandardize,
                          TestWinsorize,
+                         TestConstraints,
                          TestLongShortBuild,
                          TestRankBuild,
                          TestPercentBuild,

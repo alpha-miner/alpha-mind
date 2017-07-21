@@ -13,6 +13,7 @@ import pandas as pd
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.neutralize import neutralize
+from alphamind.portfolio.constraints import Constraints
 from alphamind.portfolio.longshortbulder import long_short_build
 from alphamind.portfolio.rankbuilder import rank_build
 from alphamind.portfolio.percentbuilder import percent_build
@@ -153,7 +154,7 @@ def factor_analysis(factors: pd.DataFrame,
                     benchmark: Optional[np.ndarray]=None,
                     risk_exp: Optional[np.ndarray]=None,
                     is_tradable: Optional[np.ndarray]=None,
-                    constraints: Optional[np.ndarray]=None,
+                    constraints: Optional[Constraints]=None,
                     method='risk_neutral',
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
@@ -177,16 +178,17 @@ def factor_analysis(factors: pd.DataFrame,
         if is_tradable is not None:
             ubound[~is_tradable] = 0.
 
-        if 'risk_bound' in kwargs:
-            risk_lbound = kwargs['risk_bound'][0]
-            risk_ubound = kwargs['risk_bound'][1]
+        if constraints:
+            risk_lbound, risk_ubound = constraints.risk_targets()
+            cons_exp = constraints.risk_exp
         else:
+            cons_exp = risk_exp
             risk_lbound = data_pack.benchmark_constraints()
             risk_ubound = data_pack.benchmark_constraints()
 
         weights = build_portfolio(er,
                                   builder='linear',
-                                  risk_constraints=constraints,
+                                  risk_constraints=cons_exp,
                                   lbound=lbound,
                                   ubound=ubound,
                                   risk_target=(risk_lbound, risk_ubound),

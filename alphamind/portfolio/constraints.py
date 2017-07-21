@@ -8,23 +8,53 @@ Created on 2017-7-21
 from math import inf
 import numpy as np
 from typing import Tuple
+from typing import Optional
 
 
 class Constraints(object):
 
     def __init__(self,
-                 risk_exp: np.ndarray,
-                 risk_names: np.ndarray):
+                 risk_exp: Optional[np.ndarray]=None,
+                 risk_names: Optional[np.ndarray]=None):
         self.risk_exp = risk_exp
-        self.risk_names = risk_names
-        self.risk_maps = dict(zip(risk_names, range(len(risk_names))))
-        self.lower_bounds = -inf * np.ones(len(risk_names))
-        self.upper_bounds = inf * np.ones(len(risk_names))
+
+        if risk_names is not None:
+            self.risk_names = np.array(risk_names)
+        else:
+            self.risk_names = np.array([])
+
+        n = len(self.risk_names)
+
+        self.risk_maps = dict(zip(self.risk_names, range(n)))
+        self.lower_bounds = -inf * np.ones(n)
+        self.upper_bounds = inf * np.ones(n)
 
     def set_constraints(self, tag: str, lower_bound: float, upper_bound: float):
         index = self.risk_maps[tag]
         self.lower_bounds[index] = lower_bound
         self.upper_bounds[index] = upper_bound
+
+    def add_exposure(self, tags: np.ndarray, new_exp: np.ndarray):
+        if len(tags) != new_exp.shape[1]:
+            raise ValueError('new dags length is not compatible with exposure shape {1}'.format(len(tags),
+                                                                                                new_exp.shape))
+
+        for tag in tags:
+            if tag in self.risk_maps:
+                raise ValueError('tag {0} is already in risk table'.format(tag))
+
+        self.risk_names = np.concatenate((self.risk_names, tags))
+
+        if self.risk_exp is not None:
+            self.risk_exp = np.concatenate((self.risk_exp, new_exp), axis=1)
+        else:
+            self.risk_exp = new_exp
+
+        n = len(self.risk_names)
+        self.risk_maps = dict(zip(self.risk_names, range(n)))
+
+        self.lower_bounds = np.concatenate((self.lower_bounds, -inf * np.ones(len(tags))))
+        self.upper_bounds = np.concatenate((self.upper_bounds, inf * np.ones(len(tags))))
 
     def risk_targets(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.lower_bounds, self.upper_bounds
