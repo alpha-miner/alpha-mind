@@ -36,6 +36,7 @@ install:
   - conda install pandas
   - conda install scikit-learn
   - conda install cython
+  - conda install libgcc
   - pip install cvxopt
   - pip install cvxpy
   - pip install simpleutils
