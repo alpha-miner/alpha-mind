@@ -6,11 +6,18 @@ python:
 sudo: false
 addons:
   apt:
+    source:
+      - ubuntu-toolchain-r-test
     packages:
-    - libblas-dev
-    - liblapack-dev
-    - gcc
-    - gfortran
+      - libblas-dev
+      - liblapack-dev
+      - gfortran
+      - g++-4.8
+      - gcc-4.8
+env:
+  - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
+before_install:
+  - eval "${MATRIX_EVAL}"
 install:
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
