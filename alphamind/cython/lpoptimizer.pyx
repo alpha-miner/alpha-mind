@@ -29,10 +29,10 @@ cdef class LPOptimizer:
                  cnp.ndarray[double] ubound,
                  cnp.ndarray[double] objective):
 
-        self.cobj = new LpOptimizer(cons_matrix.flatten(),
-                                    lbound,
-                                    ubound,
-                                    objective)
+        self.cobj = new LpOptimizer(cons_matrix.flatten().copy(),
+                                    lbound.copy(),
+                                    ubound.copy(),
+                                    objective.copy())
 
     def __del__(self):
         del self.cobj
