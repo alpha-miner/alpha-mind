@@ -59,7 +59,7 @@ class TestLinearBuild(unittest.TestCase):
         self.assertTrue(np.all(w >= -eplson))
 
         calc_risk = (w - bm) @ self.risk_exp / np.abs(bm @ self.risk_exp)
-        self.assertTrue(np.all(np.abs(calc_risk) <= 1e-2))
+        self.assertTrue(np.all(np.abs(calc_risk) <= 1.0001e-2))
 
 
 if __name__ == '__main__':

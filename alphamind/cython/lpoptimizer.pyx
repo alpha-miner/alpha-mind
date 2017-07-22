@@ -29,7 +29,7 @@ cdef class LPOptimizer:
                  cnp.ndarray[double] ubound,
                  cnp.ndarray[double] objective):
 
-        self.cobj = new LpOptimizer(cons_matrix.flatten().tolist(),
+        self.cobj = new LpOptimizer(cons_matrix.flatten(),
                                     lbound,
                                     ubound,
                                     objective)
