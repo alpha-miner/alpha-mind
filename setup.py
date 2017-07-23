@@ -43,7 +43,7 @@ else:
                                 "./libs/include/pfopt",
                                 "./libs/include/eigen",
                                 "./libs/include/alglib"],
-                  libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils'],
+                  libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils', 'IpOptFSS', 'Ipopt-vc8'],
                   library_dirs=['./libs/lib/windows']),
     ]
 

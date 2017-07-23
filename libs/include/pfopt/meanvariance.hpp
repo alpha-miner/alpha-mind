@@ -21,7 +21,7 @@ namespace pfopt {
                      const std::vector<double> &varMatrix,
                      double riskAversion=1.);
 
-        bool setBoundedConstraint(const VectorXd& lb, const VectorXd& ub);
+        bool setBoundedConstraint(const std::vector<double>& lb, const std::vector<double>& ub);
 
         virtual bool get_nlp_info(Index &n, Index &m, Index &nnz_jac_g,
                                   Index &nnz_h_lag, IndexStyleEnum &index_style);
