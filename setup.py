@@ -35,7 +35,17 @@ if platform.system() != "Windows":
                   library_dirs=['./libs/lib/linux']),
         ]
 else:
-    extensions = []
+    extensions = [
+        Extension('alphamind.cython.lpoptimizer',
+                  ['alphamind/cython/lpoptimizer.pyx'],
+                  include_dirs=["./libs/include/clp",
+                                "./libs/include/ipopt",
+                                "./libs/include/pfopt",
+                                "./libs/include/eigen",
+                                "./libs/include/alglib"],
+                  libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils'],
+                  library_dirs=['./libs/lib/windows']),
+    ]
 
 setup(
     name='Alpha-Mind',
