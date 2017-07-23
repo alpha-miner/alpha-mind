@@ -8,7 +8,7 @@ Created on 2017-5-5
 import numpy as np
 from typing import Tuple
 from typing import Union
-from alphamind.cython.lpoptimizer import LPOptimizer
+from alphamind.cython.optimizers import LPOptimizer
 
 
 def linear_build(er: np.ndarray,

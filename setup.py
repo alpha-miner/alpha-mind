@@ -24,8 +24,8 @@ else:
 
 if platform.system() != "Windows":
     extensions = [
-        Extension('alphamind.cython.lpoptimizer',
-                  ['alphamind/cython/lpoptimizer.pyx'],
+        Extension('alphamind.cython.optimizers',
+                  ['alphamind/cython/optimizers.pyx'],
                   include_dirs=["./libs/include/clp",
                                 "./libs/include/ipopt",
                                 "./libs/include/pfopt",
@@ -36,8 +36,8 @@ if platform.system() != "Windows":
         ]
 else:
     extensions = [
-        Extension('alphamind.cython.lpoptimizer',
-                  ['alphamind/cython/lpoptimizer.pyx'],
+        Extension('alphamind.cython.optimizers',
+                  ['alphamind/cython/optimizers.pyx'],
                   include_dirs=["./libs/include/clp",
                                 "./libs/include/ipopt",
                                 "./libs/include/pfopt",
