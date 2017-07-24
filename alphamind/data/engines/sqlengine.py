@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
     import datetime as dt
 
-    universe = Universe('zz500', ['zz500'], filter_cond=(Uqer.BLEV >= 0.1) & (Uqer.BLEV <= 0.1))
+    universe = Universe('zz500', ['ashare'], filter_cond=(Uqer.BLEV >= 0.) & (Uqer.BLEV <= 0.1), include_universe=['hs300'])
     engine = SqlEngine(db_url)
     ref_date = '2017-07-04'
 
