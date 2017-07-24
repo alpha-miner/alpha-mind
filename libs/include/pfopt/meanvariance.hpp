@@ -22,6 +22,7 @@ namespace pfopt {
                      double riskAversion=1.);
 
         bool setBoundedConstraint(const std::vector<double>& lb, const std::vector<double>& ub);
+        bool setLinearConstrains(const std::vector<double>& consMatrix, const std::vector<double>& clb, const std::vector<double>& cub);
 
         virtual bool get_nlp_info(Index &n, Index &m, Index &nnz_jac_g,
                                   Index &nnz_h_lag, IndexStyleEnum &index_style);
@@ -44,11 +45,6 @@ namespace pfopt {
                                 Index m, Index nele_jac, Index *iRow, Index *jCol,
                                 Number *values);
 
-        virtual bool eval_h(Index n, const Number* x, bool new_x,
-                            Number obj_factor, Index m, const Number* lambda,
-                            bool new_lambda, Index nele_hess, Index* iRow,
-                            Index* jCol, Number* values);
-
         virtual void finalize_solution(SolverReturn status,
                                        Index n, const Number *x, const Number *z_L, const Number *z_U,
                                        Index m, const Number *g, const Number *lambda,
@@ -66,11 +62,19 @@ namespace pfopt {
         VectorXd xReal_;
         double riskAversion_;
 
-        VectorXd lb_;
-        VectorXd ub_;
+        std::vector<double> lb_;
+        std::vector<double> ub_;
         VectorXd grad_f_;
         double feval_;
         std::vector<double> x_;
+        std::vector<Index> iRow_;
+        std::vector<Index> jCol_;
+        std::vector<double> g_grad_values_;
+
+        std::vector<double> consMatrix_;
+        std::vector<double> clb_;
+        std::vector<double> cub_;
+        Index m_;
     };
 }
 #endif

@@ -49,7 +49,14 @@ cdef class LPOptimizer:
 
 cdef extern from "mvoptimizer.hpp" namespace "pfopt":
     cdef cppclass MVOptimizer:
-        MVOptimizer(vector[double], vector[double], vector[double], vector[double], double) except +
+        MVOptimizer(vector[double],
+                    vector[double],
+                    vector[double],
+                    vector[double],
+                    vector[double],
+                    vector[double],
+                    vector[double],
+                    double) except +
         vector[double] xValue()
         double feval()
         int status()
@@ -64,12 +71,18 @@ cdef class QPOptimizer:
                  cnp.ndarray[double, ndim=2] cov_matrix,
                  cnp.ndarray[double] lbound,
                  cnp.ndarray[double] ubound,
-                 double risk_aversion):
+                 cnp.ndarray[double, ndim=2] cons_matrix,
+                 cnp.ndarray[double] clbound,
+                 cnp.ndarray[double] cubound,
+                 double risk_aversion=1.0):
 
         self.cobj = new MVOptimizer(expected_return,
                                     cov_matrix.flatten(order='C'),
                                     lbound,
                                     ubound,
+                                    cons_matrix.flatten(order='C'),
+                                    clbound,
+                                    cubound,
                                     risk_aversion)
 
     def __del__(self):
