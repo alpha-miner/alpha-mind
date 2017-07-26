@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Table, Text, text
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -30,11 +30,11 @@ class FactorMaster(Base):
         Index('factor_master_factor_source_uindex', 'factor', 'source', unique=True),
     )
 
-    factor = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
-    source = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
-    alias = Column(String(50, 'utf8_general_ci'), nullable=False)
+    factor = Column(String(30), primary_key=True, nullable=False)
+    source = Column(String(30), primary_key=True, nullable=False)
+    alias = Column(String(50), nullable=False)
     updateTime = Column(DateTime)
-    description = Column(Text(2147483647, 'utf8_general_ci'))
+    description = Column(Text())
 
 
 class HaltList(Base):
@@ -47,11 +47,11 @@ class HaltList(Base):
     Code = Column(Integer, primary_key=True, nullable=False)
     haltBeginTime = Column(DateTime, primary_key=True, nullable=False)
     haltEndTime = Column(DateTime)
-    secShortName = Column(String(20, 'utf8_general_ci'))
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
-    listStatusCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20))
+    exchangeCD = Column(String(4))
+    listStatusCD = Column(String(4))
     delistDate = Column(DateTime)
-    assetClass = Column(String(4, 'utf8_general_ci'))
+    assetClass = Column(String(4))
 
 
 class IndexComponent(Base):
@@ -63,10 +63,10 @@ class IndexComponent(Base):
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
     effDate = Column(DateTime)
-    indexShortName = Column(String(20, 'utf8_general_ci'))
+    indexShortName = Column(String(20))
     indexCode = Column(Integer, primary_key=True, nullable=False)
-    secShortName = Column(String(20, 'utf8_general_ci'))
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(20))
+    exchangeCD = Column(String(4))
     weight = Column(Float(53))
 
 
@@ -78,17 +78,17 @@ class Industry(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    industry = Column(String(30, 'utf8_general_ci'), nullable=False)
+    industry = Column(String(30), nullable=False)
     industryID = Column(BigInteger, primary_key=True, nullable=False)
-    industrySymbol = Column(String(20, 'utf8_general_ci'))
+    industrySymbol = Column(String(20))
     industryID1 = Column(BigInteger, nullable=False)
-    industryName1 = Column(String(50, 'utf8_general_ci'))
+    industryName1 = Column(String(50))
     industryID2 = Column(BigInteger)
-    industryName2 = Column(String(50, 'utf8_general_ci'))
+    industryName2 = Column(String(50))
     industryID3 = Column(BigInteger)
-    industryName3 = Column(String(50, 'utf8_general_ci'))
+    industryName3 = Column(String(50))
     IndustryID4 = Column(BigInteger)
-    IndustryName4 = Column(String(50, 'utf8_general_ci'))
+    IndustryName4 = Column(String(50))
 
 
 class LegacyFactor(Base):
@@ -175,8 +175,8 @@ class Market(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    secShortName = Column(String(10, 'utf8_general_ci'))
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
+    secShortName = Column(String(10))
+    exchangeCD = Column(String(4))
     preClosePrice = Column(Float(53))
     actPreClosePrice = Column(Float(53))
     openPrice = Column(Float(53))
@@ -205,11 +205,11 @@ class Performance(Base):
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
-    type = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
-    portfolio = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
-    industry = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
-    source = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
-    universe = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    type = Column(String(20), primary_key=True, nullable=False)
+    portfolio = Column(String(50), primary_key=True, nullable=False)
+    industry = Column(String(50), primary_key=True, nullable=False)
+    source = Column(String(20), primary_key=True, nullable=False)
+    universe = Column(String(50), primary_key=True, nullable=False)
     er = Column(Float(53), nullable=False)
     turn_over = Column(Float(53))
     ic = Column(Float(53))
@@ -218,16 +218,16 @@ class Performance(Base):
 class Performance2(Base):
     __tablename__ = 'performance2'
     __table_args__ = (
-        Index('performance2_Date_type_portfolio_industry_source_universe_uindex', 'Date', 'type', 'portfolio', 'industry', 'source', 'universe', 'benchmark', unique=True),
-        Index('performance2_type_industry_universe_portfolio_index', 'type', 'industry', 'universe', 'portfolio')
+        Index('performance2_uindex', 'Date', 'type', 'portfolio', 'industry', 'source', 'universe', 'benchmark', unique=True),
+        Index('performance2_index', 'type', 'industry', 'universe', 'portfolio')
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
-    type = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
-    portfolio = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
-    industry = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
-    source = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
-    universe = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    type = Column(String(20), primary_key=True, nullable=False)
+    portfolio = Column(String(50), primary_key=True, nullable=False)
+    industry = Column(String(50), primary_key=True, nullable=False)
+    source = Column(String(20), primary_key=True, nullable=False)
+    universe = Column(String(50), primary_key=True, nullable=False)
     benchmark = Column(Integer, primary_key=True, nullable=False)
     er = Column(Float(53), nullable=False)
     turn_over = Column(Float(53))
@@ -243,7 +243,7 @@ class RiskCovDay(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
-    Factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    Factor = Column(String(50), primary_key=True, nullable=False)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -295,7 +295,7 @@ class RiskCovLong(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
-    Factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    Factor = Column(String(50), primary_key=True, nullable=False)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -341,13 +341,13 @@ class RiskCovLong(Base):
 class RiskCovShort(Base):
     __tablename__ = 'risk_cov_short'
     __table_args__ = (
-        Index('risk_cov_short_Date_Factor_uindex', 'Date', 'Factor', unique=True),
-        Index('risk_cov_short_Date_FactorID_uindex', 'Date', 'FactorID', unique=True)
+        Index('risk_cov_short_Date_FactorID_uindex', 'Date', 'FactorID', unique=True),
+        Index('risk_cov_short_Date_Factor_uindex', 'Date', 'Factor', unique=True)
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
-    Factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    Factor = Column(String(50), primary_key=True, nullable=False)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -398,8 +398,8 @@ class RiskExposure(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
-    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4))
+    secShortName = Column(String(20))
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -445,13 +445,14 @@ class RiskExposure(Base):
 class RiskMaster(Base):
     __tablename__ = 'risk_master'
 
-    factor = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
-    source = Column(String(30, 'utf8_general_ci'), primary_key=True, nullable=False)
-    alias = Column(String(30, 'utf8_general_ci'), nullable=False)
-    type = Column(String(30, 'utf8_general_ci'))
+    factor = Column(String(30), primary_key=True, nullable=False)
+    source = Column(String(30), primary_key=True, nullable=False)
+    alias = Column(String(30), nullable=False)
+    type = Column(String(30))
     updateTime = Column(DateTime)
-    description = Column(Text(2147483647, 'utf8_general_ci'))
-    FactorID = Column(Integer, nullable=False)
+    description = Column(Text())
+    FactorID = Column(Integer, nullable=False, unique=True)
+    vendor = Column(String(30))
 
 
 class RiskReturn(Base):
@@ -500,6 +501,22 @@ class RiskReturn(Base):
     updateTime = Column(DateTime)
 
 
+class RiskStat(Base):
+    __tablename__ = 'risk_stats'
+    __table_args__ = (
+        Index('risk_stats_uindex', 'Date', 'type', 'portfolio', 'source', 'universe', 'benchmark', 'factor', unique=True),
+    )
+
+    Date = Column(DateTime, primary_key=True, nullable=False)
+    type = Column(String(20), primary_key=True, nullable=False)
+    portfolio = Column(String(50), primary_key=True, nullable=False)
+    source = Column(String(20), primary_key=True, nullable=False)
+    universe = Column(String(50), primary_key=True, nullable=False)
+    benchmark = Column(Integer, primary_key=True, nullable=False)
+    factor = Column(String(30), primary_key=True, nullable=False)
+    exposure = Column(Float(53))
+
+
 class SpecificReturn(Base):
     __tablename__ = 'specific_return'
     __table_args__ = (
@@ -508,8 +525,8 @@ class SpecificReturn(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
-    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4))
+    secShortName = Column(String(20))
     spret = Column(Float(53))
     updateTime = Column(DateTime)
 
@@ -522,8 +539,8 @@ class SpecificRiskDay(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
-    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4))
+    secShortName = Column(String(20))
     SRISK = Column(Float(53))
     updateTime = Column(DateTime)
 
@@ -536,8 +553,8 @@ class SpecificRiskLong(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
-    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4))
+    secShortName = Column(String(20))
     updateTime = Column(DateTime)
     SRISK = Column(Float(53))
 
@@ -550,8 +567,8 @@ class SpecificRiskShort(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4, 'utf8_general_ci'))
-    secShortName = Column(String(20, 'utf8_general_ci'))
+    exchangeCD = Column(String(4))
+    secShortName = Column(String(20))
     SRISK = Column(Float(53))
     updateTime = Column(DateTime)
 
@@ -563,10 +580,10 @@ class Strategy(Base):
     )
 
     Date = Column(DateTime, primary_key=True, nullable=False)
-    strategyName = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
-    factor = Column(String(50, 'utf8_general_ci'), primary_key=True, nullable=False)
+    strategyName = Column(String(20), primary_key=True, nullable=False)
+    factor = Column(String(50), primary_key=True, nullable=False)
     weight = Column(Float(53))
-    source = Column(String(20, 'utf8_general_ci'))
+    source = Column(String(20))
 
 
 class Tiny(Base):
@@ -591,7 +608,7 @@ class Universe(Base):
 
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
-    universe = Column(String(20, 'utf8_general_ci'), primary_key=True, nullable=False)
+    universe = Column(String(20), primary_key=True, nullable=False)
 
 
 class Uqer(Base):
@@ -1027,10 +1044,9 @@ class Uqer(Base):
     STOA = Column(Float(53))
     NLSIZE = Column(Float(53))
 
-
 if __name__ == '__main__':
 
     from sqlalchemy import create_engine
 
-    engine = create_engine('mysql+mysqldb://sa:We051253524522@rm-bp1psdz5615icqc0yo.mysql.rds.aliyuncs.com/test?charset=utf8')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
