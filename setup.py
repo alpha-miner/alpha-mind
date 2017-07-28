@@ -43,8 +43,9 @@ else:
                                 "./libs/include/pfopt",
                                 "./libs/include/eigen",
                                 "./libs/include/alglib"],
-                  libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils', 'IpOptFSS', 'Ipopt-vc8'],
-                  library_dirs=['./libs/lib/windows']),
+                  libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils', 'libipopt', 'libcoinhsl', 'libcoinblas', 'libcoinlapack', 'libcoinmetis'],
+                  library_dirs=['./libs/lib/windows'],
+                  extra_compile_args=['/MT']),
     ]
 
 setup(
