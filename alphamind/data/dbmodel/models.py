@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, text
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, text, JSON
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -232,6 +232,19 @@ class Performance2(Base):
     er = Column(Float(53), nullable=False)
     turn_over = Column(Float(53))
     ic = Column(Float(53))
+
+
+class Position(Base):
+    __tablename__ = 'positions'
+
+    source = Column(String(50), primary_key=True, nullable=False, index=True)
+    universe = Column(String(50), primary_key=True, nullable=False, index=True)
+    benchmark = Column(BigInteger, primary_key=True, nullable=False, index=True)
+    Date = Column(DateTime, primary_key=True, nullable=False, index=True)
+    portfolio = Column(String(50), primary_key=True, nullable=False, index=True)
+    type = Column(String(50), primary_key=True, nullable=False, index=True)
+    weight = Column(JSON)
+
 
 
 class RiskCovDay(Base):
@@ -1048,5 +1061,5 @@ if __name__ == '__main__':
 
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:we083826@127.0.0.1/alpha')
     Base.metadata.create_all(engine)
