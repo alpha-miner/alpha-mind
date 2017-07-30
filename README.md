@@ -47,9 +47,9 @@ python setup.py install
 
 为了尽可能的保证多因子研究工具的适用性，几乎所有的函数功能都不依赖一个具体的外部数据源。但是为了整个体系的完整性，我们在工具包中也提供了一个数据源的参考实现。这个数据源的参考实现来自于``通联数据``提供的股票因子数据和风险模型数据等，具体细节可以参考：[优矿](https://uqer.io)。
 
-该数据源使用RMDBS，供参考的数据库可以是，例如：MySQL或者SQL server。在工具包中我们已经提供了命令行工具，帮助用户一键配置好数据库。步骤如下：
+该数据源使用RMDBS，供参考的数据库可以是，例如：Postgresql或者MySQL。在工具包中我们已经提供了命令行工具，帮助用户一键配置好数据库。步骤如下：
 
-下面的步骤以Ubuntun上MySQL为例子，Windows服务器以及SQL server等其他RMDBS的配置类似。
+下面的步骤以Ubuntun上Postgresql为例子，Windows服务器以及SQL server等其他RMDBS的配置类似。
 
 * 安装数据库软件
 
@@ -59,14 +59,14 @@ python setup.py install
 
 * 新建数据库
 
-  在安装完成的数据库中新建``Database``，例如名字：``multi_factor``。**注意这个数据需要使用``utf8``作为编码**。
+  在安装完成的数据库中新建``Database``，例如名字：``alpha``。**注意这个数据需要使用``utf8``作为编码**。
 
 * 一键配置数据库
 
   在命令行中运行：
 
   ```bash
-  alphadmind initdb --url mysql+mysqldb://user:pwd@host/multi_factor?charset=utf8
+  alphadmind initdb --url postgresql+psycopg2://user:pwd@host/alpha
   ```
 
   其中：
@@ -78,8 +78,8 @@ python setup.py install
   如果成功，会有类似的输出：
 
   ```
-  2017-06-29 14:48:36,678 - ALPHA_MIND - INFO - DB: mysql+mysqldb://user:pwd@host/multi_factor?charset=utf8
-  2017-06-29 14:48:37,515 - ALPHA_MIND - INFO - DB initialization finished.
+  2017-06-29 14:48:36,678 - ALPHA_MIND - INFO - DB: postgresql+psycopg2://user:pwd@host/alpha
+  2017-06-29 14:48:37,515 - ALPHA_MIND - INFO - DB: initialization finished.
   ```
 
 * Windows
@@ -87,7 +87,7 @@ python setup.py install
   对于Windows使用者，命令行工具alphamind并不能直接使用，这个时候可以使用变通的办法，进入源码alphamind/bin目录下：
 
   ```bash
-  python alphadmind initdb --url mysql+mysqldb://user:pwd@host/multi_factor?charset=utf8
+  python alphadmind initdb --url postgresql+psycopg2://user:pwd@host/alpha
   ```
   
   可以达到一样的效果。
@@ -100,4 +100,6 @@ python setup.py install
   _ = uqer.Client(token='')
   engine = sqlalchemy.create_engine('')
   ```
+
+  其中token需要填入有效的通联数据认证信息；engine需要填入上面指定的数据库地址。
 
