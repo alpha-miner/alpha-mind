@@ -32,7 +32,8 @@ if platform.system() != "Windows":
                                 "./libs/include/eigen",
                                 "./libs/include/alglib"],
                   libraries=['pfopt'],
-                  library_dirs=['./libs/lib/linux']),
+                  library_dirs=['./libs/lib/linux'],
+                  extra_compile_args=['-std=c++11']),
         ]
 else:
     extensions = [

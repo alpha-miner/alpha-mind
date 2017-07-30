@@ -14,15 +14,16 @@ using Ipopt::IpoptCalculatedQuantities;
 
 namespace pfopt {
 
-	class PFOPT_CLASS MeanVariance : public TNLP {
+	class MeanVariance : public TNLP {
 
     public:
-        MeanVariance(const std::vector<double> &expectReturn,
-                     const std::vector<double> &varMatrix,
+        MeanVariance(int numAssets,
+                     double* expectReturn,
+                     double* varMatrix,
                      double riskAversion=1.);
 
-        bool setBoundedConstraint(const std::vector<double>& lb, const std::vector<double>& ub);
-        bool setLinearConstrains(const std::vector<double>& consMatrix, const std::vector<double>& clb, const std::vector<double>& cub);
+        bool setBoundedConstraint(const double* lb, const double* ub);
+        bool setLinearConstrains(int numCons, const double* consMatrix, const double* clb, const double* cub);
 
         virtual bool get_nlp_info(Index &n, Index &m, Index &nnz_jac_g,
                                   Index &nnz_h_lag, IndexStyleEnum &index_style);
@@ -58,22 +59,20 @@ namespace pfopt {
     private:
         VectorXd expectReturn_;
         MatrixXd varMatrix_;
-        int numOfAssets_;
+        const int numOfAssets_;
         VectorXd xReal_;
-        double riskAversion_;
+        const double riskAversion_;
 
-        std::vector<double> lb_;
-        std::vector<double> ub_;
+        const double* lb_;
+        const double* ub_;
         VectorXd grad_f_;
         double feval_;
         std::vector<double> x_;
         std::vector<Index> iRow_;
         std::vector<Index> jCol_;
         std::vector<double> g_grad_values_;
-
-        std::vector<double> consMatrix_;
-        std::vector<double> clb_;
-        std::vector<double> cub_;
+        const double* clb_;
+        const double* cub_;
         Index m_;
     };
 }

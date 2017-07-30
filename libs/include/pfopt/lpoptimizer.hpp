@@ -7,12 +7,14 @@
 
 namespace pfopt {
 
-    class PFOPT_CLASS LpOptimizer {
+    class LpOptimizer {
     public:
-        LpOptimizer(const std::vector<double>& constraintsMatraix,
-            const std::vector<double>& lowerBound,
-            const std::vector<double>& upperBound,
-            const std::vector<double>& objective);
+        LpOptimizer(int numVariables,
+                    int numCons,
+                    double* constraintMatrix,
+                    double* lowerBound,
+                    double* upperBound,
+                    double* objective);
 
         std::vector<double> xValue() const;
         double feval() const;
@@ -20,7 +22,7 @@ namespace pfopt {
 
     private:
         ClpSimplex model_;
-        int numberOfProb_;
+        size_t numberOfProb_;
     };
 }
 

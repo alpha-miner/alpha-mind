@@ -5,19 +5,23 @@
 #include <coin/IpIpoptApplication.hpp>
 
 namespace pfopt {
-    class PFOPT_CLASS MVOptimizer {
+    class MVOptimizer {
     public:
-        MVOptimizer(const std::vector<double> &expectReturn,
-            const std::vector<double> &varMatrix,
-            const std::vector<double> &lbound,
-            const std::vector<double> &ubound,
-            const std::vector<double> &consMatrix = std::vector<double>(),
-            const std::vector<double> &clb = std::vector<double>(),
-            const std::vector<double> &cub = std::vector<double>(),
-            double riskAversion = 1.);
+        MVOptimizer(int numAssets,
+                    double *expectReturn,
+                    double *varMatrix,
+                    double *lbound,
+                    double *ubound,
+                    int numConstraints,
+                    double *consMatrix = nullptr,
+                    double *clb = nullptr,
+                    double *cub = nullptr,
+                    double riskAversion = 1.);
 
         std::vector<double> xValue() const { return mvImpl_->xValue(); }
+
         double feval() const { return mvImpl_->feval(); }
+
         int status() const { return status_; }
 
     private:
