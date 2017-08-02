@@ -139,14 +139,17 @@ class SqlEngine(object):
             query = select([FactorMaster.factor, FactorMaster.source]).where(FactorMaster.factor.in_(factors))
             results = self.engine.execute(query).fetchall()
             all_factors = {r[0].strip(): r[1].strip() for r in results}
-            return ','.join(all_factors[k] + '.' + k for k in all_factors)
+            if all_factors:
+                return ','.join(all_factors[k] + '.' + k for k in all_factors) + ','
+            else:
+                return ''
 
         factor_str = mapping_factors(factors)
 
         total_risk_factors = list(set(risk_styles + industry_styles).difference(factors))
 
         if total_risk_factors:
-            risk_str = ',' + ','.join('risk_exposure.' + f for f in total_risk_factors)
+            risk_str = ','.join('risk_exposure.' + f for f in total_risk_factors)
         else:
             risk_str = ''
 
