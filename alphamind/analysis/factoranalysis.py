@@ -140,7 +140,7 @@ class FDataPack(object):
             return factor_processing(self.raw_factors,
                                      pre_process,
                                      pos_process,
-                                     do_neutralize)
+                                     do_neutralize=do_neutralize)
         else:
             return factor_processing(self.raw_factors,
                                      pre_process,
@@ -225,6 +225,9 @@ def factor_analysis(factors: pd.DataFrame,
         weights = build_portfolio(er,
                                   builder='rank',
                                   **kwargs) / kwargs['use_rank']
+    elif method == 'ls' or method == 'long_short':
+        weights = build_portfolio(er,
+                                  builder=method)
 
     if detail_analysis:
         analysis = data_pack.settle(weights, d1returns)
