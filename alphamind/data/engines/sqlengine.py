@@ -64,6 +64,8 @@ industry_styles = [
     'Conglomerates'
 ]
 
+macro_styles = ['COUNTRY']
+
 
 def append_industry_info(df):
     industry_arr = np.array(industry_styles)
@@ -146,7 +148,7 @@ class SqlEngine(object):
 
         factor_str = mapping_factors(factors)
 
-        total_risk_factors = list(set(risk_styles + industry_styles).difference(factors))
+        total_risk_factors = list(set(risk_styles + industry_styles + macro_styles).difference(factors))
 
         if total_risk_factors:
             risk_str = ','.join('risk_exposure.' + f for f in total_risk_factors)
@@ -205,15 +207,15 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
-    db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha?charset=utf8'
+    db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha?charset=cp936'
 
     from alphamind.data.dbmodel.models import Uqer
 
     import datetime as dt
 
-    universe = Universe('zz500', ['ashare'], filter_cond=(Uqer.BLEV >= 0.) & (Uqer.BLEV <= 0.1), include_universe=['hs300'])
+    universe = Universe('custom', ['ashare'])
     engine = SqlEngine(db_url)
-    ref_date = '2017-07-04'
+    ref_date = '2017-07-21'
 
     codes = engine.fetch_codes(ref_date, universe)
 
