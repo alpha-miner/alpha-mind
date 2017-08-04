@@ -228,6 +228,9 @@ def factor_analysis(factors: pd.DataFrame,
     elif method == 'ls' or method == 'long_short':
         weights = build_portfolio(er,
                                   builder=method)
+    elif method == 'mv' or method == 'mean_variance':
+        weights = build_portfolio(er,
+                                  builder=method)
 
     if detail_analysis:
         analysis = data_pack.settle(weights, d1returns)

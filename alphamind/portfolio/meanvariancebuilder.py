@@ -8,10 +8,7 @@ Created on 2017-6-27
 import numpy as np
 from typing import Union
 from typing import Tuple
-from cvxopt import matrix
-from cvxopt import solvers
-
-solvers.options['show_progress'] = False
+from alphamind.cython.optimizers import QPOptimizer
 
 
 def mean_variance_builder(er: np.ndarray,
@@ -25,39 +22,27 @@ def mean_variance_builder(er: np.ndarray,
 
     lbound = lbound - bm
     ubound = ubound - bm
-    transposed_risk_exposure = risk_exposure.T
-    risk_target = risk_target - transposed_risk_exposure @ bm
 
-    # set up problem for net position
-    n = len(er)
+    bm_risk = risk_exposure.T @ bm
 
-    P = lam * matrix(cov)
-    q = -matrix(er)
+    clbound = risk_target[0] - bm_risk
+    cubound = risk_target[1] - bm_risk
 
-    G1 = np.zeros((2*n, n))
-    h1 = np.zeros(2*n)
+    optimizer = QPOptimizer(er,
+                            cov,
+                            lbound,
+                            ubound,
+                            risk_exposure.T,
+                            clbound,
+                            cubound,
+                            lam)
 
-    for i in range(n):
-        G1[i, i] = 1.
-        h1[i] = ubound[i]
-        G1[i+n, i] = -1.
-        h1[i+n] = -lbound[i]
+    if optimizer.status() == 0:
+        status = 'optimal'
+    else:
+        status = optimizer.status()
 
-    m = len(transposed_risk_exposure)
-
-    G2 = np.concatenate([transposed_risk_exposure, -transposed_risk_exposure])
-    h2 = np.zeros(2*m)
-
-    for i in range(m):
-        h2[i] = risk_target[1][i]
-        h2[i+m] = -risk_target[0][i]
-
-    G = matrix(np.concatenate([G1, G2]))
-    h = matrix(np.concatenate([h1, h2]))
-
-    sol = solvers.qp(P, q, G, h)
-
-    return sol['status'], sol['dual objective'], np.array(sol['x']).flatten() + bm
+    return status, optimizer.feval(), optimizer.x_value() + bm
 
 
 
