@@ -159,12 +159,12 @@ class SqlEngine(object):
         codes_str = ','.join(str(c) for c in codes)
 
         sql = "select uqer.Code, {factors} {risks}, market.isOpen, {risk_table}.SRISK" \
-              " from (uqer INNER JOIN" \
+              " from (uqer LEFT JOIN" \
               " risk_exposure on uqer.Date = risk_exposure.Date and uqer.Code = risk_exposure.Code)" \
-              " INNER JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
+              " LEFT JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
               " LEFT JOIN tiny on uqer.Date = tiny.Date and uqer.Code = tiny.Code" \
               " LEFT JOIN legacy_factor on uqer.Date = legacy_factor.Date and uqer.Code = legacy_factor.Code" \
-              " INNER JOIN {risk_table} on uqer.Date = {risk_table}.Date and uqer.Code = {risk_table}.Code" \
+              " LEFT JOIN {risk_table} on uqer.Date = {risk_table}.Date and uqer.Code = {risk_table}.Code" \
               " where uqer.Date = '{ref_date}' and uqer.Code in ({codes})".format(factors=factor_str,
                                                                                   ref_date=ref_date,
                                                                                   codes=codes_str,
