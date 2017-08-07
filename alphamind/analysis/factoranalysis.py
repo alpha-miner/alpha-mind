@@ -185,9 +185,7 @@ def factor_analysis(factors: pd.DataFrame,
 
     er = data_pack.factor_processing(pre_process,  post_process, do_neutralize) @ factor_weights
 
-    if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
-        # using linear programming portfolio builder
-        benchmark = benchmark.flatten()
+    def create_constraints(benchmark, **kwargs):
 
         if 'lbound' in kwargs:
             lbound = kwargs['lbound']
@@ -212,25 +210,37 @@ def factor_analysis(factors: pd.DataFrame,
             risk_lbound = data_pack.benchmark_constraints()
             risk_ubound = data_pack.benchmark_constraints()
 
-        weights = build_portfolio(er,
-                                  builder='linear',
-                                  risk_constraints=cons_exp,
-                                  lbound=lbound,
-                                  ubound=ubound,
-                                  risk_target=(risk_lbound, risk_ubound),
-                                  **kwargs)
+        return lbound, ubound, cons_exp, risk_lbound, risk_ubound
+
+    if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
+        lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
+        status, _, weights = linear_build(er,
+                                          risk_constraints=cons_exp,
+                                          lbound=lbound,
+                                          ubound=ubound,
+                                          risk_target=(risk_lbound, risk_ubound))
+        if status != 'optimal':
+            raise ValueError('linear programming optimizer in status: {0}'.format(status))
 
     elif method == 'rank':
-        # using rank builder
-        weights = build_portfolio(er,
-                                  builder='rank',
-                                  **kwargs) / kwargs['use_rank']
+        weights = rank_build(er, use_rank=kwargs['use_rank']).flatten()
     elif method == 'ls' or method == 'long_short':
-        weights = build_portfolio(er,
-                                  builder=method)
+        weights = long_short_build(er).flatten()
     elif method == 'mv' or method == 'mean_variance':
-        weights = build_portfolio(er,
-                                  builder=method)
+        lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
+        cov = kwargs['cov']
+
+        status, _, weights = mean_variance_builder(er,
+                                                   cov=cov,
+                                                   bm=benchmark,
+                                                   lbound=lbound,
+                                                   ubound=ubound,
+                                                   risk_exposure=cons_exp,
+                                                   risk_target=(risk_lbound, risk_ubound))
+        if status != 'optimal':
+            raise ValueError('mean variance optimizer in status: {0}'.format(status))
+    else:
+        raise ValueError("Unknown building tpe ({0})".format(method))
 
     if detail_analysis:
         analysis = data_pack.settle(weights, d1returns)
@@ -241,6 +251,3 @@ def factor_analysis(factors: pd.DataFrame,
                          'er': er},
                         index=factors.index),\
            analysis
-
-
-
