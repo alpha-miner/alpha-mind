@@ -43,7 +43,7 @@ class TestNeutralize(unittest.TestCase):
     def test_neutralize_explain_output(self):
         y = self.y[:, 0].flatten()
 
-        calc_res, other_stats = neutralize(self.x, y, output_explained=True)
+        calc_res, other_stats = neutralize(self.x, y, detail=True)
 
         model = LinearRegression(fit_intercept=False)
         model.fit(self.x, y)
@@ -54,7 +54,7 @@ class TestNeutralize(unittest.TestCase):
         np.testing.assert_array_almost_equal(calc_res, exp_res.reshape(-1, 1))
         np.testing.assert_array_almost_equal(other_stats['explained'][:, :, 0], exp_explained)
 
-        calc_res, other_stats = neutralize(self.x, self.y, output_explained=True)
+        calc_res, other_stats = neutralize(self.x, self.y, detail=True)
 
         model = LinearRegression(fit_intercept=False)
         model.fit(self.x, self.y)
@@ -69,7 +69,7 @@ class TestNeutralize(unittest.TestCase):
     def test_neutralize_explain_output_with_group(self):
         y = self.y[:, 0].flatten()
 
-        calc_res, other_stats = neutralize(self.x, y, self.groups, output_explained=True)
+        calc_res, other_stats = neutralize(self.x, y, self.groups, detail=True)
 
         model = LinearRegression(fit_intercept=False)
         for i in range(30):
@@ -81,7 +81,7 @@ class TestNeutralize(unittest.TestCase):
             np.testing.assert_array_almost_equal(calc_res[self.groups == i], exp_res.reshape(-1, 1))
             np.testing.assert_array_almost_equal(other_stats['explained'][self.groups == i, :, 0], exp_explained)
 
-        calc_res, other_stats = neutralize(self.x, self.y, self.groups, output_explained=True)
+        calc_res, other_stats = neutralize(self.x, self.y, self.groups, detail=True)
 
         model = LinearRegression(fit_intercept=False)
         for i in range(30):

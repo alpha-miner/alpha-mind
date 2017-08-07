@@ -22,8 +22,7 @@ def risk_analysis(net_weight_series: pd.Series,
     idiosyncratic, other_stats = neutralize(risk_table.values,
                                             next_bar_return_series.values,
                                             group_idx,
-                                            output_exposure=True,
-                                            output_explained=True)
+                                            detail=True)
 
     systematic = other_stats['explained']
     exposure = other_stats['exposure']

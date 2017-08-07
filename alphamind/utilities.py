@@ -67,6 +67,8 @@ def simple_sum(x, axis=0):
         for i in range(length):
             for j in range(width):
                 res[i] += x[i, j]
+    else:
+        raise ValueError("axis value is not supported")
     return res
 
 
@@ -86,6 +88,8 @@ def simple_abssum(x, axis=0):
         for i in range(length):
             for j in range(width):
                 res[i] += abs(x[i, j])
+    else:
+        raise ValueError("axis value is not supported")
     return res
 
 
@@ -106,6 +110,8 @@ def simple_mean(x, axis=0):
             for j in range(width):
                 res[i] += x[i, j]
             res[i] /= width
+    else:
+        raise ValueError("axis value is not supported")
     return res
 
 
@@ -129,6 +135,8 @@ def simple_std(x, axis=0, ddof=1):
                 res[i] += x[i, j] * x[i, j]
                 sum_mat[i] += x[i, j]
             res[i] = math.sqrt((res[i] - sum_mat[i] * sum_mat[i] / width) / (width - ddof))
+    else:
+        raise ValueError("axis value is not supported")
     return res
 
 
