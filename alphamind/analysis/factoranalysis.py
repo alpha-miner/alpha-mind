@@ -230,13 +230,19 @@ def factor_analysis(factors: pd.DataFrame,
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
         cov = kwargs['cov']
 
+        if 'lambda' in kwargs:
+            lam = kwargs['lambda']
+        else:
+            lam = 1.
+
         status, _, weights = mean_variance_builder(er,
                                                    cov=cov,
                                                    bm=benchmark,
                                                    lbound=lbound,
                                                    ubound=ubound,
                                                    risk_exposure=cons_exp,
-                                                   risk_target=(risk_lbound, risk_ubound))
+                                                   risk_target=(risk_lbound, risk_ubound),
+                                                   lam=lam)
         if status != 'optimal':
             raise ValueError('mean variance optimizer in status: {0}'.format(status))
     else:
