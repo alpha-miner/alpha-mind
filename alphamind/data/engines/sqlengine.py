@@ -209,33 +209,18 @@ class SqlEngine(object):
 if __name__ == '__main__':
     db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha?charset=cp936'
 
-    from alphamind.data.dbmodel.models import Uqer
-
     import datetime as dt
 
-    universe = Universe('custom', ['ashare'])
+    universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
-    ref_date = '2017-07-21'
+    ref_date = '2017-01-17'
 
     codes = engine.fetch_codes(ref_date, universe)
+    data = engine.fetch_data(ref_date, ['EPS'], codes, 905)
+    d1ret = engine.fetch_dx_return(ref_date, codes, horizon=0)
 
-    start = dt.datetime.now()
-    for i in range(100):
-        codes = engine.fetch_codes(ref_date, universe)
-    print(dt.datetime.now() - start)
+    missing_codes = [c for c in data['factor'].Code if c not in set(d1ret.Code)]
 
-    print(codes)
-    print(len(codes))
-
-    universe = Universe('zz500', ['zz500'])
-    engine = SqlEngine(db_url)
-    ref_date = '2017-07-04'
-
-    start = dt.datetime.now()
-    for i in range(100):
-        codes = engine.fetch_codes(ref_date, universe)
-    print(dt.datetime.now() - start)
-
-    print(codes)
-    print(len(codes))
-
+    print(len(data['factor']))
+    print(len(d1ret))
+    print(missing_codes)

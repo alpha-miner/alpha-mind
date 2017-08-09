@@ -5,69 +5,80 @@ Created on 2017-7-10
 @author: cheng.li
 """
 
-import datetime as dt
+import numpy as np
 import pandas as pd
 from alphamind.analysis.factoranalysis import factor_analysis
+from alphamind.data.engines.sqlengine import risk_styles
+from alphamind.data.engines.sqlengine import industry_styles
+from alphamind.portfolio.constraints import Constraints
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
-from alphamind.data.engines.sqlengine import industry_styles
 from PyFin.api import bizDatesList
-from PyFin.api import makeSchedule
 
 engine = SqlEngine('mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha')
 universe = Universe('custom', ['zz500'])
+dates = bizDatesList('china.sse', '2017-01-01', '2017-08-05')
+factors = ['EPS', 'FEARNG', 'VAL', 'NIAP']
+f_weights = np.array([1., 1., 1., 1.])
 
-used_risk_styles = ['SIZE']
+neutralize_risk = ['SIZE'] + industry_styles
+constraint_risk = []
 
-total_risks = used_risk_styles + industry_styles
-build_type = 'risk_neutral'
+rets = []
 
-
-def calculate_one_day(ref_date, factors, factor_weights, horizon_end=None):
-    print(ref_date)
-
+for date in dates:
+    print(date)
+    ref_date = date.strftime('%Y-%m-%d')
     codes = engine.fetch_codes(ref_date, universe)
-    total_data = engine.fetch_data(ref_date, factors, codes, 905)
+    data = engine.fetch_data(ref_date, factors, codes, 905, risk_model='short')
+    returns = engine.fetch_dx_return(ref_date, codes, 0)
 
-    factor_data = total_data['factor']
-    factor_df = factor_data[['Code', 'industry', 'weight', 'isOpen'] + total_risks + factors].dropna()
+    total_data = pd.merge(data['factor'], returns, on=['Code']).dropna()
+    risk_cov = data['risk_cov']
 
-    dx_return = engine.fetch_dx_return(ref_date, codes, expiry_date=horizon_end)
-    factor_df = pd.merge(factor_df, dx_return, on=['Code'])
+    total_risks = risk_cov.Factor
+    risk_cov = risk_cov[total_risks]
+    risk_exp = total_data[total_risks]
+    stocks_cov = ((risk_exp.values @ risk_cov.values @ risk_exp.values.T) + np.diag(total_data.SRISK ** 2)) / 10000.
 
-    weights, _ = factor_analysis(factor_df[factors],
-                                 factor_weights,
-                                 factor_df.industry.values,
-                                 None,
-                                 detail_analysis=False,
-                                 benchmark=factor_df.weight.values,
-                                 risk_exp=factor_df[total_risks].values,
-                                 is_tradable=factor_df.isOpen.values.astype(bool),
-                                 method=build_type)
+    f_data = total_data[factors]
 
-    return ref_date, (weights.weight - factor_df.weight).dot(factor_df.dx)
+    industry = total_data.industry_code.values
+    dx_return = total_data.dx.values
+    benchmark = total_data.weight.values
+    risk_exp = total_data[neutralize_risk].values
+    constraint_exp = total_data[constraint_risk].values
+    risk_exp_expand = np.concatenate((constraint_exp, np.ones((len(risk_exp), 1))), axis=1).astype(float)
 
+    risk_names = constraint_risk + ['total']
+    risk_target = risk_exp_expand.T @ benchmark
 
-if __name__ == '__main__':
+    lbound = 0.
+    ubound = 0.05 + benchmark
 
-    from matplotlib import pyplot as plt
+    constraint = Constraints(risk_exp_expand, risk_names)
+    for i, name in enumerate(risk_names):
+        constraint.set_constraints(name, lower_bound=risk_target[i], upper_bound=risk_target[i])
 
-    factors = ['BDTO', 'CFinc1', 'DivP', 'EPS', 'RVOL', 'DROEAfterNonRecurring']
-    factor_weights = [0.10, 0.30, 0.15, 0.18, 0.11, 0.35]
-    biz_dates = makeSchedule('2015-01-01', '2017-07-07', '1w', 'china.sse')
+    try:
+        pos, analysis = factor_analysis(f_data,
+                                        f_weights,
+                                        industry,
+                                        dx_return,
+                                        benchmark=benchmark,
+                                        risk_exp=risk_exp,
+                                        is_tradable=total_data.isOpen.values.astype(bool),
+                                        method='mv',
+                                        constraints=constraint,
+                                        cov=stocks_cov,
+                                        use_rank=100,
+                                        lam=100.,
+                                        lbound=lbound,
+                                        ubound=ubound)
+    except:
+        rets.append(0.)
+        print("{0} is error!".format(date))
+    else:
+        rets.append(analysis.er[-1])
 
-    ers = []
-    dates = []
-
-    for i, ref_date in enumerate(biz_dates[:-1]):
-        ref_date = ref_date.strftime("%Y-%m-%d")
-        try:
-            ref_date, er = calculate_one_day(ref_date, factors, factor_weights, horizon_end=biz_dates[i+1])
-            dates.append(ref_date)
-            ers.append(er)
-        except Exception as e:
-            print(str(e) + ": {0}".format(ref_date))
-
-    res = pd.Series(ers, index=dates)
-    res.cumsum().plot()
-    plt.show()
+ret_series = pd.Series(rets, dates)

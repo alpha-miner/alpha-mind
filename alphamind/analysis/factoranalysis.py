@@ -230,8 +230,8 @@ def factor_analysis(factors: pd.DataFrame,
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
         cov = kwargs['cov']
 
-        if 'lambda' in kwargs:
-            lam = kwargs['lambda']
+        if 'lam' in kwargs:
+            lam = kwargs['lam']
         else:
             lam = 1.
 
