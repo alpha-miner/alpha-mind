@@ -24,6 +24,18 @@ class DailyReturn(Base):
     d1 = Column(Float(53))
 
 
+class Experimental(Base):
+    __tablename__ = 'experimental'
+    __table_args__ = (
+        Index('experimental_Date_Code_uindex', 'Date', 'Code', unique=True),
+    )
+
+    Date = Column(DateTime, primary_key=True, nullable=False)
+    Code = Column(Integer, primary_key=True, nullable=False)
+    CHV = Column(Float(53))
+    VAL = Column(Float(53))
+
+
 class FactorMaster(Base):
     __tablename__ = 'factor_master'
     __table_args__ = (
@@ -1061,5 +1073,5 @@ if __name__ == '__main__':
 
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@127.0.0.1/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
