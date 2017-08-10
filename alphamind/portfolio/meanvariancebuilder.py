@@ -37,7 +37,7 @@ def mean_variance_builder(er: np.ndarray,
                             cubound,
                             lam)
 
-    if optimizer.status() == 0:
+    if optimizer.status() == 0 or optimizer.status() == 1:
         status = 'optimal'
     else:
         status = optimizer.status()
