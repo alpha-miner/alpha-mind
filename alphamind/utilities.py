@@ -278,7 +278,3 @@ def aggregate(groups, x, func, ddof=1):
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
     return value_data
-
-
-if __name__ == '__main__':
-    pass

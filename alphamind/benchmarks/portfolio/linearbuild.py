@@ -38,33 +38,32 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
                                     ubound,
                                     risk_exp,
                                     risk_target=(risk_lbound,
-                                                 risk_ubound),
-                                    solver='ECOS')
+                                                 risk_ubound))
     impl_model_time = dt.datetime.now() - start
     print('{0:20s}: {1}'.format('Implemented model (ECOS)', impl_model_time))
 
     c = - er
     bounds = [(lbound, ubound) for _ in range(n_samples)]
-    A_eq = np.ones((1, n_samples))
-    A_eq = np.vstack((A_eq, risk_exp.T))
+    a_eq = np.ones((1, n_samples))
+    a_eq = np.vstack((a_eq, risk_exp.T))
     b_eq = np.hstack((np.array([1.]), risk_exp.T @ bm))
     start = dt.datetime.now()
     for _ in range(n_loop):
-        res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, options={'maxiter': 10000})
+        res = linprog(c, A_eq=a_eq, b_eq=b_eq, bounds=bounds, options={'maxiter': 10000})
     benchmark_model_time = dt.datetime.now() - start
     print('{0:20s}: {1}'.format('Benchmark model (scipy)', benchmark_model_time))
     np.testing.assert_array_almost_equal(x, res['x'])
 
     c = matrix(-er)
-    A = matrix(A_eq)
+    aneq = matrix(a_eq)
     b = matrix(b_eq)
-    G = matrix(np.vstack((np.diag(np.ones(n_samples)), -np.diag(np.ones(n_samples)))))
+    g = matrix(np.vstack((np.diag(np.ones(n_samples)), -np.diag(np.ones(n_samples)))))
     h = matrix(np.hstack((ubound * np.ones(n_samples), -lbound * np.ones(n_samples))))
 
-    solvers.lp(c, G, h, solver='glpk')
+    solvers.lp(c, g, h, solver='glpk')
     start = dt.datetime.now()
     for _ in range(n_loop):
-        res2 = solvers.lp(c, G, h, A, b, solver='glpk')
+        res2 = solvers.lp(c, g, h, aneq, b, solver='glpk')
     benchmark_model_time = dt.datetime.now() - start
     print('{0:20s}: {1}'.format('Benchmark model (glpk)', benchmark_model_time))
     np.testing.assert_array_almost_equal(x, np.array(res2['x']).flatten())

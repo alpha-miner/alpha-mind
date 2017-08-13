@@ -12,6 +12,7 @@ from alphamind.portfolio.constraints import Constraints
 
 class TestConstraints(unittest.TestCase):
 
+    @staticmethod
     def test_constraints(self):
         cons = Constraints()
 

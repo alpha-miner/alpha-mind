@@ -80,11 +80,12 @@ class SqlEngine(object):
     def __init__(self,
                  db_url: str):
         self.engine = sa.create_engine(db_url)
+        self.session = None
         self.create_session()
 
     def create_session(self):
-        Session = orm.sessionmaker(bind=self.engine)
-        self.session = Session()
+        db_session = orm.sessionmaker(bind=self.engine)
+        self.session = db_session()
 
     def fetch_factors_meta(self) -> pd.DataFrame:
         query = self.session.query(FactorMaster)
@@ -207,9 +208,7 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
-    db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha?charset=cp936'
-
-    import datetime as dt
+    db_url = 'mssql+pymssql://user:pwd@host/alpha?charset=cp936'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
