@@ -14,7 +14,7 @@ from alphamind.analysis.riskanalysis import risk_analysis
 class TestRiskAnalysis(unittest.TestCase):
 
     @staticmethod
-    def test_risk_analysis(self):
+    def test_risk_analysis():
         n_samples = 36000
         n_dates = 20
         n_risk_factors = 35

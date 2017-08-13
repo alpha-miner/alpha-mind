@@ -13,7 +13,7 @@ from alphamind.portfolio.constraints import Constraints
 class TestConstraints(unittest.TestCase):
 
     @staticmethod
-    def test_constraints(self):
+    def test_constraints():
         cons = Constraints()
 
         test_exp = np.array([[1., 2.],
