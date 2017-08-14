@@ -200,7 +200,7 @@ def factor_analysis(factors: pd.DataFrame,
             ubound = 0.01 + benchmark
 
         if is_tradable is not None:
-            ubound[~is_tradable] = 0.
+            ubound[~is_tradable] = np.minimum(lbound, ubound)[~is_tradable]
 
         if constraints:
             risk_lbound, risk_ubound = constraints.risk_targets()
