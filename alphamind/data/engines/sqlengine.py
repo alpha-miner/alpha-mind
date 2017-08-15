@@ -12,14 +12,24 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_
-from sqlalchemy import MetaData
+from sqlalchemy import select, and_, outerjoin
 from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import Strategy
 from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
+from alphamind.data.dbmodel.models import Uqer
+from alphamind.data.dbmodel.models import Tiny
+from alphamind.data.dbmodel.models import LegacyFactor
+from alphamind.data.dbmodel.models import SpecificRiskDay
+from alphamind.data.dbmodel.models import SpecificRiskShort
+from alphamind.data.dbmodel.models import SpecificRiskLong
+from alphamind.data.dbmodel.models import RiskCovDay
+from alphamind.data.dbmodel.models import RiskCovShort
+from alphamind.data.dbmodel.models import RiskCovLong
+from alphamind.data.dbmodel.models import RiskExposure
+from alphamind.data.dbmodel.models import Market
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -66,6 +76,10 @@ industry_styles = [
 
 macro_styles = ['COUNTRY']
 
+total_risk_factors = risk_styles + industry_styles + macro_styles
+
+factor_tables = [Uqer, Tiny, LegacyFactor]
+
 
 def append_industry_info(df):
     industry_arr = np.array(industry_styles)
@@ -74,6 +88,27 @@ def append_industry_info(df):
 
     df['industry'], df['industry_code'] = [industry_arr[row][0] for row in industry_dummies], \
                                           [industry_codes[row][0] for row in industry_dummies]
+
+
+def _map_risk_model_table(risk_model):
+    if risk_model == 'day':
+        return RiskCovDay, SpecificRiskDay
+    elif risk_model == 'short':
+        return RiskCovShort, SpecificRiskShort
+    elif risk_model == 'long':
+        return RiskCovLong, SpecificRiskLong
+    else:
+        raise ValueError("risk model name {0} is not recognized".format(risk_model))
+
+
+def _map_factors(factors):
+    factor_cols = []
+    for f in factors:
+        for t in factor_tables:
+            if f in t.__table__.columns:
+                factor_cols.append(t.__table__.columns[f])
+                break
+    return factor_cols
 
 
 class SqlEngine(object):
@@ -137,52 +172,28 @@ class SqlEngine(object):
                    benchmark: int = None,
                    risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
 
-        def mapping_factors(factors):
+        risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
 
-            query = select([FactorMaster.factor, FactorMaster.source]).where(FactorMaster.factor.in_(factors))
-            results = self.engine.execute(query).fetchall()
-            all_factors = {r[0].strip(): r[1].strip() for r in results}
-            if all_factors:
-                return ','.join(all_factors[k] + '.' + k for k in all_factors) + ','
-            else:
-                return ''
+        factor_cols = _map_factors(factors)
+        cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
+        risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors]
 
-        factor_str = mapping_factors(factors)
+        big_table = outerjoin(Uqer, RiskExposure, and_(RiskExposure.Date == Uqer.Date, RiskExposure.Code == Uqer.Code))
+        big_table = outerjoin(big_table, Market, and_(Market.Date == Uqer.Date, Market.Code == Uqer.Code))
+        big_table = outerjoin(big_table, Tiny, and_(Tiny.Date == Uqer.Date, Tiny.Code == Uqer.Code))
+        big_table = outerjoin(big_table, LegacyFactor, and_(LegacyFactor.Date == Uqer.Date, LegacyFactor.Code == Uqer.Code))
+        big_table = outerjoin(big_table, special_risk_table, and_(special_risk_table.Date == Uqer.Date, special_risk_table.Code == Uqer.Code))
 
-        total_risk_factors = list(set(risk_styles + industry_styles + macro_styles).difference(factors))
+        query = select([Uqer.Code, Market.isOpen, special_risk_table.SRISK] + factor_cols + risk_exposure_cols) \
+            .select_from(big_table) \
+            .where(and_(Uqer.Date == ref_date, Uqer.Code.in_(codes)))
 
-        if total_risk_factors:
-            risk_str = ','.join('risk_exposure.' + f for f in total_risk_factors)
-        else:
-            risk_str = ''
+        factor_data = pd.read_sql(query, self.engine)
 
-        special_risk_table = 'specific_risk_' + risk_model
-        codes_str = ','.join(str(c) for c in codes)
-
-        sql = "select uqer.Code, {factors} {risks}, market.isOpen, {risk_table}.SRISK" \
-              " from (uqer LEFT JOIN" \
-              " risk_exposure on uqer.Date = risk_exposure.Date and uqer.Code = risk_exposure.Code)" \
-              " LEFT JOIN market on uqer.Date = market.Date and uqer.Code = market.Code" \
-              " LEFT JOIN tiny on uqer.Date = tiny.Date and uqer.Code = tiny.Code" \
-              " LEFT JOIN legacy_factor on uqer.Date = legacy_factor.Date and uqer.Code = legacy_factor.Code" \
-              " LEFT JOIN {risk_table} on uqer.Date = {risk_table}.Date and uqer.Code = {risk_table}.Code" \
-              " where uqer.Date = '{ref_date}' and uqer.Code in ({codes})".format(factors=factor_str,
-                                                                                  ref_date=ref_date,
-                                                                                  codes=codes_str,
-                                                                                  risks=risk_str,
-                                                                                  risk_table=special_risk_table)
-
-        factor_data = pd.read_sql(sql, self.engine)
-
-        risk_cov_table = 'risk_cov_' + risk_model
-        meta = MetaData()
-        meta.reflect(self.engine)
-        risk_cov_table = meta.tables[risk_cov_table]
-
-        query = select([risk_cov_table.columns['FactorID'],
-                        risk_cov_table.columns['Factor']]
-                       + [risk_cov_table.columns[f] for f in total_risk_factors]).where(
-            risk_cov_table.columns['Date'] == ref_date
+        query = select([risk_cov_table.FactorID,
+                        risk_cov_table.Factor]
+                       + cov_risk_cols).where(
+            risk_cov_table.Date == ref_date
         )
         risk_cov_data = pd.read_sql(query, self.engine).sort_values('FactorID')
 
@@ -208,11 +219,11 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
-    db_url = 'mssql+pymssql://user:pwd@host/alpha?charset=cp936'
+    db_url = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
-    ref_date = '2017-01-17'
+    ref_date = '2017-08-10'
 
     codes = engine.fetch_codes(ref_date, universe)
     data = engine.fetch_data(ref_date, ['EPS'], codes, 905)
