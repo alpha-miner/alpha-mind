@@ -59,9 +59,6 @@ def factor_analysis(factors: pd.DataFrame,
                     do_neutralize=True,
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
 
-    if risk_exp is not None:
-        risk_exp = risk_exp[:, risk_exp.sum(axis=0) != 0]
-
     data_pack = FDataPack(raw_factors=factors.values,
                           groups=industry,
                           benchmark=benchmark,

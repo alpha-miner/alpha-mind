@@ -63,6 +63,10 @@ class FDataPack(object):
             self.benchmark = benchmark.flatten()
         else:
             self.benchmark = None
+
+        if risk_exp is not None:
+            risk_exp = risk_exp[:, risk_exp.sum(axis=0) != 0]
+
         self.risk_exp = risk_exp
         self.constraints = constraints
         self.risk_names = risk_names

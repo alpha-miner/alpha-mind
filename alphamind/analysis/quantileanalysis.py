@@ -40,7 +40,14 @@ def quantile_analysis(factors: pd.DataFrame,
                           risk_exp=risk_exp)
 
     er = data_pack.factor_processing(pre_process, post_process, do_neutralize) @ factor_weights
-    return q_anl_impl(er, n_bins, dx_return)
+    raw_return = q_anl_impl(er, n_bins, dx_return)
+
+    if benchmark is not None:
+        b_ret = np.dot(benchmark, dx_return)
+        b_total = benchmark.sum()
+        return raw_return * b_total - b_ret
+    else:
+        return raw_return
 
 
 def q_anl_impl(er: np.ndarray,

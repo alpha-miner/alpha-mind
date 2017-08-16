@@ -24,6 +24,8 @@ class TestQuantileAnalysis(unittest.TestCase):
         self.x = np.random.randn(n, 5)
         self.x_w = np.random.randn(n_f)
         self.r = np.random.randn(n)
+        self.b_w = np.random.randint(0, 10, n)
+        self.b_w = self.b_w / float(self.b_w.sum())
         self.risk_exp = np.random.randn(n, 3)
         self.n_bins = 10
 
@@ -70,6 +72,27 @@ class TestQuantileAnalysis(unittest.TestCase):
                                           [standardize],
                                           True).T
         expected = q_anl_impl(er, self.n_bins, self.r)
+        np.testing.assert_array_almost_equal(calculated, expected)
+
+    def test_quantile_analysis_with_benchmark(self):
+        f_df = pd.DataFrame(self.x)
+        calculated = quantile_analysis(f_df,
+                                       self.x_w,
+                                       self.r,
+                                       n_bins=self.n_bins,
+                                       do_neutralize=True,
+                                       benchmark=self.b_w,
+                                       risk_exp=self.risk_exp,
+                                       pre_process=[winsorize_normal, standardize],
+                                       post_process=[standardize])
+
+        er = self.x_w @ factor_processing(self.x,
+                                          [winsorize_normal, standardize],
+                                          self.risk_exp,
+                                          [standardize],
+                                          True).T
+        raw_er = q_anl_impl(er, self.n_bins, self.r)
+        expected = raw_er * self.b_w.sum() - np.dot(self.b_w, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)
 
 
