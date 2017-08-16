@@ -14,6 +14,7 @@ from alphamind.utilities import alpha_logger
 from alphamind.tests.data.test_neutralize import TestNeutralize
 from alphamind.tests.data.test_standardize import TestStandardize
 from alphamind.tests.data.test_winsorize import TestWinsorize
+from alphamind.tests.data.test_quantile import TestQuantile
 from alphamind.tests.portfolio.test_constraints import TestConstraints
 from alphamind.tests.portfolio.test_longshortbuild import TestLongShortBuild
 from alphamind.tests.portfolio.test_rankbuild import TestRankBuild
@@ -24,12 +25,14 @@ from alphamind.tests.settlement.test_simplesettle import TestSimpleSettle
 from alphamind.tests.analysis.test_riskanalysis import TestRiskAnalysis
 from alphamind.tests.analysis.test_perfanalysis import TestPerformanceAnalysis
 from alphamind.tests.analysis.test_factoranalysis import TestFactorAnalysis
+from alphamind.tests.analysis.test_quantilieanalysis import TestQuantileAnalysis
 
 
 if __name__ == '__main__':
     runner = TestRunner([TestNeutralize,
                          TestStandardize,
                          TestWinsorize,
+                         TestQuantile,
                          TestConstraints,
                          TestLongShortBuild,
                          TestRankBuild,
@@ -39,6 +42,7 @@ if __name__ == '__main__':
                          TestSimpleSettle,
                          TestRiskAnalysis,
                          TestPerformanceAnalysis,
-                         TestFactorAnalysis],
+                         TestFactorAnalysis,
+                         TestQuantileAnalysis],
                         alpha_logger)
     runner.run()

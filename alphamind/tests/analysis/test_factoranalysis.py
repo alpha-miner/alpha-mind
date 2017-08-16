@@ -12,7 +12,7 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
 from alphamind.data.neutralize import neutralize
 from alphamind.portfolio.constraints import Constraints
-from alphamind.analysis.factoranalysis import factor_processing
+from alphamind.analysis.utilities import factor_processing
 from alphamind.analysis.factoranalysis import factor_analysis
 
 
