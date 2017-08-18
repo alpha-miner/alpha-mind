@@ -33,7 +33,9 @@ class Experimental(Base):
     Date = Column(DateTime, primary_key=True, nullable=False)
     Code = Column(Integer, primary_key=True, nullable=False)
     CHV = Column(Float(53))
-    VAL = Column(Float(53))
+    DROE = Column(Float(53))
+    IVR = Column(Float(53))
+    ROEAfterNonRecurring = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -256,7 +258,6 @@ class Position(Base):
     portfolio = Column(String(50), primary_key=True, nullable=False, index=True)
     type = Column(String(50), primary_key=True, nullable=False, index=True)
     weight = Column(JSON)
-
 
 
 class RiskCovDay(Base):
@@ -1069,9 +1070,36 @@ class Uqer(Base):
     STOA = Column(Float(53))
     NLSIZE = Column(Float(53))
 
+
+class SecurityMaster(Base):
+    __tablename__ = 'security_master'
+
+    Code = Column(Integer, primary_key=True)
+    exchangeCD = Column(Text())
+    ListSectorCD = Column(BigInteger)
+    ListSector = Column(Text())
+    transCurrCD = Column(Text())
+    secShortName = Column(Text())
+    secFullName = Column(Text())
+    listStatusCD = Column(Text())
+    listDate = Column(DateTime)
+    delistDate = Column(DateTime)
+    equTypeCD = Column(Text())
+    equType = Column(Text())
+    exCountryCD = Column(Text())
+    partyID = Column(BigInteger)
+    totalShares = Column(Float(53))
+    nonrestFloatShares = Column(Float(53))
+    nonrestfloatA = Column(Float(53))
+    officeAddr = Column(Text())
+    primeOperating = Column(Text())
+    endDate = Column(DateTime)
+    TShEquity = Column(Float(53))
+
+
 if __name__ == '__main__':
 
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://user:pwd@host/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
