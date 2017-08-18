@@ -12,48 +12,56 @@ from PyFin.api import makeSchedule
 from alphamind.api import *
 
 engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
-universe = Universe('custom', ['zz500'])
+#engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+universe = Universe('custom', ['pm500_mirror'])
 neutralize_risk = ['SIZE'] + industry_styles
 n_bins = 5
-factors = ['ROEDiluted']
+
 factor_weights = np.array([1.])
 
-dates = makeSchedule('2017-01-01',
+dates = makeSchedule('2016-08-14',
                      '2017-08-14',
                      tenor='1w',
                      calendar='china.sse')
 
-final_res = np.zeros((len(dates), n_bins))
+prod_factors = ['EARNYILD', 'ROAEBIT']
 
-for i, date in enumerate(dates):
-    print(date)
-    ref_date = date.strftime('%Y-%m-%d')
+for factor in prod_factors:
 
-    codes = engine.fetch_codes(ref_date, universe)
+    factors = [factor]
+    final_res = np.zeros((len(dates), n_bins))
 
-    data = engine.fetch_data(ref_date, factors, codes, 905)
-    returns = engine.fetch_dx_return(ref_date, codes, horizon=4)
+    for i, date in enumerate(dates):
+        ref_date = date.strftime('%Y-%m-%d')
 
-    total_data = pd.merge(data['factor'], returns, on=['Code']).dropna()
-    risk_exp = total_data[neutralize_risk].values.astype(float)
-    dx_return = total_data.dx.values
-    benchmark = total_data.weight.values
+        codes = engine.fetch_codes(ref_date, universe)
 
-    f_data = total_data[factors]
-    try:
-        res = quantile_analysis(f_data,
-                                factor_weights,
-                                dx_return,
-                                risk_exp=risk_exp,
-                                n_bins=n_bins,
-                                benchmark=benchmark)
-    except:
-        print(date, ' is error!')
-        res = np.zeros(n_bins)
+        data = engine.fetch_data(ref_date, factors, codes, 905)
+        returns = engine.fetch_dx_return(ref_date, codes, horizon=4)
 
-    final_res[i] = res
+        total_data = pd.merge(data['factor'], returns, on=['Code']).dropna()
+        print(date, ': ', len(total_data))
+        risk_exp = total_data[neutralize_risk].values.astype(float)
+        dx_return = total_data.dx.values
+        benchmark = total_data.weight.values
 
-df = pd.DataFrame(final_res, index=dates)
-df.cumsum().plot(figsize=(12, 6))
-plt.title('{0} weekly reblance'.format(factors))
+        f_data = total_data[factors]
+        try:
+            res = quantile_analysis(f_data,
+                                    factor_weights,
+                                    dx_return,
+                                    risk_exp=risk_exp,
+                                    n_bins=n_bins,
+                                    benchmark=benchmark)
+        except Exception as e:
+            print(e)
+            res = np.zeros(n_bins)
+
+        final_res[i] = res / benchmark.sum()
+
+    df = pd.DataFrame(final_res, index=dates)
+    df.cumsum().plot(figsize=(12, 6))
+    plt.title('{0} weekly re-balance'.format(factors[0]))
+    plt.savefig('{0}_big_universe_20170814.png'.format(factors[0]))
+
 plt.show()

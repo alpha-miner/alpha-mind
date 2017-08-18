@@ -1074,19 +1074,18 @@ class Uqer(Base):
 class SecurityMaster(Base):
     __tablename__ = 'security_master'
 
-    Code = Column(Integer, primary_key=True)
-    exchangeCD = Column(Text())
+    exchangeCD = Column(String(4))
     ListSectorCD = Column(BigInteger)
-    ListSector = Column(Text())
+    ListSector = Column(String(6))
     transCurrCD = Column(Text())
-    secShortName = Column(Text())
+    secShortName = Column(String(10))
     secFullName = Column(Text())
-    listStatusCD = Column(Text())
+    listStatusCD = Column(String(2))
     listDate = Column(DateTime)
     delistDate = Column(DateTime)
-    equTypeCD = Column(Text())
-    equType = Column(Text())
-    exCountryCD = Column(Text())
+    equTypeCD = Column(String(4))
+    equType = Column(String(10))
+    exCountryCD = Column(String(3))
     partyID = Column(BigInteger)
     totalShares = Column(Float(53))
     nonrestFloatShares = Column(Float(53))
@@ -1095,6 +1094,7 @@ class SecurityMaster(Base):
     primeOperating = Column(Text())
     endDate = Column(DateTime)
     TShEquity = Column(Float(53))
+    Code = Column(Integer, primary_key=True)
 
 
 if __name__ == '__main__':
