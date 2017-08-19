@@ -30,8 +30,7 @@ class Universe(object):
         self.include_codes = include_codes
         self.exclude_codes = exclude_codes
 
-    def query(self, ref_date):
-        query = select([UniverseTable.Code]).distinct()
+    def _create_condition(self):
 
         all_and_conditions = []
 
@@ -55,9 +54,31 @@ class Universe(object):
             codes_in = UniverseTable.Code.in_(self.include_codes)
             all_or_conditions.append(codes_in)
 
+        return all_and_conditions, all_or_conditions
+
+    def query(self, ref_date):
+        query = select([UniverseTable.Date, UniverseTable.Code]).distinct()
+        all_and_conditions, all_or_conditions = self._create_condition()
+
         query = query.where(
             and_(
                 UniverseTable.Date == ref_date,
+                or_(
+                    and_(*all_and_conditions),
+                    *all_or_conditions
+                )
+            )
+        )
+
+        return query
+
+    def query_range(self, start_date, end_date):
+        query = select([UniverseTable.Date, UniverseTable.Code]).distinct()
+        all_and_conditions, all_or_conditions = self._create_condition()
+
+        query = query.where(
+            and_(
+                UniverseTable.Date.between(start_date, end_date),
                 or_(
                     and_(*all_and_conditions),
                     *all_or_conditions

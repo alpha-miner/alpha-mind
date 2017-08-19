@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_, outerjoin
+from sqlalchemy import select, and_, outerjoin, join
 from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
@@ -143,12 +143,18 @@ class SqlEngine(object):
         strategy_names = {s[0] for s in cursor.fetchall()}
         return strategy_names
 
-    def fetch_codes(self, ref_date: str, univ: Universe) -> List[int]:
-        query = univ.query(ref_date)
+    def fetch_codes(self, ref_date: str, universe: Universe) -> List[int]:
+        query = universe.query(ref_date)
         cursor = self.engine.execute(query)
-        codes_set = {c[0] for c in cursor.fetchall()}
-
+        codes_set = {c[1] for c in cursor.fetchall()}
         return sorted(codes_set)
+
+    def fetch_codes_range(self,
+                          start_date: str,
+                          end_date: str,
+                          universe: Universe) -> pd.DataFrame:
+        query = universe.query_range(start_date, end_date)
+        return pd.read_sql(query, self.engine)
 
     def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=0):
         start_date = ref_date
@@ -183,12 +189,43 @@ class SqlEngine(object):
 
         return pd.read_sql(query, self.engine)
 
+    def fetch_factor_range(self,
+                           start_date: str,
+                           end_date: str,
+                           factors: Iterable[str],
+                           universe: Universe) -> pd.DataFrame:
+        factor_cols = _map_factors(factors)
+
+        q2 = universe.query_range(start_date, end_date).alias('temp_universe')
+
+        big_table = join(Market, q2, and_(Market.Date == q2.c.Date, Market.Code == q2.c.Code))
+        for t in set(factor_cols.values()):
+            big_table = outerjoin(big_table, t, and_(Market.Date == t.Date, Market.Code == t.Code))
+
+        query = select([Market.Date, Market.Code, Market.isOpen] + list(factor_cols.keys())) \
+            .select_from(big_table)
+
+        return pd.read_sql(query, self.engine)
+
     def fetch_benchmark(self,
                         ref_date: str,
                         benchmark: int) -> pd.DataFrame:
         query = select([IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
                 IndexComponent.Date == ref_date,
+                IndexComponent.indexCode == benchmark
+            )
+        )
+
+        return pd.read_sql(query, self.engine)
+
+    def fetch_benchmark_range(self,
+                              start_date: str,
+                              end_date: str,
+                              benchmark: int) -> pd.DataFrame:
+        query = select([IndexComponent.Date, IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
+            and_(
+                IndexComponent.Date.between(start_date, end_date),
                 IndexComponent.indexCode == benchmark
             )
         )
@@ -222,6 +259,39 @@ class SqlEngine(object):
 
         return risk_cov, risk_exp
 
+    def fetch_risk_model_range(self,
+                               start_date: str,
+                               end_date: str,
+                               universe: Universe,
+                               risk_model: str='short') -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
+
+        cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
+        query = select([risk_cov_table.Date,
+                        risk_cov_table.FactorID,
+                        risk_cov_table.Factor]
+                       + cov_risk_cols).where(
+            risk_cov_table.Date.between(start_date, end_date)
+        )
+        risk_cov = pd.read_sql(query, self.engine).sort_values(['Date', 'FactorID'])
+
+        risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors]
+        big_table = outerjoin(special_risk_table, RiskExposure,
+                              and_(special_risk_table.Date == RiskExposure.Date,
+                                   special_risk_table.Code == RiskExposure.Code))
+
+        q2 = universe.query_range(start_date, end_date).alias('temp_universe')
+        big_table = join(big_table, q2, and_(special_risk_table.Date == q2.c.Date, special_risk_table.Code == q2.c.Code))
+
+        query = select(
+            [RiskExposure.Date, RiskExposure.Code, special_risk_table.SRISK] + risk_exposure_cols) \
+            .select_from(big_table)
+
+        risk_exp = pd.read_sql(query, self.engine)
+
+        return risk_cov, risk_exp
+
     def fetch_data(self, ref_date,
                    factors: Iterable[str],
                    codes: Iterable[int],
@@ -248,6 +318,34 @@ class SqlEngine(object):
         append_industry_info(factor_data)
         return total_data
 
+    def fetch_data_range(self,
+                         start_date: str,
+                         end_date: str,
+                         factors: Iterable[str],
+                         universe: Universe,
+                         benchmark: int = None,
+                         risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
+
+        total_data = {}
+
+        factor_data = self.fetch_factor_range(start_date, end_date, factors, universe)
+
+        if benchmark:
+            benchmark_data = self.fetch_benchmark_range(start_date, end_date, benchmark)
+            total_data['benchmark'] = benchmark_data
+            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['Date', 'Code'])
+            factor_data['weight'] = factor_data['weight'].fillna(0.)
+
+        if risk_model:
+            risk_cov, risk_exp = self.fetch_risk_model_range(start_date, end_date, universe, risk_model)
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['Date', 'Code'])
+            total_data['risk_cov'] = risk_cov
+
+        total_data['factor'] = factor_data
+
+        append_industry_info(factor_data)
+        return total_data
+
 
 if __name__ == '__main__':
     db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
@@ -256,12 +354,8 @@ if __name__ == '__main__':
     engine = SqlEngine(db_url)
     ref_date = '2017-08-10'
 
-    codes = engine.fetch_codes(ref_date, universe)
-    data = engine.fetch_data(ref_date, ['EPS'], codes, 905, 'short')
-    d1ret = engine.fetch_dx_return(ref_date, codes, horizon=0)
+    codes = engine.fetch_codes_range('2017-01-01', '2017-08-10', universe)
+    data = engine.fetch_data_range('2017-01-01', '2017-08-10', ['EPS'], universe, 905, 'short')
+    print(codes)
+    print(data)
 
-    missing_codes = [c for c in data['factor'].Code if c not in set(d1ret.Code)]
-
-    print(len(data['factor']))
-    print(len(d1ret))
-    print(missing_codes)
