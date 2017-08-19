@@ -36,6 +36,7 @@ class Experimental(Base):
     DROE = Column(Float(53))
     IVR = Column(Float(53))
     ROEAfterNonRecurring = Column(Float(53))
+    EPAfterNonRecurring = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -1101,5 +1102,5 @@ if __name__ == '__main__':
 
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:pwd@localhost/alpha')
     Base.metadata.create_all(engine)
