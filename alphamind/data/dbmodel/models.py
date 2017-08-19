@@ -209,6 +209,7 @@ class Market(Base):
     PE = Column(Float(53))
     PE1 = Column(Float(53))
     PB = Column(Float(53))
+    vwap = Column(Float(53))
     isOpen = Column(Integer)
 
 
