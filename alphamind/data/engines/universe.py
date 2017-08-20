@@ -76,25 +76,16 @@ class Universe(object):
         query = select([UniverseTable.Date, UniverseTable.Code]).distinct()
         all_and_conditions, all_or_conditions = self._create_condition()
 
-        if dates:
-            query = query.where(
-                and_(
-                    UniverseTable.Date.in_(dates),
-                    or_(
-                        and_(*all_and_conditions),
-                        *all_or_conditions
-                    )
+        dates_cond = UniverseTable.Date.in_(dates) if dates else UniverseTable.Date.between(start_date, end_date)
+
+        query = query.where(
+            and_(
+                dates_cond,
+                or_(
+                    and_(*all_and_conditions),
+                    *all_or_conditions
                 )
             )
-        else:
-            query = query.where(
-                and_(
-                    UniverseTable.Date.between(start_date, end_date),
-                    or_(
-                        and_(*all_and_conditions),
-                        *all_or_conditions
-                    )
-                )
-            )
+        )
 
         return query

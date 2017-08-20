@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_, outerjoin, join
+from sqlalchemy import select, and_, outerjoin, join, over
 from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
@@ -151,13 +151,17 @@ class SqlEngine(object):
 
     def fetch_codes_range(self,
                           universe: Universe,
-                          start_date: str=None,
-                          end_date: str=None,
-                          dates: Iterable[str]=None) -> pd.DataFrame:
+                          start_date: str = None,
+                          end_date: str = None,
+                          dates: Iterable[str] = None) -> pd.DataFrame:
         query = universe.query_range(start_date, end_date, dates)
         return pd.read_sql(query, self.engine)
 
-    def fetch_dx_return(self, ref_date, codes, expiry_date=None, horizon=0):
+    def fetch_dx_return(self,
+                        ref_date: str,
+                        codes: Iterable[int],
+                        expiry_date: str=None,
+                        horizon: int=0) -> pd.DataFrame:
         start_date = ref_date
 
         if not expiry_date:
@@ -165,7 +169,7 @@ class SqlEngine(object):
         else:
             end_date = expiry_date
 
-        query = select([DailyReturn.Code, func.sum(func.log(1. + DailyReturn.d1)).label('dx')]).where(
+        query = select([DailyReturn.Code, func.sum(func.ln(1. + DailyReturn.d1)).label('dx')]).where(
             and_(
                 DailyReturn.Date.between(start_date, end_date),
                 DailyReturn.Code.in_(codes)
@@ -173,6 +177,38 @@ class SqlEngine(object):
         ).group_by(DailyReturn.Code)
 
         return pd.read_sql(query, self.session.bind)
+
+    def fetch_dx_return_range(self,
+                              universe,
+                              start_date: str=None,
+                              end_date: str=None,
+                              dates: Iterable[str]=None,
+                              horizon: int=0) -> pd.DataFrame:
+
+        if dates:
+            start_date = dates[0]
+            end_date = dates[-1]
+
+        end_date = advanceDateByCalendar('china.sse', end_date, str(horizon) + 'b').strftime('%Y-%m-%d')
+
+        q2 = universe.query_range(start_date, end_date).alias('temp_universe')
+        big_table = join(DailyReturn, q2, and_(DailyReturn.Date == q2.c.Date, DailyReturn.Code == q2.c.Code))
+
+        stats = func.sum(func.ln(1. + DailyReturn.d1)).over(
+            partition_by=DailyReturn.Code,
+            order_by=DailyReturn.Date,
+            rows=(0, horizon)).label('dx')
+
+        query = select([DailyReturn.Date, DailyReturn.Code, stats]) \
+            .select_from(big_table) \
+            .where(DailyReturn.Date.between(start_date, end_date))
+
+        df = pd.read_sql(query, self.session.bind)
+
+        if dates:
+            df = df[df.Date.isin(dates)]
+
+        return df
 
     def fetch_factor(self,
                      ref_date: str,
@@ -193,9 +229,9 @@ class SqlEngine(object):
     def fetch_factor_range(self,
                            universe: Universe,
                            factors: Iterable[str],
-                           start_date: str=None,
-                           end_date: str=None,
-                           dates: Iterable[str]=None) -> pd.DataFrame:
+                           start_date: str = None,
+                           end_date: str = None,
+                           dates: Iterable[str] = None) -> pd.DataFrame:
         factor_cols = _map_factors(factors)
 
         q2 = universe.query_range(start_date, end_date, dates).alias('temp_universe')
@@ -223,25 +259,19 @@ class SqlEngine(object):
 
     def fetch_benchmark_range(self,
                               benchmark: int,
-                              start_date: str=None,
-                              end_date: str=None,
-                              dates: Iterable[str]=None) -> pd.DataFrame:
-        if dates:
-            query = select(
-                [IndexComponent.Date, IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
-                and_(
-                    IndexComponent.Date.in_(dates),
-                    IndexComponent.indexCode == benchmark
-                )
-            )
-        else:
-            query = select([IndexComponent.Date, IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
-                and_(
-                    IndexComponent.Date.between(start_date, end_date),
-                    IndexComponent.indexCode == benchmark
-                )
-            )
+                              start_date: str = None,
+                              end_date: str = None,
+                              dates: Iterable[str] = None) -> pd.DataFrame:
 
+        cond = IndexComponent.Date.in_(dates) if dates else IndexComponent.Date.between(start_date, end_date)
+
+        query = select(
+            [IndexComponent.Date, IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
+            and_(
+                cond,
+                IndexComponent.indexCode == benchmark
+            )
+        )
         return pd.read_sql(query, self.engine)
 
     def fetch_risk_model(self,
@@ -273,28 +303,23 @@ class SqlEngine(object):
 
     def fetch_risk_model_range(self,
                                universe: Universe,
-                               start_date: str=None,
-                               end_date: str=None,
-                               dates: Iterable[str]=None,
-                               risk_model: str='short') -> Tuple[pd.DataFrame, pd.DataFrame]:
+                               start_date: str = None,
+                               end_date: str = None,
+                               dates: Iterable[str] = None,
+                               risk_model: str = 'short') -> Tuple[pd.DataFrame, pd.DataFrame]:
 
         risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
 
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
-        if dates:
-            query = select([risk_cov_table.Date,
-                            risk_cov_table.FactorID,
-                            risk_cov_table.Factor]
-                           + cov_risk_cols).where(
-                risk_cov_table.Date.in_(dates)
-            )
-        else:
-            query = select([risk_cov_table.Date,
-                            risk_cov_table.FactorID,
-                            risk_cov_table.Factor]
-                           + cov_risk_cols).where(
-                risk_cov_table.Date.between(start_date, end_date)
-            )
+
+        cond = risk_cov_table.Date.in_(dates) if dates else risk_cov_table.Date.between(start_date, end_date)
+        query = select([risk_cov_table.Date,
+                        risk_cov_table.FactorID,
+                        risk_cov_table.Factor]
+                       + cov_risk_cols).where(
+            cond
+        )
+
         risk_cov = pd.read_sql(query, self.engine).sort_values(['Date', 'FactorID'])
 
         risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors]
@@ -303,7 +328,8 @@ class SqlEngine(object):
                                    special_risk_table.Code == RiskExposure.Code))
 
         q2 = universe.query_range(start_date, end_date, dates).alias('temp_universe')
-        big_table = join(big_table, q2, and_(special_risk_table.Date == q2.c.Date, special_risk_table.Code == q2.c.Code))
+        big_table = join(big_table, q2,
+                         and_(special_risk_table.Date == q2.c.Date, special_risk_table.Code == q2.c.Code))
 
         query = select(
             [RiskExposure.Date, RiskExposure.Code, special_risk_table.SRISK] + risk_exposure_cols) \
@@ -342,9 +368,9 @@ class SqlEngine(object):
     def fetch_data_range(self,
                          universe: Universe,
                          factors: Iterable[str],
-                         start_date: str=None,
-                         end_date: str=None,
-                         dates: Iterable[str]=None,
+                         start_date: str = None,
+                         end_date: str = None,
+                         dates: Iterable[str] = None,
                          benchmark: int = None,
                          risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
 
@@ -377,7 +403,8 @@ if __name__ == '__main__':
     ref_date = '2017-08-10'
 
     codes = engine.fetch_codes_range(universe, None, None, ['2017-01-01', '2017-08-10'])
-    data = engine.fetch_data_range(universe, ['EPS'], None, None, ['2017-01-01', '2017-08-10'], 905, 'short')
+
+    data1 = engine.fetch_dx_return('2017-08-01', )
+    data2 = engine.fetch_dx_return_range(universe, '2017-08-01', '2017-08-10', ['2017-08-01', '2017-08-10'])
     print(codes)
     print(data)
-
