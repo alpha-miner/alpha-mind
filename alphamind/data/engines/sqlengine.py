@@ -119,6 +119,11 @@ class SqlEngine(object):
         self.session = None
         self.create_session()
 
+        if self.engine.name == 'mssql':
+            self.ln_func = func.log
+        else:
+            self.ln_func = func.ln
+
     def create_session(self):
         db_session = orm.sessionmaker(bind=self.engine)
         self.session = db_session()
@@ -169,7 +174,7 @@ class SqlEngine(object):
         else:
             end_date = expiry_date
 
-        query = select([DailyReturn.Code, func.sum(func.ln(1. + DailyReturn.d1)).label('dx')]).where(
+        query = select([DailyReturn.Code, func.sum(self.ln_func(1. + DailyReturn.d1)).label('dx')]).where(
             and_(
                 DailyReturn.Date.between(start_date, end_date),
                 DailyReturn.Code.in_(codes)
@@ -194,7 +199,7 @@ class SqlEngine(object):
         q2 = universe.query_range(start_date, end_date).alias('temp_universe')
         big_table = join(DailyReturn, q2, and_(DailyReturn.Date == q2.c.Date, DailyReturn.Code == q2.c.Code))
 
-        stats = func.sum(func.ln(1. + DailyReturn.d1)).over(
+        stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
             partition_by=DailyReturn.Code,
             order_by=DailyReturn.Date,
             rows=(0, horizon)).label('dx')
@@ -374,6 +379,7 @@ class SqlEngine(object):
                          benchmark: int = None,
                          risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
 
+        dates = sorted(dates)
         total_data = {}
 
         factor_data = self.fetch_factor_range(universe, factors, start_date, end_date, dates)
@@ -403,8 +409,6 @@ if __name__ == '__main__':
     ref_date = '2017-08-10'
 
     codes = engine.fetch_codes_range(universe, None, None, ['2017-01-01', '2017-08-10'])
-
-    data1 = engine.fetch_dx_return('2017-08-01', )
     data2 = engine.fetch_dx_return_range(universe, '2017-08-01', '2017-08-10', ['2017-08-01', '2017-08-10'])
     print(codes)
-    print(data)
+    print(data2)

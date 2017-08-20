@@ -19,7 +19,7 @@ n_bins = 5
 
 factor_weights = np.array([1.])
 
-freq = '1w'
+freq = '1d'
 
 if freq == '1m':
     horizon = 21
