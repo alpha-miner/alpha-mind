@@ -11,15 +11,14 @@ from matplotlib import pyplot as plt
 from PyFin.api import *
 from alphamind.api import *
 
-#engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
-engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
+engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
 universe = Universe('custom', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
 n_bins = 5
 
 factor_weights = np.array([1.])
 
-freq = '1d'
+freq = '1w'
 
 if freq == '1m':
     horizon = 21
@@ -40,7 +39,6 @@ prod_factors = ['EARNYILD', 'ROAEBIT', 'CHV', 'CFinc1']
 
 all_data = engine.fetch_data_range(universe, prod_factors, dates=dates, benchmark=905)
 factor_all_data = all_data['factor']
-return_all_data = engine.fetch_dx_return_range(universe, start_date, end_date, dates, horizon=horizon)
 
 for factor in prod_factors:
 
@@ -48,14 +46,12 @@ for factor in prod_factors:
     final_res = np.zeros((len(dates), n_bins))
 
     factor_groups = factor_all_data.groupby('Date')
-    return_groups = return_all_data.groupby('Date')
-
     for i, value in enumerate(factor_groups):
         date = value[0]
         data = value[1]
         codes = data.Code.tolist()
         ref_date = value[0].strftime('%Y-%m-%d')
-        returns = return_groups.get_group(date)
+        returns = engine.fetch_dx_return(date, codes, horizon=horizon)
 
         total_data = pd.merge(data, returns, on=['Code']).dropna()
         print(date, ': ', len(total_data))

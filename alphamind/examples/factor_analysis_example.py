@@ -29,14 +29,19 @@ universe = Universe('custom', ['zz500'])
 benchmark_code = 905
 neutralize_risk = ['SIZE'] + industry_styles
 constraint_risk = ['SIZE'] + industry_styles
-n_bins = 5
+freq = '1w'
+
+if freq == '1m':
+    horizon = 21
+elif freq == '1w':
+    horizon = 4
+elif freq == '1d':
+    horizon = 0
+
 dates = makeSchedule('2012-01-14',
                      '2017-08-14',
-                     tenor='1w',
+                     tenor=freq,
                      calendar='china.sse')
-
-final_res = np.zeros((len(dates), n_bins))
-
 
 total_data_dict = {}
 
@@ -44,16 +49,19 @@ for strategy in strategies:
     factors = strategies[strategy]['factors']
     factor_weights = strategies[strategy]['weights']
 
+    all_data = engine.fetch_data_range(universe, factors, dates=dates, benchmark=905)
+    factor_all_data = all_data['factor']
+    factor_groups = factor_all_data.groupby('Date')
+
     rets = []
-    for i, date in enumerate(dates):
+    for i, value in enumerate(factor_groups):
+        date = value[0]
+        data = value[1]
+        codes = data.Code.tolist()
         ref_date = date.strftime('%Y-%m-%d')
+        returns = engine.fetch_dx_return(ref_date, codes, horizon=horizon)
 
-        codes = engine.fetch_codes(ref_date, universe)
-
-        data = engine.fetch_data(ref_date, factors, codes, benchmark_code)
-        returns = engine.fetch_dx_return(ref_date, codes, horizon=4)
-
-        total_data = pd.merge(data['factor'], returns, on=['Code']).dropna()
+        total_data = pd.merge(data, returns, on=['Code']).dropna()
         print(date, ': ', len(total_data))
         risk_exp = total_data[neutralize_risk].values.astype(float)
         industry = total_data.industry_code.values
@@ -97,3 +105,4 @@ for strategy in strategies:
 ret_df = pd.DataFrame(total_data_dict, index=dates)
 ret_df.cumsum().plot(figsize=(12, 6))
 plt.savefig("backtest_big_universe_20170814.png")
+plt.show()
