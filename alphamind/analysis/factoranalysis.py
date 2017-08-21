@@ -18,12 +18,12 @@ from alphamind.portfolio.percentbuilder import percent_build
 from alphamind.portfolio.linearbuilder import linear_build
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
 from alphamind.analysis.utilities import FDataPack
+from alphamind.settlement.simplesettle import simple_settle
 
 
 def build_portfolio(er: np.ndarray,
-                    builder: Optional[str]='long_short',
+                    builder: Optional[str] = 'long_short',
                     **kwargs) -> np.ndarray:
-
     builder = builder.lower()
 
     if builder == 'ls' or builder == 'long_short':
@@ -49,16 +49,15 @@ def build_portfolio(er: np.ndarray,
 def factor_analysis(factors: pd.DataFrame,
                     factor_weights: np.ndarray,
                     industry: np.ndarray,
-                    d1returns: np.ndarray=None,
+                    d1returns: np.ndarray = None,
                     detail_analysis=True,
-                    benchmark: Optional[np.ndarray]=None,
-                    risk_exp: Optional[np.ndarray]=None,
-                    is_tradable: Optional[np.ndarray]=None,
-                    constraints: Optional[Constraints]=None,
+                    benchmark: Optional[np.ndarray] = None,
+                    risk_exp: Optional[np.ndarray] = None,
+                    is_tradable: Optional[np.ndarray] = None,
+                    constraints: Optional[Constraints] = None,
                     method='risk_neutral',
                     do_neutralize=True,
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-
     data_pack = FDataPack(raw_factors=factors.values,
                           groups=industry,
                           benchmark=benchmark,
@@ -77,10 +76,29 @@ def factor_analysis(factors: pd.DataFrame,
     else:
         post_process = [standardize]
 
-    er = data_pack.factor_processing(pre_process,  post_process, do_neutralize) @ factor_weights
+    er = data_pack.factor_processing(pre_process, post_process, do_neutralize) @ factor_weights
 
+    return er_analysis(er,
+                       industry,
+                       d1returns,
+                       constraints,
+                       detail_analysis,
+                       benchmark,
+                       is_tradable,
+                       method,
+                       **kwargs)
+
+
+def er_analysis(er: np.ndarray,
+                industry: np.ndarray,
+                dx_return: np.ndarray,
+                constraints: Constraints,
+                detail_analysis=True,
+                benchmark: Optional[np.ndarray] = None,
+                is_tradable: Optional[np.ndarray] = None,
+                method='risk_neutral',
+                **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
     def create_constraints(benchmark, **kwargs):
-
         if 'lbound' in kwargs:
             lbound = kwargs['lbound']
             del kwargs['lbound']
@@ -92,21 +110,14 @@ def factor_analysis(factors: pd.DataFrame,
             del kwargs['ubound']
         else:
             ubound = 0.01 + benchmark
-
         if is_tradable is not None:
             ubound[~is_tradable] = np.minimum(lbound, ubound)[~is_tradable]
 
-        if constraints:
-            risk_lbound, risk_ubound = constraints.risk_targets()
-            cons_exp = constraints.risk_exp
-        else:
-            cons_exp = risk_exp
-            risk_lbound = data_pack.benchmark_constraints()
-            risk_ubound = data_pack.benchmark_constraints()
-
+        risk_lbound, risk_ubound = constraints.risk_targets()
+        cons_exp = constraints.risk_exp
         return lbound, ubound, cons_exp, risk_lbound, risk_ubound
 
-    if benchmark is not None and risk_exp is not None and method == 'risk_neutral':
+    if benchmark is not None and method == 'risk_neutral':
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
         status, _, weights = linear_build(er,
                                           risk_constraints=cons_exp,
@@ -143,11 +154,10 @@ def factor_analysis(factors: pd.DataFrame,
         raise ValueError("Unknown building tpe ({0})".format(method))
 
     if detail_analysis:
-        analysis = data_pack.settle(weights, d1returns)
+        analysis = simple_settle(weights, dx_return, industry, benchmark)
     else:
         analysis = None
     return pd.DataFrame({'weight': weights,
                          'industry': industry,
-                         'er': er},
-                        index=factors.index),\
+                         'er': er}), \
            analysis

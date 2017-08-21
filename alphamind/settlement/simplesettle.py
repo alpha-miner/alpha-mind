@@ -6,21 +6,44 @@ Created on 2017-4-28
 """
 
 import numpy as np
-from alphamind.utilities import group_mapping
-from alphamind.utilities import aggregate
-from alphamind.utilities import simple_sum
+import pandas as pd
 
 
-def simple_settle(weights: np.ndarray, ret_series: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+def simple_settle(weights: np.ndarray,
+                  dx_return: np.ndarray,
+                  groups: np.ndarray=None,
+                  benchmark: np.ndarray=None) -> pd.DataFrame:
 
-    if ret_series.ndim == 1:
-        ret_series = ret_series.reshape((-1, 1))
+    weights = weights.flatten()
+    dx_return = dx_return.flatten()
 
-    ret_mat = weights * ret_series
-    if groups is not None:
-        groups = group_mapping(groups)
-        return aggregate(groups, ret_mat, 'sum')
+    if benchmark is not None:
+        net_pos = weights - benchmark
     else:
-        if ret_mat.ndim == 1:
-            ret_mat = ret_mat.reshape((-1, 1))
-        return simple_sum(ret_mat, axis=0)
+        net_pos = weights
+
+    ret_arr = net_pos * dx_return
+
+    if groups is not None:
+        ret_agg = pd.Series(ret_arr).groupby(groups).sum()
+        ret_agg.loc['total'] = ret_agg.sum()
+    else:
+        ret_agg = pd.Series(ret_arr.sum(), index=['total'])
+
+    ret_agg.index.name = 'industry'
+    ret_agg.name = 'er'
+
+    pos_table = pd.DataFrame(net_pos, columns=['weight'])
+    pos_table['ret'] = dx_return
+
+    if groups is not None:
+        ic_table = pos_table.groupby(groups).corr()['ret'].loc[(slice(None), 'weight')]
+        ic_table.loc['total'] = pos_table.corr().iloc[0, 1]
+    else:
+        ic_table = pd.Series(pos_table.corr().iloc[0, 1], index=['total'])
+
+    return pd.DataFrame({'er': ret_agg.values,
+                         'ic': ic_table.values},
+                        index=ret_agg.index)
+
+
