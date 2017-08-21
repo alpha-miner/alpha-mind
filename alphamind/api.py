@@ -7,7 +7,7 @@ Created on 2017-8-16
 
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.analysis.factoranalysis import factor_analysis
-from alphamind.analysis.factoranalysis import er_analysis
+from alphamind.analysis.factoranalysis import er_portfolio_analysis
 from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
@@ -21,7 +21,7 @@ from alphamind.data.engines.sqlengine import macro_styles
 __all__ = [
     'SqlEngine',
     'factor_analysis',
-    'er_analysis',
+    'er_portfolio_analysis',
     'quantile_analysis',
     'Universe',
     'factor_processing',

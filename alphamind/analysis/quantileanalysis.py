@@ -36,19 +36,13 @@ def quantile_analysis(factors: pd.DataFrame,
         post_process = [standardize]
 
     er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
-    raw_return = q_anl_impl(er, n_bins, dx_return)
-
-    if benchmark is not None:
-        b_ret = np.dot(benchmark, dx_return)
-        b_total = benchmark.sum()
-        return raw_return * b_total - b_ret
-    else:
-        return raw_return
+    return er_quantile_analysis(er, n_bins, dx_return, benchmark)
 
 
-def q_anl_impl(er: np.ndarray,
-               n_bins: int,
-               dx_return: np.ndarray) -> np.ndarray:
+def er_quantile_analysis(er: np.ndarray,
+                         n_bins: int,
+                         dx_return: np.ndarray,
+                         benchmark: Optional[np.ndarray]=None,) -> np.ndarray:
 
     er = er.flatten()
     q_groups = quantile(er, n_bins)
@@ -57,7 +51,12 @@ def q_anl_impl(er: np.ndarray,
         dx_return.shape = -1, 1
 
     group_return = agg_mean(q_groups, dx_return).flatten()
-    return group_return
+    if benchmark is not None:
+        b_ret = np.dot(benchmark, dx_return)
+        b_total = benchmark.sum()
+        return group_return * b_total - b_ret
+    else:
+        return group_return
 
 
 if __name__ == '__main__':
@@ -81,7 +80,7 @@ if __name__ == '__main__':
                                    post_process=[standardize])
 
     er = x_w @ f_df.T
-    expected = q_anl_impl(er, 5, r)
+    expected = er_quantile_analysis(er, 5, r)
 
     print(calculated)
     print(expected)

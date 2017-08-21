@@ -8,7 +8,7 @@ Created on 2017-8-16
 import unittest
 import numpy as np
 import pandas as pd
-from alphamind.analysis.quantileanalysis import q_anl_impl
+from alphamind.analysis.quantileanalysis import er_quantile_analysis
 from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
@@ -37,7 +37,7 @@ class TestQuantileAnalysis(unittest.TestCase):
 
         s = pd.Series(self.r, index=q_groups)
         expected_res = s.groupby(level=0).mean()
-        calculated_res = q_anl_impl(x, n_bins, self.r)
+        calculated_res = er_quantile_analysis(x, n_bins, self.r)
 
         np.testing.assert_array_almost_equal(expected_res.values, calculated_res)
 
@@ -52,7 +52,7 @@ class TestQuantileAnalysis(unittest.TestCase):
                                        post_process=[])
 
         er = self.x_w @ self.x.T
-        expected = q_anl_impl(er, self.n_bins, self.r)
+        expected = er_quantile_analysis(er, self.n_bins, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)
 
     def test_quantile_analysis_with_factor_processing(self):
@@ -70,7 +70,7 @@ class TestQuantileAnalysis(unittest.TestCase):
                                           [winsorize_normal, standardize],
                                           self.risk_exp,
                                           [standardize]).T
-        expected = q_anl_impl(er, self.n_bins, self.r)
+        expected = er_quantile_analysis(er, self.n_bins, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)
 
     def test_quantile_analysis_with_benchmark(self):
@@ -89,7 +89,7 @@ class TestQuantileAnalysis(unittest.TestCase):
                                           [winsorize_normal, standardize],
                                           self.risk_exp,
                                           [standardize]).T
-        raw_er = q_anl_impl(er, self.n_bins, self.r)
+        raw_er = er_quantile_analysis(er, self.n_bins, self.r)
         expected = raw_er * self.b_w.sum() - np.dot(self.b_w, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)
 

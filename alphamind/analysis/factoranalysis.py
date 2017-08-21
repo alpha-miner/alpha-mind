@@ -46,26 +46,26 @@ def factor_analysis(factors: pd.DataFrame,
 
     er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
 
-    return er_analysis(er,
-                       industry,
-                       d1returns,
-                       constraints,
-                       detail_analysis,
-                       benchmark,
-                       is_tradable,
-                       method,
-                       **kwargs)
+    return er_portfolio_analysis(er,
+                                 industry,
+                                 d1returns,
+                                 constraints,
+                                 detail_analysis,
+                                 benchmark,
+                                 is_tradable,
+                                 method,
+                                 **kwargs)
 
 
-def er_analysis(er: np.ndarray,
-                industry: np.ndarray,
-                dx_return: np.ndarray,
-                constraints: Optional[Constraints]=None,
-                detail_analysis=True,
-                benchmark: Optional[np.ndarray] = None,
-                is_tradable: Optional[np.ndarray] = None,
-                method='risk_neutral',
-                **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+def er_portfolio_analysis(er: np.ndarray,
+                          industry: np.ndarray,
+                          dx_return: np.ndarray,
+                          constraints: Optional[Constraints]=None,
+                          detail_analysis=True,
+                          benchmark: Optional[np.ndarray] = None,
+                          is_tradable: Optional[np.ndarray] = None,
+                          method='risk_neutral',
+                          **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
     def create_constraints(benchmark, **kwargs):
         if 'lbound' in kwargs:
             lbound = kwargs['lbound']
