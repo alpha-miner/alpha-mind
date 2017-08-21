@@ -14,36 +14,10 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.portfolio.constraints import Constraints
 from alphamind.portfolio.longshortbulder import long_short_build
 from alphamind.portfolio.rankbuilder import rank_build
-from alphamind.portfolio.percentbuilder import percent_build
 from alphamind.portfolio.linearbuilder import linear_build
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
-from alphamind.analysis.utilities import FDataPack
+from alphamind.data.processing import factor_processing
 from alphamind.settlement.simplesettle import simple_settle
-
-
-def build_portfolio(er: np.ndarray,
-                    builder: Optional[str] = 'long_short',
-                    **kwargs) -> np.ndarray:
-    builder = builder.lower()
-
-    if builder == 'ls' or builder == 'long_short':
-        return long_short_build(er, **kwargs).flatten()
-    elif builder == 'rank':
-        return rank_build(er, **kwargs).flatten()
-    elif builder == 'percent':
-        return percent_build(er, **kwargs).flatten()
-    elif builder == 'linear_prog' or builder == 'linear':
-        status, _, weight = linear_build(er, **kwargs)
-        if status != 'optimal':
-            raise ValueError('linear programming optimizer in status: {0}'.format(status))
-        else:
-            return weight
-    elif builder == 'mean_variance' or builder == 'mv':
-        status, _, weight = mean_variance_builder(er, **kwargs)
-        if status != 'optimal':
-            raise ValueError('mean variance optimizer in status: {0}'.format(status))
-        else:
-            return weight
 
 
 def factor_analysis(factors: pd.DataFrame,
@@ -56,13 +30,7 @@ def factor_analysis(factors: pd.DataFrame,
                     is_tradable: Optional[np.ndarray] = None,
                     constraints: Optional[Constraints] = None,
                     method='risk_neutral',
-                    do_neutralize=True,
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-    data_pack = FDataPack(raw_factors=factors.values,
-                          groups=industry,
-                          benchmark=benchmark,
-                          risk_exp=risk_exp,
-                          constraints=constraints)
 
     if 'pre_process' in kwargs:
         pre_process = kwargs['pre_process']
@@ -76,7 +44,7 @@ def factor_analysis(factors: pd.DataFrame,
     else:
         post_process = [standardize]
 
-    er = data_pack.factor_processing(pre_process, post_process, do_neutralize) @ factor_weights
+    er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
 
     return er_analysis(er,
                        industry,
@@ -92,7 +60,7 @@ def factor_analysis(factors: pd.DataFrame,
 def er_analysis(er: np.ndarray,
                 industry: np.ndarray,
                 dx_return: np.ndarray,
-                constraints: Constraints,
+                constraints: Optional[Constraints]=None,
                 detail_analysis=True,
                 benchmark: Optional[np.ndarray] = None,
                 is_tradable: Optional[np.ndarray] = None,
