@@ -23,6 +23,7 @@ from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.dbmodel.models import Tiny
 from alphamind.data.dbmodel.models import LegacyFactor
+from alphamind.data.dbmodel.models import Experimental
 from alphamind.data.dbmodel.models import SpecificRiskDay
 from alphamind.data.dbmodel.models import SpecificRiskShort
 from alphamind.data.dbmodel.models import SpecificRiskLong
@@ -79,7 +80,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [Uqer, Tiny, LegacyFactor]
+factor_tables = [Uqer, Tiny, LegacyFactor, Experimental]
 
 
 def append_industry_info(df):
