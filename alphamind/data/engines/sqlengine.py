@@ -380,7 +380,6 @@ class SqlEngine(object):
                          benchmark: int = None,
                          risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
 
-        dates = sorted(dates)
         total_data = {}
 
         factor_data = self.fetch_factor_range(universe, factors, start_date, end_date, dates)
