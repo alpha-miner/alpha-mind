@@ -151,7 +151,7 @@ def er_analysis(er: np.ndarray,
         if status != 'optimal':
             raise ValueError('mean variance optimizer in status: {0}'.format(status))
     else:
-        raise ValueError("Unknown building tpe ({0})".format(method))
+        raise ValueError("Unknown building type ({0})".format(method))
 
     if detail_analysis:
         analysis = simple_settle(weights, dx_return, industry, benchmark)
