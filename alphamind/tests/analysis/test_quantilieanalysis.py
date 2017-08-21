@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from alphamind.analysis.quantileanalysis import q_anl_impl
 from alphamind.analysis.quantileanalysis import quantile_analysis
-from alphamind.analysis.utilities import factor_processing
+from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.quantile import quantile
@@ -69,8 +69,7 @@ class TestQuantileAnalysis(unittest.TestCase):
         er = self.x_w @ factor_processing(self.x,
                                           [winsorize_normal, standardize],
                                           self.risk_exp,
-                                          [standardize],
-                                          True).T
+                                          [standardize]).T
         expected = q_anl_impl(er, self.n_bins, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)
 
@@ -89,8 +88,7 @@ class TestQuantileAnalysis(unittest.TestCase):
         er = self.x_w @ factor_processing(self.x,
                                           [winsorize_normal, standardize],
                                           self.risk_exp,
-                                          [standardize],
-                                          True).T
+                                          [standardize]).T
         raw_er = q_anl_impl(er, self.n_bins, self.r)
         expected = raw_er * self.b_w.sum() - np.dot(self.b_w, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)

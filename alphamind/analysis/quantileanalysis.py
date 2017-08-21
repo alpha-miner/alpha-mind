@@ -12,7 +12,7 @@ from alphamind.utilities import agg_mean
 from alphamind.data.quantile import quantile
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
-from alphamind.analysis.utilities import FDataPack
+from alphamind.data.processing import factor_processing
 
 
 def quantile_analysis(factors: pd.DataFrame,
@@ -21,7 +21,6 @@ def quantile_analysis(factors: pd.DataFrame,
                       n_bins: int=5,
                       benchmark: Optional[np.ndarray]=None,
                       risk_exp: Optional[np.ndarray]=None,
-                      do_neutralize=True,
                       **kwargs):
 
     if 'pre_process' in kwargs:
@@ -36,10 +35,7 @@ def quantile_analysis(factors: pd.DataFrame,
     else:
         post_process = [standardize]
 
-    data_pack = FDataPack(raw_factors=factors.values,
-                          risk_exp=risk_exp)
-
-    er = data_pack.factor_processing(pre_process, post_process, do_neutralize) @ factor_weights
+    er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
     raw_return = q_anl_impl(er, n_bins, dx_return)
 
     if benchmark is not None:
