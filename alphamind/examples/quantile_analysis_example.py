@@ -7,14 +7,16 @@ Created on 2017-8-16
 
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 from PyFin.api import *
 from alphamind.api import *
+from alphamind.data.dbmodel.models import Uqer
+from alphamind.data.dbmodel.models import Tiny
+from alphamind.data.dbmodel.models import LegacyFactor
 
-engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
+engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
 universe = Universe('custom', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
-n_bins = 5
+n_bins = 24
 
 factor_weights = np.array([1.])
 
@@ -35,30 +37,40 @@ dates = makeSchedule(start_date,
                      tenor=freq,
                      calendar='china.sse')
 
-prod_factors = ['EARNYILD', 'ROAEBIT', 'CHV', 'CFinc1']
+col_names = set()
+
+factor_tables = [LegacyFactor]
+
+for t in factor_tables:
+    for c in t.__table__.columns:
+        col_names.add(c.name)
+
+col_names = col_names.difference(set(['Date', 'Code']))
+
+prod_factors = list(col_names)
 
 all_data = engine.fetch_data_range(universe, prod_factors, dates=dates, benchmark=905)
+return_all_data = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
 factor_all_data = all_data['factor']
 
-for factor in prod_factors:
+total_df = pd.DataFrame()
+factor_groups = factor_all_data.groupby('Date')
+return_groups = return_all_data.groupby('Date')
 
-    factors = [factor]
-    final_res = np.zeros((len(dates), n_bins))
+for date, factor_data in factor_groups:
+    ref_date = date.strftime('%Y-%m-%d')
+    returns = return_groups.get_group(date)
+    final_res = np.zeros((len(prod_factors), n_bins))
+    this_date_data = factor_data[['Code', 'isOpen', 'weight'] + prod_factors + neutralize_risk]
+    this_date_data = pd.merge(this_date_data, returns, on=['Code'])
+    codes = this_date_data.Code.tolist()
 
-    factor_groups = factor_all_data.groupby('Date')
-    for i, value in enumerate(factor_groups):
-        date = value[0]
-        data = value[1]
-        codes = data.Code.tolist()
-        ref_date = value[0].strftime('%Y-%m-%d')
-        returns = engine.fetch_dx_return(date, codes, horizon=horizon)
-
-        total_data = pd.merge(data, returns, on=['Code']).dropna()
-        print(date, ': ', len(total_data))
+    for i, factor in enumerate(prod_factors):
+        factors = [factor]
+        total_data = this_date_data[['Code', 'isOpen', 'weight', 'dx'] + factors + neutralize_risk].dropna()
         risk_exp = total_data[neutralize_risk].values.astype(float)
         dx_return = total_data.dx.values
         benchmark = total_data.weight.values
-
         f_data = total_data[factors]
         try:
             res = quantile_analysis(f_data,
@@ -73,13 +85,11 @@ for factor in prod_factors:
 
         final_res[i] = res / benchmark.sum()
 
-    df = pd.DataFrame(final_res, index=dates)
-
-    start_date = advanceDateByCalendar('china.sse', dates[0], '-1m')
-    df.loc[start_date] = 0.
+    df = pd.DataFrame(final_res, index=prod_factors)
     df.sort_index(inplace=True)
-    df.cumsum().plot(figsize=(12, 6))
-    plt.title('{0} weekly re-balance'.format(factors[0]))
-    plt.savefig('{0}_big_universe_20170814.png'.format(factors[0]))
+    df['Date'] = date
 
-plt.show()
+    total_df = total_df.append(df)
+    print('{0} is finished'.format(date))
+
+total_df.to_csv('d:/factor_eval_pm500_mirror.csv')
