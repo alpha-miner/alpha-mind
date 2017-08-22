@@ -42,7 +42,7 @@ def factor_analysis(factors: pd.DataFrame,
         post_process = kwargs['post_process']
         del kwargs['post_process']
     else:
-        post_process = [standardize]
+        post_process = [winsorize_normal, standardize]
 
     er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
 
