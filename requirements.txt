@@ -1,6 +1,7 @@
 cvxopt >= 1.1.9
 cvxpy >= 0.4.9
 cython >= 0.25.2
+finance-python >= 0.5.7
 mysqlclient >= 1.3.10
 numpy >= 1.12.1
 numba >= 0.33.0
