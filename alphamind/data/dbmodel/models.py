@@ -1099,9 +1099,28 @@ class SecurityMaster(Base):
     Code = Column(Integer, primary_key=True)
 
 
+class QuantileAnalysi(Base):
+    __tablename__ = 'quantile_analysis'
+
+    Date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio = Column(String(50), primary_key=True, nullable=False)
+    universe = Column(String(20), primary_key=True, nullable=False)
+    benchmark = Column(Integer, primary_key=True, nullable=False)
+    q1 = Column(Float(53))
+    q2 = Column(Float(53))
+    q3 = Column(Float(53))
+    q4 = Column(Float(53))
+    q5 = Column(Float(53))
+    q6 = Column(Float(53))
+    q7 = Column(Float(53))
+    q8 = Column(Float(53))
+    q9 = Column(Float(53))
+    q10 = Column(Float(53))
+
+
 if __name__ == '__main__':
 
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:pwd@localhost/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
