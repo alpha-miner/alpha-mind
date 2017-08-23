@@ -20,6 +20,9 @@ from alphamind.data.engines.sqlengine import macro_styles
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
 from alphamind.data.neutralize import neutralize
+from alphamind.data.engines.sqlengine import factor_tables
+
+from alphamind.utilities import alpha_logger
 
 
 __all__ = [
@@ -36,5 +39,7 @@ __all__ = [
     'macro_styles',
     'winsorize_normal',
     'standardize',
-    'neutralize'
+    'neutralize',
+    'factor_tables',
+    'alpha_logger'
 ]

@@ -235,7 +235,7 @@ class SqlEngine(object):
             .select_from(big_table) \
             .where(and_(Market.Date == ref_date, Market.Code.in_(codes)))
 
-        df = pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine).sort_values('Code')
         res = transformer.transform('Code', df)
 
         for col in res.columns:
