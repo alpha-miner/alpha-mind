@@ -66,12 +66,14 @@ for i, value in enumerate(factor_groups):
 
     f_data = total_data[[alpha_factor_name]]
     try:
-        res = quantile_analysis(f_data,
-                                [1.],
-                                dx_return,
-                                risk_exp=risk_exp,
-                                n_bins=n_bins,
-                                benchmark=benchmark)
+        er = factor_processing(total_data[[alpha_factor_name]].values,
+                               pre_process=[winsorize_normal, standardize],
+                               risk_factors=risk_exp,
+                               post_process=[standardize])
+        res = er_quantile_analysis(er,
+                                   n_bins=n_bins,
+                                   dx_return=dx_return,
+                                   benchmark=benchmark)
     except Exception as e:
         print(e)
         res = np.zeros(n_bins)
