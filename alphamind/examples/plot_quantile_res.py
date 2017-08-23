@@ -31,14 +31,15 @@ elif freq == '1d':
     horizon = 0
 
 start_date = '2017-01-01'
-end_date = '2017-08-18'
+end_date = '2017-08-22'
 
 dates = makeSchedule(start_date,
                      end_date,
                      tenor=freq,
-                     calendar='china.sse')
+                     calendar='china.sse',
+                     dateRule=BizDayConventions.Following)
 
-prod_factors = ['EPS']
+prod_factors = ['CHV']
 
 all_data = engine.fetch_data_range(universe, prod_factors, dates=dates, benchmark=905)
 factor_all_data = all_data['factor']
@@ -59,6 +60,7 @@ for factor in prod_factors:
         returns = engine.fetch_dx_return(date, codes, horizon=horizon)
 
         total_data = pd.merge(data, returns, on=['Code']).dropna()
+        print('{0}: {1}'.format(date, len(data)))
         risk_exp = total_data[neutralize_risk].values.astype(float)
         dx_return = total_data.dx.values
         benchmark = total_data.weight.values

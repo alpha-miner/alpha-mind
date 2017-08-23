@@ -14,13 +14,15 @@ from PyFin.api import *
 
 strategies = {
     'prod': {
-        'factors': ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
-        'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
+        # 'factors': ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
+        # 'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
+        'factors': ['CHV'],
+        'weights': [1.]
     },
-    'candidate': {
-        'factors': ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'GREV', 'ROEDiluted'],
-        'weights': [0.02, 0.2, 0.15, 0.05, 0.2, 0.2, 0.2]
-    }
+    # 'candidate': {
+    #     'factors': ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'GREV', 'ROEDiluted'],
+    #     'weights': [0.02, 0.2, 0.15, 0.05, 0.2, 0.2, 0.2]
+    # }
 }
 
 
@@ -39,7 +41,7 @@ elif freq == '1d':
     horizon = 0
 
 dates = makeSchedule('2017-01-01',
-                     '2017-08-18',
+                     '2017-08-20',
                      tenor=freq,
                      calendar='china.sse')
 
@@ -75,7 +77,7 @@ for strategy in strategies:
         risk_target = risk_exp_expand.T @ benchmark
 
         lbound = np.zeros(len(total_data))
-        ubound = 0.02 + benchmark
+        ubound = 0.01 + benchmark
 
         constraint = Constraints(risk_exp_expand, risk_names)
         for i, name in enumerate(risk_names):

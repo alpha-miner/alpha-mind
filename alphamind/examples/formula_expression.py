@@ -18,7 +18,7 @@ base_factors = ['EPS', 'ROEDiluted', 'VAL', 'CFinc1']
 expression = 0.
 
 for name in base_factors:
-    expression = expression + LAST(name)
+    expression = expression + RSI(10, name)
 
 alpha_factor_name = 'alpha_factor'
 alpha_factor = {alpha_factor_name: expression}
