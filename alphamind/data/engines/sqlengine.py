@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_, outerjoin, join, over
+from sqlalchemy import select, and_, outerjoin, join
 from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
@@ -32,6 +32,7 @@ from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import Market
+from alphamind.data.transformer import Transformer
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -218,9 +219,13 @@ class SqlEngine(object):
 
     def fetch_factor(self,
                      ref_date: str,
-                     factors: Iterable[str],
+                     factors: Iterable[object],
                      codes: Iterable[int]) -> pd.DataFrame:
-        factor_cols = _map_factors(factors)
+
+        transformer = Transformer(factors)
+        dependency = transformer.dependency
+
+        factor_cols = _map_factors(dependency)
 
         big_table = Market
         for t in set(factor_cols.values()):
@@ -230,15 +235,24 @@ class SqlEngine(object):
             .select_from(big_table) \
             .where(and_(Market.Date == ref_date, Market.Code.in_(codes)))
 
-        return pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine)
+        res = transformer.transform('Code', df)
+
+        for col in res.columns:
+            if col not in set(['Code', 'isOpen']) and col not in df.columns:
+                df[col] = res[col].values
+        return df
 
     def fetch_factor_range(self,
                            universe: Universe,
-                           factors: Iterable[str],
+                           factors: Iterable[object],
                            start_date: str = None,
                            end_date: str = None,
                            dates: Iterable[str] = None) -> pd.DataFrame:
-        factor_cols = _map_factors(factors)
+
+        transformer = Transformer(factors)
+        dependency = transformer.dependency
+        factor_cols = _map_factors(dependency)
 
         q2 = universe.query_range(start_date, end_date, dates).alias('temp_universe')
 
@@ -249,7 +263,14 @@ class SqlEngine(object):
         query = select([Market.Date, Market.Code, Market.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table)
 
-        return pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine).sort_values(['Date', 'Code']).set_index('Date')
+        res = transformer.transform('Code', df)
+
+        for col in res.columns:
+            if col not in set(['Code', 'isOpen']) and col not in df.columns:
+                df[col] = res[col].values
+
+        return df.reset_index()
 
     def fetch_benchmark(self,
                         ref_date: str,
@@ -402,13 +423,16 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
+    from PyFin.api import *
     db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
+    db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
     ref_date = '2017-08-10'
 
-    codes = engine.fetch_codes_range(universe, None, None, ['2017-01-01', '2017-08-10'])
-    data2 = engine.fetch_dx_return_range(universe, '2017-08-01', '2017-08-10', ['2017-08-01', '2017-08-10'])
+    codes = engine.fetch_codes(universe=universe, ref_date='2017-08-10')
+    MAXIMUM(('EPS', 'ROEDiluted'))
+    data2 = engine.fetch_factor_range(universe=universe, dates=['2017-08-01', '2017-08-10'], factors={'factor': MAXIMUM(('EPS', 'ROEDiluted'))})
     print(codes)
     print(data2)

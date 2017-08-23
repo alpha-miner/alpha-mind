@@ -8,8 +8,8 @@ Created on 2017-8-16
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from PyFin.api import makeSchedule
 from alphamind.api import *
+from PyFin.api import *
 
 
 strategies = {
@@ -27,8 +27,8 @@ strategies = {
 engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
 universe = Universe('custom', ['zz500'])
 benchmark_code = 905
-neutralize_risk = ['SIZE'] + industry_styles
-constraint_risk = ['SIZE'] + industry_styles
+neutralize_risk = industry_styles
+constraint_risk = industry_styles
 freq = '1w'
 
 if freq == '1m':
@@ -38,8 +38,8 @@ elif freq == '1w':
 elif freq == '1d':
     horizon = 0
 
-dates = makeSchedule('2012-01-14',
-                     '2017-08-14',
+dates = makeSchedule('2017-01-01',
+                     '2017-08-18',
                      tenor=freq,
                      calendar='china.sse')
 
@@ -75,7 +75,7 @@ for strategy in strategies:
         risk_target = risk_exp_expand.T @ benchmark
 
         lbound = np.zeros(len(total_data))
-        ubound = 0.01 + benchmark
+        ubound = 0.02 + benchmark
 
         constraint = Constraints(risk_exp_expand, risk_names)
         for i, name in enumerate(risk_names):
@@ -92,7 +92,9 @@ for strategy in strategies:
                                             is_tradable=total_data.isOpen.values.astype(bool),
                                             method='risk_neutral',
                                             constraints=constraint,
-                                            use_rank=100)
+                                            use_rank=50,
+                                            lbound=lbound,
+                                            ubound=ubound)
         except Exception as e:
             print(e)
             rets.append(0.)
@@ -103,6 +105,11 @@ for strategy in strategies:
 
 
 ret_df = pd.DataFrame(total_data_dict, index=dates)
+
+start_date = advanceDateByCalendar('china.sse', dates[0], '-1w')
+ret_df.loc[start_date] = 0.
+ret_df.sort_index(inplace=True)
+
 ret_df.cumsum().plot(figsize=(12, 6))
 plt.savefig("backtest_big_universe_20170814.png")
 plt.show()

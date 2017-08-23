@@ -30,15 +30,15 @@ elif freq == '1w':
 elif freq == '1d':
     horizon = 0
 
-start_date = '2016-04-01'
-end_date = '2017-08-17'
+start_date = '2017-01-01'
+end_date = '2017-08-18'
 
 dates = makeSchedule(start_date,
                      end_date,
                      tenor=freq,
                      calendar='china.sse')
 
-prod_factors = ['IVR', 'RVOL']
+prod_factors = ['EPS']
 
 all_data = engine.fetch_data_range(universe, prod_factors, dates=dates, benchmark=905)
 factor_all_data = all_data['factor']
