@@ -22,6 +22,8 @@ from alphamind.data.standardize import standardize
 from alphamind.data.neutralize import neutralize
 from alphamind.data.engines.sqlengine import factor_tables
 
+from alphamind.model.preparing import prepare_data
+
 from alphamind.utilities import alpha_logger
 
 
@@ -41,5 +43,6 @@ __all__ = [
     'standardize',
     'neutralize',
     'factor_tables',
+    'prepare_data',
     'alpha_logger'
 ]

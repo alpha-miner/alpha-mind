@@ -15,35 +15,39 @@ from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 
 
-def _map_horizon(sampling: str) -> int:
-    if sampling == '1d':
+def _map_horizon(frequency: str) -> int:
+    if frequency == '1d':
         return 0
-    elif sampling == '1w':
+    elif frequency == '1w':
         return 4
-    elif sampling == '1m':
+    elif frequency == '1m':
         return 21
-    elif sampling == '3m':
+    elif frequency == '3m':
         return 62
     else:
-        raise ValueError('{0} is an unrecognized sampling rule'.format(sampling))
+        raise ValueError('{0} is an unrecognized frequency rule'.format(frequency))
 
 
 def prepare_data(engine: SqlEngine,
                  factors: Iterable[object],
                  start_date: str,
                  end_date: str,
-                 sampling: str,
-                 universe: Universe):
-    dates = makeSchedule(start_date, end_date, sampling, calendar='china.sse', dateRule=BizDayConventions.Following)
+                 frequency: str,
+                 universe: Universe,
+                 default_window: int=0):
+    dates = makeSchedule(start_date, end_date, frequency, calendar='china.sse', dateRule=BizDayConventions.Following)
 
-    horizon = _map_horizon(sampling)
+    horizon = _map_horizon(frequency)
 
     transformer = Transformer(factors)
 
-    factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates).sort_values(['Date', 'Code'])
+    factor_df = engine.fetch_factor_range(universe,
+                                          factors=transformer,
+                                          dates=dates,
+                                          default_window=default_window).sort_values(['Date', 'Code'])
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
 
-    df = pd.merge(factor_df, return_df, on=['Date', 'Code'])
+    df = pd.merge(factor_df, return_df, on=['Date', 'Code']).dropna()
 
     return df[['Date', 'Code', 'dx']], df[['Date', 'Code'] + transformer.names]
 

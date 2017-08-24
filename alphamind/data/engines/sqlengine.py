@@ -83,7 +83,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [Uqer, Tiny, LegacyFactor, Experimental, Market]
+factor_tables = [Uqer, Tiny, LegacyFactor, Experimental, RiskExposure, Market]
 
 
 def append_industry_info(df):
