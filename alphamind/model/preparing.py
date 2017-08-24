@@ -34,6 +34,7 @@ def prepare_data(engine: SqlEngine,
                  end_date: str,
                  frequency: str,
                  universe: Universe,
+                 benchmark: int,
                  default_window: int=0):
     dates = makeSchedule(start_date, end_date, frequency, calendar='china.sse', dateRule=BizDayConventions.Following)
 
@@ -46,10 +47,13 @@ def prepare_data(engine: SqlEngine,
                                           dates=dates,
                                           default_window=default_window).sort_values(['Date', 'Code'])
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+    benchmark_df = engine.fetch_benchmark_range(benchmark, dates=dates)
 
     df = pd.merge(factor_df, return_df, on=['Date', 'Code']).dropna()
+    df = pd.merge(df, benchmark_df, on=['Date', 'Code'], how='left')
+    df['weight'] = df['weight'].fillna(0.)
 
-    return df[['Date', 'Code', 'dx']], df[['Date', 'Code'] + transformer.names]
+    return df[['Date', 'Code', 'dx']], df[['Date', 'Code', 'weight'] + transformer.names]
 
 
 if __name__ == '__main__':
