@@ -224,7 +224,7 @@ class SqlEngine(object):
                      ref_date: str,
                      factors: Iterable[object],
                      codes: Iterable[int],
-                     default_window: int=0) -> pd.DataFrame:
+                     warm_start: int=0) -> pd.DataFrame:
 
         if isinstance(factors, Transformer):
             transformer = factors
@@ -235,7 +235,7 @@ class SqlEngine(object):
 
         factor_cols = _map_factors(dependency)
 
-        start_date = advanceDateByCalendar('china.sse', ref_date, str(-default_window) + 'b').strftime('%Y-%m-%d')
+        start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
         end_date = ref_date
 
         big_table = Market
@@ -263,7 +263,7 @@ class SqlEngine(object):
                            start_date: str = None,
                            end_date: str = None,
                            dates: Iterable[str] = None,
-                           default_window: int=0) -> pd.DataFrame:
+                           warm_start: int=0) -> pd.DataFrame:
 
         if isinstance(factors, Transformer):
             transformer = factors
@@ -287,10 +287,10 @@ class SqlEngine(object):
             real_dates = dates
         else:
             if dates:
-                real_start_date = advanceDateByCalendar('china.sse', dates[0], str(-default_window) + 'b').strftime('%Y-%m-%d')
+                real_start_date = advanceDateByCalendar('china.sse', dates[0], str(-warm_start) + 'b').strftime('%Y-%m-%d')
                 real_end_date = dates[-1]
             else:
-                real_start_date = advanceDateByCalendar('china.sse', start_date, str(-default_window) + 'b').strftime('%Y-%m-%d')
+                real_start_date = advanceDateByCalendar('china.sse', start_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
                 real_end_date = end_date
             real_dates = None
 
@@ -393,6 +393,9 @@ class SqlEngine(object):
         )
 
         risk_cov = pd.read_sql(query, self.engine).sort_values(['Date', 'FactorID'])
+
+        if not excluded:
+            excluded = []
 
         risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
         big_table = outerjoin(special_risk_table, RiskExposure,
