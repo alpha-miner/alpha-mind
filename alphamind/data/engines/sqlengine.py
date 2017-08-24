@@ -35,6 +35,7 @@ from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.transformer import Transformer
 from PyFin.api import advanceDateByCalendar
+from PyFin.Analysis.SecurityValueHolders import SecurityLatestValueHolder
 
 risk_styles = ['BETA',
                'MOMENTUM',
@@ -82,7 +83,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [Uqer, Tiny, LegacyFactor, Experimental, RiskExposure]
+factor_tables = [Uqer, Tiny, LegacyFactor, Experimental, Market]
 
 
 def append_industry_info(df):
@@ -107,9 +108,10 @@ def _map_risk_model_table(risk_model: str) -> tuple:
 
 def _map_factors(factors: Iterable[str]) -> dict:
     factor_cols = {}
+    excluded = {'Date', 'Code', 'isOpen', }
     for f in factors:
         for t in factor_tables:
-            if f in t.__table__.columns:
+            if f not in excluded and f in t.__table__.columns:
                 factor_cols[t.__table__.columns[f]] = t
                 break
     return factor_cols
@@ -271,14 +273,28 @@ class SqlEngine(object):
         dependency = transformer.dependency
         factor_cols = _map_factors(dependency)
 
-        if dates:
-            real_start_date = advanceDateByCalendar('china.sse', dates[0], str(-default_window) + 'b').strftime('%Y-%m-%d')
-            real_end_date = dates[-1]
-        else:
-            real_start_date = advanceDateByCalendar('china.sse', start_date, str(-default_window) + 'b').strftime('%Y-%m-%d')
-            real_end_date = end_date
+        fast_path_optimization = False
 
-        q2 = universe.query_range(real_start_date, real_end_date).alias('temp_universe')
+        for name in transformer.expressions:
+            if not isinstance(name, SecurityLatestValueHolder) and not isinstance(name, str):
+                break
+        else:
+            fast_path_optimization = True
+
+        if fast_path_optimization:
+            real_start_date = start_date
+            real_end_date = end_date
+            real_dates = dates
+        else:
+            if dates:
+                real_start_date = advanceDateByCalendar('china.sse', dates[0], str(-default_window) + 'b').strftime('%Y-%m-%d')
+                real_end_date = dates[-1]
+            else:
+                real_start_date = advanceDateByCalendar('china.sse', start_date, str(-default_window) + 'b').strftime('%Y-%m-%d')
+                real_end_date = end_date
+            real_dates = None
+
+        q2 = universe.query_range(real_start_date, real_end_date, real_dates).alias('temp_universe')
 
         big_table = join(Market, q2, and_(Market.Date == q2.c.Date, Market.Code == q2.c.Code))
         for t in set(factor_cols.values()):
@@ -464,6 +480,6 @@ if __name__ == '__main__':
     ref_date = '2017-08-10'
 
     codes = engine.fetch_codes(universe=universe, ref_date='2017-08-10')
-    data2 = engine.fetch_factor_range(universe=universe, start_date='2017-08-01', end_date='2017-08-10', factors={'factor': MAXIMUM(('EPS', 'ROEDiluted'))})
+    data2 = engine.fetch_factor_range(universe=universe, dates=['2017-08-01', '2017-08-10'], factors={'factor': MAXIMUM(('EPS', 'ROEDiluted'))})
     print(codes)
     print(data2)
