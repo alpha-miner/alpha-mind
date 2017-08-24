@@ -136,7 +136,8 @@ def fetch_data_package(engine: SqlEngine,
 
     if neutralized_risk:
         risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
-        risk_df = risk_df[['Date', 'Code'] + neutralized_risk].dropna()
+        used_neutralized_risk = list(set(neutralized_risk).difference(transformer.names))
+        risk_df = risk_df[['Date', 'Code'] + used_neutralized_risk].dropna()
 
         train_x = pd.merge(factor_df, risk_df, on=['Date', 'Code'])
         return_df = pd.merge(return_df, risk_df, on=['Date', 'Code'])[['Date', 'Code', 'dx']]

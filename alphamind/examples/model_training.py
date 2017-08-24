@@ -18,22 +18,21 @@ plt.style.use('ggplot')
 '''
 Settings:
 
-    universe     - zz500
-    neutralize   - 'SIZE' + all industries
-    benchmark    - zz500
-    base factors - ['CFinc1', 'CHV', 'VAL', 'BDTO', 'RVOL']
-    quantiles    - 5
-    start_date   - 2012-01-01
-    end_date     - 2017-08-01
-    re-balance   - 1 week
-    training     - every 4 week
-    
+universe     - zz500
+neutralize   - all industries
+benchmark    - zz500
+base factors - all the risk styles
+quantiles    - 5
+start_date   - 2012-01-01
+end_date     - 2017-08-01
+re-balance   - 1 week
+training     - every 4 week
 '''
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('zz500', ['zz500'])
-neutralize_risk = ['SIZE'] + industry_styles
-alpha_factors = ['CFinc1', 'CHV', 'VAL', 'BDTO', 'RVOL']
+neutralize_risk = industry_styles
+alpha_factors = risk_styles
 benchmark = 905
 n_bins = 5
 frequency = '1w'
