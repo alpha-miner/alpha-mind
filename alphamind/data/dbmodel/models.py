@@ -250,12 +250,12 @@ class Performance2(Base):
     ic = Column(Float(53))
 
 
-class Position(Base):
+class Positions(Base):
     __tablename__ = 'positions'
 
     source = Column(String(50), primary_key=True, nullable=False, index=True)
     universe = Column(String(50), primary_key=True, nullable=False, index=True)
-    benchmark = Column(BigInteger, primary_key=True, nullable=False, index=True)
+    benchmark = Column(Integer, primary_key=True, nullable=False, index=True)
     Date = Column(DateTime, primary_key=True, nullable=False, index=True)
     portfolio = Column(String(50), primary_key=True, nullable=False, index=True)
     type = Column(String(50), primary_key=True, nullable=False, index=True)
