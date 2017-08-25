@@ -50,15 +50,15 @@ def prepare_data(engine: SqlEngine,
     factor_df = engine.fetch_factor_range(universe,
                                           factors=transformer,
                                           dates=dates,
-                                          warm_start=warm_start).sort_values(['Date', 'Code'])
+                                          warm_start=warm_start).sort_values(['trade_date', 'code'])
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
     benchmark_df = engine.fetch_benchmark_range(benchmark, dates=dates)
 
-    df = pd.merge(factor_df, return_df, on=['Date', 'Code']).dropna()
-    df = pd.merge(df, benchmark_df, on=['Date', 'Code'], how='left')
+    df = pd.merge(factor_df, return_df, on=['trade_date', 'code']).dropna()
+    df = pd.merge(df, benchmark_df, on=['trade_date', 'code'], how='left')
     df['weight'] = df['weight'].fillna(0.)
 
-    return df[['Date', 'Code', 'dx']], df[['Date', 'Code', 'weight'] + transformer.names]
+    return df[['trade_date', 'code', 'dx']], df[['trade_date', 'code', 'weight'] + transformer.names]
 
 
 def batch_processing(x_values,
@@ -137,10 +137,10 @@ def fetch_data_package(engine: SqlEngine,
     if neutralized_risk:
         risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
         used_neutralized_risk = list(set(neutralized_risk).difference(transformer.names))
-        risk_df = risk_df[['Date', 'Code'] + used_neutralized_risk].dropna()
+        risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
 
-        train_x = pd.merge(factor_df, risk_df, on=['Date', 'Code'])
-        return_df = pd.merge(return_df, risk_df, on=['Date', 'Code'])[['Date', 'Code', 'dx']]
+        train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
+        return_df = pd.merge(return_df, risk_df, on=['trade_date', 'code'])[['trade_date', 'code', 'dx']]
         train_y = return_df.copy()
 
         risk_exp = train_x[neutralized_risk].values.astype(float)
@@ -153,7 +153,7 @@ def fetch_data_package(engine: SqlEngine,
         x_values = train_x[transformer.names].values.astype(float)
         y_values = train_y[['dx']].values
 
-    date_label = pd.DatetimeIndex(factor_df.Date).to_pydatetime()
+    date_label = pd.DatetimeIndex(factor_df.trade_date).to_pydatetime()
     dates = np.unique(date_label)
 
     return_df['weight'] = train_x['weight']

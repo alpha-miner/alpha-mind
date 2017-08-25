@@ -108,7 +108,7 @@ def _map_risk_model_table(risk_model: str) -> tuple:
 
 def _map_factors(factors: Iterable[str]) -> dict:
     factor_cols = {}
-    excluded = {'Date', 'Code', 'isOpen', }
+    excluded = {'trade_date', 'code', 'isOpen', }
     for f in factors:
         for t in factor_tables:
             if f not in excluded and f in t.__table__.columns:
@@ -140,7 +140,7 @@ class SqlEngine(object):
     def fetch_strategy(self, ref_date: str, strategy: str) -> pd.DataFrame():
         query = select([Strategy.strategyName, Strategy.factor, Strategy.weight]).where(
             and_(
-                Strategy.Date == ref_date,
+                Strategy.trade_date == ref_date,
                 Strategy.strategyName == strategy
             )
         )
@@ -179,12 +179,12 @@ class SqlEngine(object):
         else:
             end_date = expiry_date
 
-        query = select([DailyReturn.Code, func.sum(self.ln_func(1. + DailyReturn.d1)).label('dx')]).where(
+        query = select([DailyReturn.code, func.sum(self.ln_func(1. + DailyReturn.d1)).label('dx')]).where(
             and_(
-                DailyReturn.Date.between(start_date, end_date),
-                DailyReturn.Code.in_(codes)
+                DailyReturn.trade_date.between(start_date, end_date),
+                DailyReturn.code.in_(codes)
             )
-        ).group_by(DailyReturn.Code)
+        ).group_by(DailyReturn.code)
 
         return pd.read_sql(query, self.session.bind)
 
@@ -202,21 +202,21 @@ class SqlEngine(object):
         end_date = advanceDateByCalendar('china.sse', end_date, str(horizon) + 'b').strftime('%Y-%m-%d')
 
         q2 = universe.query_range(start_date, end_date).alias('temp_universe')
-        big_table = join(DailyReturn, q2, and_(DailyReturn.Date == q2.c.Date, DailyReturn.Code == q2.c.Code))
+        big_table = join(DailyReturn, q2, and_(DailyReturn.trade_date == q2.c.trade_date, DailyReturn.code == q2.c.code))
 
         stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
-            partition_by=DailyReturn.Code,
-            order_by=DailyReturn.Date,
+            partition_by=DailyReturn.code,
+            order_by=DailyReturn.trade_date,
             rows=(0, horizon)).label('dx')
 
-        query = select([DailyReturn.Date, DailyReturn.Code, stats]) \
+        query = select([DailyReturn.trade_date, DailyReturn.code, stats]) \
             .select_from(big_table) \
-            .where(DailyReturn.Date.between(start_date, end_date))
+            .where(DailyReturn.trade_date.between(start_date, end_date))
 
         df = pd.read_sql(query, self.session.bind)
 
         if dates:
-            df = df[df.Date.isin(dates)]
+            df = df[df.trade_date.isin(dates)]
 
         return df
 
@@ -240,17 +240,17 @@ class SqlEngine(object):
 
         big_table = Market
         for t in set(factor_cols.values()):
-            big_table = outerjoin(big_table, t, and_(Market.Date == t.Date, Market.Code == t.Code))
+            big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date, Market.code == t.code))
 
-        query = select([Market.Date, Market.Code, Market.isOpen] + list(factor_cols.keys())) \
+        query = select([Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table) \
-            .where(and_(Market.Date.between(start_date, end_date), Market.Code.in_(codes)))
+            .where(and_(Market.trade_date.between(start_date, end_date), Market.code.in_(codes)))
 
-        df = pd.read_sql(query, self.engine).sort_values(['Date', 'Code']).set_index('Date')
-        res = transformer.transform('Code', df)
+        df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).set_index('trade_date')
+        res = transformer.transform('code', df)
 
         for col in res.columns:
-            if col not in set(['Code', 'isOpen']) and col not in df.columns:
+            if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
 
         df = df.loc[ref_date]
@@ -296,18 +296,18 @@ class SqlEngine(object):
 
         q2 = universe.query_range(real_start_date, real_end_date, real_dates).alias('temp_universe')
 
-        big_table = join(Market, q2, and_(Market.Date == q2.c.Date, Market.Code == q2.c.Code))
+        big_table = join(Market, q2, and_(Market.trade_date == q2.c.trade_date, Market.code == q2.c.code))
         for t in set(factor_cols.values()):
-            big_table = outerjoin(big_table, t, and_(Market.Date == t.Date, Market.Code == t.Code))
+            big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date, Market.code == t.code))
 
-        query = select([Market.Date, Market.Code, Market.isOpen] + list(factor_cols.keys())) \
+        query = select([Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table)
 
-        df = pd.read_sql(query, self.engine).sort_values(['Date', 'Code']).set_index('Date')
-        res = transformer.transform('Code', df)
+        df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).set_index('trade_date')
+        res = transformer.transform('code', df)
 
         for col in res.columns:
-            if col not in set(['Code', 'isOpen']) and col not in df.columns:
+            if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
         if dates:
             df = df[df.index.isin(dates)]
@@ -318,9 +318,9 @@ class SqlEngine(object):
     def fetch_benchmark(self,
                         ref_date: str,
                         benchmark: int) -> pd.DataFrame:
-        query = select([IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
+        query = select([IndexComponent.code, (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
-                IndexComponent.Date == ref_date,
+                IndexComponent.trade_date == ref_date,
                 IndexComponent.indexCode == benchmark
             )
         )
@@ -333,10 +333,10 @@ class SqlEngine(object):
                               end_date: str = None,
                               dates: Iterable[str] = None) -> pd.DataFrame:
 
-        cond = IndexComponent.Date.in_(dates) if dates else IndexComponent.Date.between(start_date, end_date)
+        cond = IndexComponent.trade_date.in_(dates) if dates else IndexComponent.trade_date.between(start_date, end_date)
 
         query = select(
-            [IndexComponent.Date, IndexComponent.Code, (IndexComponent.weight / 100.).label('weight')]).where(
+            [IndexComponent.trade_date, IndexComponent.code, (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
                 cond,
                 IndexComponent.indexCode == benchmark
@@ -355,18 +355,18 @@ class SqlEngine(object):
         query = select([risk_cov_table.FactorID,
                         risk_cov_table.Factor]
                        + cov_risk_cols).where(
-            risk_cov_table.Date == ref_date
+            risk_cov_table.trade_date == ref_date
         )
         risk_cov = pd.read_sql(query, self.engine).sort_values('FactorID')
 
         risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
         big_table = outerjoin(special_risk_table, RiskExposure,
-                              and_(special_risk_table.Date == RiskExposure.Date,
-                                   special_risk_table.Code == RiskExposure.Code))
+                              and_(special_risk_table.trade_date == RiskExposure.trade_date,
+                                   special_risk_table.code == RiskExposure.code))
         query = select(
-            [RiskExposure.Code, special_risk_table.SRISK] + risk_exposure_cols) \
+            [RiskExposure.code, special_risk_table.SRISK] + risk_exposure_cols) \
             .select_from(big_table) \
-            .where(and_(RiskExposure.Date == ref_date, RiskExposure.Code.in_(codes)))
+            .where(and_(RiskExposure.trade_date == ref_date, RiskExposure.code.in_(codes)))
 
         risk_exp = pd.read_sql(query, self.engine)
 
@@ -384,30 +384,30 @@ class SqlEngine(object):
 
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
 
-        cond = risk_cov_table.Date.in_(dates) if dates else risk_cov_table.Date.between(start_date, end_date)
-        query = select([risk_cov_table.Date,
+        cond = risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(start_date, end_date)
+        query = select([risk_cov_table.trade_date,
                         risk_cov_table.FactorID,
                         risk_cov_table.Factor]
                        + cov_risk_cols).where(
             cond
         )
 
-        risk_cov = pd.read_sql(query, self.engine).sort_values(['Date', 'FactorID'])
+        risk_cov = pd.read_sql(query, self.engine).sort_values(['trade_date', 'FactorID'])
 
         if not excluded:
             excluded = []
 
         risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
         big_table = outerjoin(special_risk_table, RiskExposure,
-                              and_(special_risk_table.Date == RiskExposure.Date,
-                                   special_risk_table.Code == RiskExposure.Code))
+                              and_(special_risk_table.trade_date == RiskExposure.trade_date,
+                                   special_risk_table.code == RiskExposure.code))
 
         q2 = universe.query_range(start_date, end_date, dates).alias('temp_universe')
         big_table = join(big_table, q2,
-                         and_(special_risk_table.Date == q2.c.Date, special_risk_table.Code == q2.c.Code))
+                         and_(special_risk_table.trade_date == q2.c.trade_date, special_risk_table.code == q2.c.code))
 
         query = select(
-            [RiskExposure.Date, RiskExposure.Code, special_risk_table.SRISK] + risk_exposure_cols) \
+            [RiskExposure.trade_date, RiskExposure.code, special_risk_table.SRISK] + risk_exposure_cols) \
             .select_from(big_table)
 
         risk_exp = pd.read_sql(query, self.engine)
@@ -428,13 +428,13 @@ class SqlEngine(object):
         if benchmark:
             benchmark_data = self.fetch_benchmark(ref_date, benchmark)
             total_data['benchmark'] = benchmark_data
-            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['Code'])
+            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['code'])
             factor_data['weight'] = factor_data['weight'].fillna(0.)
 
         if risk_model:
             excluded = list(set(total_risk_factors).intersection(transformer.dependency))
             risk_cov, risk_exp = self.fetch_risk_model(ref_date, codes, risk_model, excluded)
-            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['Code'])
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['code'])
             total_data['risk_cov'] = risk_cov
 
         total_data['factor'] = factor_data
@@ -458,13 +458,13 @@ class SqlEngine(object):
         if benchmark:
             benchmark_data = self.fetch_benchmark_range(benchmark, start_date, end_date, dates)
             total_data['benchmark'] = benchmark_data
-            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['Date', 'Code'])
+            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['trade_date', 'code'])
             factor_data['weight'] = factor_data['weight'].fillna(0.)
 
         if risk_model:
             excluded = list(set(total_risk_factors).intersection(transformer.dependency))
             risk_cov, risk_exp = self.fetch_risk_model_range(universe, start_date, end_date, dates, risk_model, excluded)
-            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['Date', 'Code'])
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['trade_date', 'code'])
             total_data['risk_cov'] = risk_cov
 
         total_data['factor'] = factor_data

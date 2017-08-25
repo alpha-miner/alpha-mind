@@ -41,7 +41,7 @@ class Universe(object):
             all_and_conditions.append(univ_out)
 
         if self.exclude_codes:
-            codes_out = UniverseTable.Code.notin_(self.exclude_codes)
+            codes_out = UniverseTable.code.notin_(self.exclude_codes)
             all_and_conditions.append(codes_out)
 
         all_or_conditions = []
@@ -50,18 +50,18 @@ class Universe(object):
             all_or_conditions.append(univ_in)
 
         if self.include_codes:
-            codes_in = UniverseTable.Code.in_(self.include_codes)
+            codes_in = UniverseTable.code.in_(self.include_codes)
             all_or_conditions.append(codes_in)
 
         return all_and_conditions, all_or_conditions
 
     def query(self, ref_date):
-        query = select([UniverseTable.Date, UniverseTable.Code]).distinct()
+        query = select([UniverseTable.trade_date, UniverseTable.code]).distinct()
         all_and_conditions, all_or_conditions = self._create_condition()
 
         query = query.where(
             and_(
-                UniverseTable.Date == ref_date,
+                UniverseTable.trade_date == ref_date,
                 or_(
                     and_(*all_and_conditions),
                     *all_or_conditions
@@ -72,10 +72,10 @@ class Universe(object):
         return query
 
     def query_range(self, start_date=None, end_date=None, dates=None):
-        query = select([UniverseTable.Date, UniverseTable.Code]).distinct()
+        query = select([UniverseTable.trade_date, UniverseTable.code]).distinct()
         all_and_conditions, all_or_conditions = self._create_condition()
 
-        dates_cond = UniverseTable.Date.in_(dates) if dates else UniverseTable.Date.between(start_date, end_date)
+        dates_cond = UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date)
 
         query = query.where(
             and_(
