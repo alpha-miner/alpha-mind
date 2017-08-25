@@ -261,7 +261,7 @@ class Positions(Base):
     weight = Column(JSON)
 
 
-class QuantileAnalysi(Base):
+class QuantileAnalysis(Base):
     __tablename__ = 'quantile_analysis'
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
