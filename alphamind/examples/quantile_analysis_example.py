@@ -13,7 +13,7 @@ from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.dbmodel.models import Tiny
 from alphamind.data.dbmodel.models import LegacyFactor
 
-engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
+engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('custom', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
 n_bins = 24
@@ -45,7 +45,7 @@ for t in factor_tables:
     for c in t.__table__.columns:
         col_names.add(c.name)
 
-col_names = col_names.difference(set(['Date', 'Code']))
+col_names = col_names.difference(set(['trade_date', 'code']))
 
 prod_factors = list(col_names)
 
@@ -54,20 +54,20 @@ return_all_data = engine.fetch_dx_return_range(universe, dates=dates, horizon=ho
 factor_all_data = all_data['factor']
 
 total_df = pd.DataFrame()
-factor_groups = factor_all_data.groupby('Date')
-return_groups = return_all_data.groupby('Date')
+factor_groups = factor_all_data.groupby('trade_date')
+return_groups = return_all_data.groupby('trade_date')
 
 for date, factor_data in factor_groups:
     ref_date = date.strftime('%Y-%m-%d')
     returns = return_groups.get_group(date)
     final_res = np.zeros((len(prod_factors), n_bins))
-    this_date_data = factor_data[['Code', 'isOpen', 'weight'] + prod_factors + neutralize_risk]
-    this_date_data = pd.merge(this_date_data, returns, on=['Code'])
-    codes = this_date_data.Code.tolist()
+    this_date_data = factor_data[['code', 'isOpen', 'weight'] + prod_factors + neutralize_risk]
+    this_date_data = pd.merge(this_date_data, returns, on=['code'])
+    codes = this_date_data.code.tolist()
 
     for i, factor in enumerate(prod_factors):
         factors = [factor]
-        total_data = this_date_data[['Code', 'isOpen', 'weight', 'dx'] + factors + neutralize_risk].dropna()
+        total_data = this_date_data[['code', 'isOpen', 'weight', 'dx'] + factors + neutralize_risk].dropna()
         risk_exp = total_data[neutralize_risk].values.astype(float)
         dx_return = total_data.dx.values
         benchmark = total_data.weight.values
@@ -87,7 +87,7 @@ for date, factor_data in factor_groups:
 
     df = pd.DataFrame(final_res, index=prod_factors)
     df.sort_index(inplace=True)
-    df['Date'] = date
+    df['trade_date'] = date
 
     total_df = total_df.append(df)
     print('{0} is finished'.format(date))

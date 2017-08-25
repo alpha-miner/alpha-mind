@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 start = dt.datetime.now()
 
-engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
+engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('custom', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
 n_bins = 5
@@ -30,8 +30,8 @@ elif freq == '1w':
 elif freq == '1d':
     horizon = 0
 
-start_date = '2017-01-01'
-end_date = '2017-08-22'
+start_date = '2012-01-01'
+end_date = '2012-08-01'
 
 dates = makeSchedule(start_date,
                      end_date,
@@ -39,9 +39,10 @@ dates = makeSchedule(start_date,
                      calendar='china.sse',
                      dateRule=BizDayConventions.Following)
 
-prod_factors = ['CHV']
+prod_factors = ['EPS']
 
 all_data = engine.fetch_data_range(universe, prod_factors, dates=dates, benchmark=905)
+return_all_data = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
 factor_all_data = all_data['factor']
 
 total_df = pd.DataFrame()
@@ -51,15 +52,16 @@ for factor in prod_factors:
     factors = [factor]
     final_res = np.zeros((len(dates), n_bins))
 
-    factor_groups = factor_all_data.groupby('Date')
+    factor_groups = factor_all_data.groupby('trade_date')
+    return_groups = return_all_data.groupby('trade_date')
     for i, value in enumerate(factor_groups):
         date = value[0]
-        data = value[1][['Code', factor, 'isOpen', 'weight'] + neutralize_risk]
-        codes = data.Code.tolist()
+        data = value[1][['code', factor, 'isOpen', 'weight'] + neutralize_risk]
+        codes = data.code.tolist()
         ref_date = value[0].strftime('%Y-%m-%d')
-        returns = engine.fetch_dx_return(date, codes, horizon=horizon)
+        returns = return_groups.get_group(date)
 
-        total_data = pd.merge(data, returns, on=['Code']).dropna()
+        total_data = pd.merge(data, returns, on=['code']).dropna()
         print('{0}: {1}'.format(date, len(data)))
         risk_exp = total_data[neutralize_risk].values.astype(float)
         dx_return = total_data.dx.values

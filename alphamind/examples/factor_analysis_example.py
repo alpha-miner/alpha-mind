@@ -26,7 +26,7 @@ strategies = {
 }
 
 
-engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
+engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('custom', ['zz500'])
 benchmark_code = 905
 neutralize_risk = industry_styles
@@ -53,17 +53,17 @@ for strategy in strategies:
 
     all_data = engine.fetch_data_range(universe, factors, dates=dates, benchmark=905)
     factor_all_data = all_data['factor']
-    factor_groups = factor_all_data.groupby('Date')
+    factor_groups = factor_all_data.groupby('trade_date')
 
     rets = []
     for i, value in enumerate(factor_groups):
         date = value[0]
         data = value[1]
-        codes = data.Code.tolist()
+        codes = data.code.tolist()
         ref_date = date.strftime('%Y-%m-%d')
         returns = engine.fetch_dx_return(ref_date, codes, horizon=horizon)
 
-        total_data = pd.merge(data, returns, on=['Code']).dropna()
+        total_data = pd.merge(data, returns, on=['code']).dropna()
         print(date, ': ', len(total_data))
         risk_exp = total_data[neutralize_risk].values.astype(float)
         industry = total_data.industry_code.values

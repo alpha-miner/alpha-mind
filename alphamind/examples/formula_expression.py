@@ -13,19 +13,19 @@ from matplotlib import pyplot as plt
 
 
 # defind your alpha formula here
-base_factors = ['EPS', 'ROEDiluted', 'VAL', 'CFinc1']
+base_factors = ['EPS', 'ROEDiluted', 'BTOP']#, 'ROEDiluted', 'VAL', 'CFinc1']
 
 expression = 0.
 
 for name in base_factors:
-    expression = expression + RSI(10, name)
+    expression = expression + LAST(name)
 
 alpha_factor_name = 'alpha_factor'
 alpha_factor = {alpha_factor_name: expression}
 
 # end of formula definition
 
-engine = SqlEngine("mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha")
+engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('custom', ['zz500'])
 benchmark_code = 905
 neutralize_risk = ['SIZE'] + industry_styles
@@ -39,8 +39,8 @@ elif freq == '1w':
 elif freq == '1d':
     horizon = 0
 
-dates = makeSchedule('2017-01-01',
-                     '2017-08-18',
+dates = makeSchedule('2012-01-01',
+                     '2012-08-01',
                      tenor=freq,
                      calendar='china.sse')
 
@@ -48,18 +48,20 @@ factor_all_data = engine.fetch_data_range(universe,
                                           alpha_factor,
                                           dates=dates,
                                           benchmark=905)['factor']
+return_all_data = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
 
-factor_groups = factor_all_data.groupby('Date')
+factor_groups = factor_all_data.groupby('trade_date')
+return_groups = return_all_data.groupby('trade_date')
 final_res = np.zeros((len(dates), n_bins))
 
 for i, value in enumerate(factor_groups):
     date = value[0]
-    data = value[1][['Code', alpha_factor_name, 'isOpen', 'weight'] + neutralize_risk]
-    codes = data.Code.tolist()
+    data = value[1][['code', alpha_factor_name, 'isOpen', 'weight'] + neutralize_risk]
+    codes = data.code.tolist()
     ref_date = value[0].strftime('%Y-%m-%d')
-    returns = engine.fetch_dx_return(date, codes, horizon=horizon)
+    returns = return_groups.get_group(date)
 
-    total_data = pd.merge(data, returns, on=['Code']).dropna()
+    total_data = pd.merge(data, returns, on=['code']).dropna()
     risk_exp = total_data[neutralize_risk].values.astype(float)
     dx_return = total_data.dx.values
     benchmark = total_data.weight.values
