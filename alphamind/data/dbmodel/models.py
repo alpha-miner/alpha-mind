@@ -1099,7 +1099,7 @@ class SecurityMaster(Base):
     Code = Column(Integer, primary_key=True)
 
 
-class QuantileAnalysi(Base):
+class QuantileAnalysis(Base):
     __tablename__ = 'quantile_analysis'
 
     Date = Column(DateTime, primary_key=True, nullable=False)
