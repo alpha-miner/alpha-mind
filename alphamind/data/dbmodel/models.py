@@ -249,7 +249,7 @@ class Performance2(Base):
     ic = Column(Float(53))
 
 
-class Position(Base):
+class Positions(Base):
     __tablename__ = 'positions'
 
     source = Column(String(50), primary_key=True, nullable=False, index=True)
