@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, text, JSON
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, JSON, String, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -16,27 +16,26 @@ metadata = Base.metadata
 class DailyReturn(Base):
     __tablename__ = 'daily_return'
     __table_args__ = (
-        Index('daily_return_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('daily_return_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     d1 = Column(Float(53))
 
 
 class Experimental(Base):
     __tablename__ = 'experimental'
     __table_args__ = (
-        Index('experimental_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('experimental_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     CHV = Column(Float(53))
     DROE = Column(Float(53))
     IVR = Column(Float(53))
     ROEAfterNonRecurring = Column(Float(53))
-    EPAfterNonRecurring = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -49,17 +48,17 @@ class FactorMaster(Base):
     source = Column(String(30), primary_key=True, nullable=False)
     alias = Column(String(50), nullable=False)
     updateTime = Column(DateTime)
-    description = Column(Text())
+    description = Column(Text)
 
 
 class HaltList(Base):
     __tablename__ = 'halt_list'
     __table_args__ = (
-        Index('halt_list_Date_Code_haltBeginTime_uindex', 'Date', 'Code', 'haltBeginTime', unique=True),
+        Index('halt_list_Date_Code_haltBeginTime_uindex', 'trade_date', 'code', 'haltBeginTime', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     haltBeginTime = Column(DateTime, primary_key=True, nullable=False)
     haltEndTime = Column(DateTime)
     secShortName = Column(String(20))
@@ -72,11 +71,11 @@ class HaltList(Base):
 class IndexComponent(Base):
     __tablename__ = 'index_components'
     __table_args__ = (
-        Index('index_components_Date_indexCode_Code_uindex', 'Date', 'indexCode', 'Code', unique=True),
+        Index('index_components_Date_indexCode_Code_uindex', 'trade_date', 'indexCode', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     effDate = Column(DateTime)
     indexShortName = Column(String(20))
     indexCode = Column(Integer, primary_key=True, nullable=False)
@@ -88,11 +87,11 @@ class IndexComponent(Base):
 class Industry(Base):
     __tablename__ = 'industry'
     __table_args__ = (
-        Index('industry_Date_Code_industryID_uindex', 'Date', 'Code', 'industryID', unique=True),
+        Index('industry_Date_Code_industryID_uindex', 'trade_date', 'code', 'industryID', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     industry = Column(String(30), nullable=False)
     industryID = Column(BigInteger, primary_key=True, nullable=False)
     industrySymbol = Column(String(20))
@@ -109,11 +108,11 @@ class Industry(Base):
 class LegacyFactor(Base):
     __tablename__ = 'legacy_factor'
     __table_args__ = (
-        Index('legacy_factor_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('legacy_factor_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     ROEAfterNonRecurring = Column(Float(53))
     EPSAfterNonRecurring = Column(Float(53))
     EODPrice = Column(Float(53))
@@ -185,11 +184,11 @@ class LegacyFactor(Base):
 class Market(Base):
     __tablename__ = 'market'
     __table_args__ = (
-        Index('market_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('market_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     secShortName = Column(String(10))
     exchangeCD = Column(String(4))
     preClosePrice = Column(Float(53))
@@ -209,18 +208,18 @@ class Market(Base):
     PE = Column(Float(53))
     PE1 = Column(Float(53))
     PB = Column(Float(53))
-    vwap = Column(Float(53))
     isOpen = Column(Integer)
+    vwap = Column(Float(53))
 
 
 class Performance(Base):
     __tablename__ = 'performance'
     __table_args__ = (
-        Index('performance_Date_type_portfolio_industry_source_universe_uindex', 'Date', 'type', 'portfolio', 'industry', 'source', 'universe', unique=True),
-        Index('performance_type_industry_universe_portfolio_index', 'type', 'industry', 'universe', 'portfolio')
+        Index('performance_type_industry_universe_portfolio_index', 'type', 'industry', 'universe', 'portfolio'),
+        Index('performance_Date_type_portfolio_industry_source_universe_uindex', 'trade_date', 'type', 'portfolio', 'industry', 'source', 'universe', unique=True)
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     type = Column(String(20), primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
     industry = Column(String(50), primary_key=True, nullable=False)
@@ -234,11 +233,11 @@ class Performance(Base):
 class Performance2(Base):
     __tablename__ = 'performance2'
     __table_args__ = (
-        Index('performance2_uindex', 'Date', 'type', 'portfolio', 'industry', 'source', 'universe', 'benchmark', unique=True),
+        Index('performance2_uindex', 'trade_date', 'type', 'portfolio', 'industry', 'source', 'universe', 'benchmark', unique=True),
         Index('performance2_index', 'type', 'industry', 'universe', 'portfolio')
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     type = Column(String(20), primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
     industry = Column(String(50), primary_key=True, nullable=False)
@@ -250,26 +249,45 @@ class Performance2(Base):
     ic = Column(Float(53))
 
 
-class Positions(Base):
+class Position(Base):
     __tablename__ = 'positions'
 
     source = Column(String(50), primary_key=True, nullable=False, index=True)
     universe = Column(String(50), primary_key=True, nullable=False, index=True)
     benchmark = Column(Integer, primary_key=True, nullable=False, index=True)
-    Date = Column(DateTime, primary_key=True, nullable=False, index=True)
+    trade_date = Column(DateTime, primary_key=True, nullable=False, index=True)
     portfolio = Column(String(50), primary_key=True, nullable=False, index=True)
     type = Column(String(50), primary_key=True, nullable=False, index=True)
     weight = Column(JSON)
 
 
+class QuantileAnalysi(Base):
+    __tablename__ = 'quantile_analysis'
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio = Column(String(50), primary_key=True, nullable=False)
+    universe = Column(String(20), primary_key=True, nullable=False)
+    benchmark = Column(Integer, primary_key=True, nullable=False)
+    q1 = Column(Float(53))
+    q2 = Column(Float(53))
+    q3 = Column(Float(53))
+    q4 = Column(Float(53))
+    q5 = Column(Float(53))
+    q6 = Column(Float(53))
+    q7 = Column(Float(53))
+    q8 = Column(Float(53))
+    q9 = Column(Float(53))
+    q10 = Column(Float(53))
+
+
 class RiskCovDay(Base):
     __tablename__ = 'risk_cov_day'
     __table_args__ = (
-        Index('risk_cov_day_Date_Factor_uindex', 'Date', 'Factor', unique=True),
-        Index('risk_cov_day_Date_FactorID_uindex', 'Date', 'FactorID', unique=True)
+        Index('risk_cov_day_Date_FactorID_uindex', 'trade_date', 'FactorID', unique=True),
+        Index('risk_cov_day_Date_Factor_uindex', 'trade_date', 'Factor', unique=True)
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
     Factor = Column(String(50), primary_key=True, nullable=False)
     BETA = Column(Float(53))
@@ -317,11 +335,11 @@ class RiskCovDay(Base):
 class RiskCovLong(Base):
     __tablename__ = 'risk_cov_long'
     __table_args__ = (
-        Index('risk_cov_long_Date_FactorID_uindex', 'Date', 'FactorID', unique=True),
-        Index('risk_cov_long_Date_Factor_uindex', 'Date', 'Factor', unique=True)
+        Index('risk_cov_long_Date_FactorID_uindex', 'trade_date', 'FactorID', unique=True),
+        Index('risk_cov_long_Date_Factor_uindex', 'trade_date', 'Factor', unique=True)
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
     Factor = Column(String(50), primary_key=True, nullable=False)
     BETA = Column(Float(53))
@@ -369,11 +387,11 @@ class RiskCovLong(Base):
 class RiskCovShort(Base):
     __tablename__ = 'risk_cov_short'
     __table_args__ = (
-        Index('risk_cov_short_Date_FactorID_uindex', 'Date', 'FactorID', unique=True),
-        Index('risk_cov_short_Date_Factor_uindex', 'Date', 'Factor', unique=True)
+        Index('risk_cov_short_Date_FactorID_uindex', 'trade_date', 'FactorID', unique=True),
+        Index('risk_cov_short_Date_Factor_uindex', 'trade_date', 'Factor', unique=True)
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     FactorID = Column(Integer)
     Factor = Column(String(50), primary_key=True, nullable=False)
     BETA = Column(Float(53))
@@ -421,11 +439,11 @@ class RiskCovShort(Base):
 class RiskExposure(Base):
     __tablename__ = 'risk_exposure'
     __table_args__ = (
-        Index('risk_exposure_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('risk_exposure_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     exchangeCD = Column(String(4))
     secShortName = Column(String(20))
     BETA = Column(Float(53))
@@ -478,7 +496,7 @@ class RiskMaster(Base):
     alias = Column(String(30), nullable=False)
     type = Column(String(30))
     updateTime = Column(DateTime)
-    description = Column(Text())
+    description = Column(Text)
     FactorID = Column(Integer, nullable=False, unique=True)
     vendor = Column(String(30))
 
@@ -486,7 +504,7 @@ class RiskMaster(Base):
 class RiskReturn(Base):
     __tablename__ = 'risk_return'
 
-    Date = Column(DateTime, primary_key=True, unique=True)
+    trade_date = Column(DateTime, primary_key=True)
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -532,10 +550,10 @@ class RiskReturn(Base):
 class RiskStat(Base):
     __tablename__ = 'risk_stats'
     __table_args__ = (
-        Index('risk_stats_uindex', 'Date', 'type', 'portfolio', 'source', 'universe', 'benchmark', 'factor', unique=True),
+        Index('risk_stats_uindex', 'trade_date', 'type', 'portfolio', 'source', 'universe', 'benchmark', 'factor', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     type = Column(String(20), primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
     source = Column(String(20), primary_key=True, nullable=False)
@@ -545,14 +563,40 @@ class RiskStat(Base):
     exposure = Column(Float(53))
 
 
+class SecurityMaster(Base):
+    __tablename__ = 'security_master'
+
+    exchangeCD = Column(String(4))
+    ListSectorCD = Column(BigInteger)
+    ListSector = Column(String(6))
+    transCurrCD = Column(Text)
+    secShortName = Column(String(10))
+    secFullName = Column(Text)
+    listStatusCD = Column(String(2))
+    listDate = Column(DateTime)
+    delistDate = Column(DateTime)
+    equTypeCD = Column(String(4))
+    equType = Column(String(10))
+    exCountryCD = Column(String(3))
+    partyID = Column(BigInteger)
+    totalShares = Column(Float(53))
+    nonrestFloatShares = Column(Float(53))
+    nonrestfloatA = Column(Float(53))
+    officeAddr = Column(Text)
+    primeOperating = Column(Text)
+    endDate = Column(DateTime)
+    TShEquity = Column(Float(53))
+    code = Column(Integer, primary_key=True, nullable=False)
+
+
 class SpecificReturn(Base):
     __tablename__ = 'specific_return'
     __table_args__ = (
-        Index('specific_return_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('specific_return_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     exchangeCD = Column(String(4))
     secShortName = Column(String(20))
     spret = Column(Float(53))
@@ -562,11 +606,11 @@ class SpecificReturn(Base):
 class SpecificRiskDay(Base):
     __tablename__ = 'specific_risk_day'
     __table_args__ = (
-        Index('specific_risk_day_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('specific_risk_day_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     exchangeCD = Column(String(4))
     secShortName = Column(String(20))
     SRISK = Column(Float(53))
@@ -576,11 +620,11 @@ class SpecificRiskDay(Base):
 class SpecificRiskLong(Base):
     __tablename__ = 'specific_risk_long'
     __table_args__ = (
-        Index('specific_risk_long_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('specific_risk_long_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     exchangeCD = Column(String(4))
     secShortName = Column(String(20))
     updateTime = Column(DateTime)
@@ -590,11 +634,11 @@ class SpecificRiskLong(Base):
 class SpecificRiskShort(Base):
     __tablename__ = 'specific_risk_short'
     __table_args__ = (
-        Index('specific_risk_short_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('specific_risk_short_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     exchangeCD = Column(String(4))
     secShortName = Column(String(20))
     SRISK = Column(Float(53))
@@ -604,10 +648,10 @@ class SpecificRiskShort(Base):
 class Strategy(Base):
     __tablename__ = 'strategy'
     __table_args__ = (
-        Index('strategy_Date_strategyName_factor_uindex', 'Date', 'strategyName', 'factor', unique=True),
+        Index('strategy_Date_strategyName_factor_uindex', 'trade_date', 'strategyName', 'factor', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
     strategyName = Column(String(20), primary_key=True, nullable=False)
     factor = Column(String(50), primary_key=True, nullable=False)
     weight = Column(Float(53))
@@ -617,12 +661,12 @@ class Strategy(Base):
 class Tiny(Base):
     __tablename__ = 'tiny'
 
-    Date = Column(DateTime, primary_key=True, nullable=False, server_default=text("(NULL)"))
-    Code = Column(Integer, primary_key=True, nullable=False, server_default=text("(NULL)"))
-    CFinc1 = Column(Float(53), server_default=text("(NULL)"))
-    BDTO = Column(Float(53), server_default=text("(NULL)"))
-    RVOL = Column(Float(53), server_default=text("(NULL)"))
-    CHV = Column(Float(53), server_default=text("(NULL)"))
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
+    CFinc1 = Column(Float(53))
+    BDTO = Column(Float(53))
+    RVOL = Column(Float(53))
+    CHV = Column(Float(53))
     VAL = Column(Float(53))
     EPSAfterNonRecurring = Column(Float(53))
     DivP = Column(Float(53))
@@ -631,22 +675,22 @@ class Tiny(Base):
 class Universe(Base):
     __tablename__ = 'universe'
     __table_args__ = (
-        Index('universe_Date_universe_Code_uindex', 'Date', 'universe', 'Code', unique=True),
+        Index('universe_Date_universe_Code_uindex', 'trade_date', 'universe', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     universe = Column(String(20), primary_key=True, nullable=False)
 
 
 class Uqer(Base):
     __tablename__ = 'uqer'
     __table_args__ = (
-        Index('factors_Date_Code_uindex', 'Date', 'Code', unique=True),
+        Index('factors_Date_Code_uindex', 'trade_date', 'code', unique=True),
     )
 
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    Code = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
     AccountsPayablesTDays = Column(Float(53))
     AccountsPayablesTRate = Column(Float(53))
     AdminiExpenseRate = Column(Float(53))
@@ -1072,50 +1116,6 @@ class Uqer(Base):
     STOA = Column(Float(53))
     NLSIZE = Column(Float(53))
 
-
-class SecurityMaster(Base):
-    __tablename__ = 'security_master'
-
-    exchangeCD = Column(String(4))
-    ListSectorCD = Column(BigInteger)
-    ListSector = Column(String(6))
-    transCurrCD = Column(Text())
-    secShortName = Column(String(10))
-    secFullName = Column(Text())
-    listStatusCD = Column(String(2))
-    listDate = Column(DateTime)
-    delistDate = Column(DateTime)
-    equTypeCD = Column(String(4))
-    equType = Column(String(10))
-    exCountryCD = Column(String(3))
-    partyID = Column(BigInteger)
-    totalShares = Column(Float(53))
-    nonrestFloatShares = Column(Float(53))
-    nonrestfloatA = Column(Float(53))
-    officeAddr = Column(Text())
-    primeOperating = Column(Text())
-    endDate = Column(DateTime)
-    TShEquity = Column(Float(53))
-    Code = Column(Integer, primary_key=True)
-
-
-class QuantileAnalysis(Base):
-    __tablename__ = 'quantile_analysis'
-
-    Date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio = Column(String(50), primary_key=True, nullable=False)
-    universe = Column(String(20), primary_key=True, nullable=False)
-    benchmark = Column(Integer, primary_key=True, nullable=False)
-    q1 = Column(Float(53))
-    q2 = Column(Float(53))
-    q3 = Column(Float(53))
-    q4 = Column(Float(53))
-    q5 = Column(Float(53))
-    q6 = Column(Float(53))
-    q7 = Column(Float(53))
-    q8 = Column(Float(53))
-    q9 = Column(Float(53))
-    q10 = Column(Float(53))
 
 
 if __name__ == '__main__':
