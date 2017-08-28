@@ -16,6 +16,9 @@ DEFAULT_FACTOR_NAME = 'user_factor'
 
 def factor_translator(factor_pool):
 
+    if not factor_pool:
+        return None, None
+
     if isinstance(factor_pool, str):
         return {factor_pool: factor_pool}, [factor_pool]
     elif isinstance(factor_pool, SecurityValueHolder):
@@ -57,11 +60,17 @@ class Transformer(object):
         expression_dict, expression_dependency = \
             factor_translator(expressions)
 
-        res = list(zip(*list(expression_dict.items())))
+        if expression_dict:
 
-        self.names = list(res[0])
-        self.expressions = list(res[1])
-        self.dependency = expression_dependency
+            res = list(zip(*list(expression_dict.items())))
+
+            self.names = list(res[0])
+            self.expressions = list(res[1])
+            self.dependency = expression_dependency
+        else:
+            self.names = []
+            self.expressions = []
+            self.dependency = []
 
     def transform(self, group_name, data):
         if len(data) > 0:

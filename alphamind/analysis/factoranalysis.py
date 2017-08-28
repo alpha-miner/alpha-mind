@@ -66,6 +66,9 @@ def er_portfolio_analysis(er: np.ndarray,
                           is_tradable: Optional[np.ndarray] = None,
                           method='risk_neutral',
                           **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+
+    er = er.flatten()
+
     def create_constraints(benchmark, **kwargs):
         if 'lbound' in kwargs:
             lbound = kwargs['lbound']

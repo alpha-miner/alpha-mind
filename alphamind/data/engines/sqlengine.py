@@ -21,6 +21,7 @@ from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import Strategy
 from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
+from alphamind.data.dbmodel.models import Industry
 from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.dbmodel.models import Tiny
 from alphamind.data.dbmodel.models import LegacyFactor
@@ -115,6 +116,13 @@ def _map_factors(factors: Iterable[str]) -> dict:
                 factor_cols[t.__table__.columns[f]] = t
                 break
     return factor_cols
+
+
+def _map_industry_category(category: str) -> str:
+    if category == 'sw':
+        return '申万行业分类'
+    else:
+        raise ValueError("No other industry is supported at the current time")
 
 
 class SqlEngine(object):
@@ -414,7 +422,48 @@ class SqlEngine(object):
 
         return risk_cov, risk_exp
 
-    def fetch_data(self, ref_date,
+    def fetch_industry(self,
+                       ref_date: str,
+                       codes: Iterable[int],
+                       category: str='sw'):
+
+        industry_category_name = _map_industry_category(category)
+
+        query = select([Industry.code,
+                        Industry.industryID1.label('industry_code'),
+                        Industry.industryName1.label('industry')]).where(
+            and_(
+                Industry.trade_date == ref_date,
+                Industry.code.in_(codes),
+                Industry.industry == industry_category_name
+            )
+        )
+
+        return pd.read_sql(query, self.engine)
+
+    def fetch_industry_range(self,
+                             universe: Universe,
+                             start_date: str = None,
+                             end_date: str = None,
+                             dates: Iterable[str] = None,
+                             category: str = 'sw'):
+        industry_category_name = _map_industry_category(category)
+
+        q2 = universe.query_range(start_date, end_date, dates).alias('temp_universe')
+        big_table = join(Industry, q2,
+                         and_(Industry.trade_date == q2.c.trade_date, Industry.code == q2.c.code))
+
+        query = select(
+            [Industry.trade_date,
+             Industry.code,
+             Industry.industryID1.label('industry_code'),
+             Industry.industryName1.label('industry')]). \
+            select_from(big_table).where(
+            Industry.industry == industry_category_name
+        )
+        return pd.read_sql(query, self.engine)
+
+    def fetch_data(self, ref_date: str,
                    factors: Iterable[str],
                    codes: Iterable[int],
                    benchmark: int = None,
@@ -449,7 +498,8 @@ class SqlEngine(object):
                          end_date: str = None,
                          dates: Iterable[str] = None,
                          benchmark: int = None,
-                         risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
+                         risk_model: str = 'short',
+                         industry: str='sw') -> Dict[str, pd.DataFrame]:
 
         total_data = {}
         transformer = Transformer(factors)
@@ -467,22 +517,34 @@ class SqlEngine(object):
             factor_data = pd.merge(factor_data, risk_exp, how='left', on=['trade_date', 'code'])
             total_data['risk_cov'] = risk_cov
 
-        total_data['factor'] = factor_data
+        industry_info = self.fetch_industry_range(universe,
+                                                  start_date=start_date,
+                                                  end_date=end_date,
+                                                  dates=dates,
+                                                  category=industry)
 
-        append_industry_info(factor_data)
+        factor_data = pd.merge(factor_data, industry_info, on=['trade_date', 'code'])
+        total_data['factor'] = factor_data
         return total_data
 
 
 if __name__ == '__main__':
     from PyFin.api import *
-    db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
-    db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha'
+    db_url = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
+    # db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
     ref_date = '2017-08-10'
+    start_date = '2017-08-01'
+    end_date = '2017-08-12'
 
-    codes = engine.fetch_codes(universe=universe, ref_date='2017-08-10')
-    data2 = engine.fetch_factor_range(universe=universe, dates=['2017-08-01', '2017-08-10'], factors={'factor': MAXIMUM(('EPS', 'ROEDiluted'))})
+    codes = engine.fetch_codes(universe=universe, ref_date=ref_date)
+    data2 = engine.fetch_industry(ref_date=ref_date,
+                                  codes=codes)
+    data2 = engine.fetch_data_range(universe,
+                                    factors=['EPS'],
+                                    start_date=start_date,
+                                    end_date=end_date)
     print(codes)
     print(data2)

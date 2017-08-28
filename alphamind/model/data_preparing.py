@@ -15,6 +15,7 @@ from alphamind.data.transformer import Transformer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
+from alphamind.utilities import alpha_logger
 
 
 def _map_horizon(frequency: str) -> int:
@@ -52,13 +53,15 @@ def prepare_data(engine: SqlEngine,
                                           dates=dates,
                                           warm_start=warm_start).sort_values(['trade_date', 'code'])
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+    industry_df = engine.fetch_industry_range(universe, dates=dates)
     benchmark_df = engine.fetch_benchmark_range(benchmark, dates=dates)
 
     df = pd.merge(factor_df, return_df, on=['trade_date', 'code']).dropna()
     df = pd.merge(df, benchmark_df, on=['trade_date', 'code'], how='left')
+    df = pd.merge(df, industry_df, on=['trade_date', 'code'])
     df['weight'] = df['weight'].fillna(0.)
 
-    return df[['trade_date', 'code', 'dx']], df[['trade_date', 'code', 'weight'] + transformer.names]
+    return df[['trade_date', 'code', 'dx']], df[['trade_date', 'code', 'weight', 'isOpen', 'industry_code', 'industry'] + transformer.names]
 
 
 def batch_processing(x_values,
@@ -123,6 +126,8 @@ def fetch_data_package(engine: SqlEngine,
                        risk_model: str = 'short',
                        pre_process: Iterable[object] = None,
                        post_process: Iterable[object] = None):
+    alpha_logger.info("Starting data package fetching ...")
+
     transformer = Transformer(alpha_factors)
     dates = makeSchedule(start_date, end_date, frequency, calendar='china.sse', dateRule=BizDayConventions.Following)
     return_df, factor_df = prepare_data(engine,
@@ -133,6 +138,8 @@ def fetch_data_package(engine: SqlEngine,
                                         universe,
                                         benchmark,
                                         warm_start)
+
+    alpha_logger.info("Loading data is finished")
 
     if neutralized_risk:
         risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
@@ -157,6 +164,9 @@ def fetch_data_package(engine: SqlEngine,
     dates = np.unique(date_label)
 
     return_df['weight'] = train_x['weight']
+    return_df['industry'] = train_x['industry']
+    return_df['industry_code'] = train_x['industry_code']
+    return_df['isOpen'] = train_x['isOpen']
 
     train_x_buckets, train_y_buckets, predict_x_buckets = batch_processing(x_values,
                                                                            y_values,
@@ -166,6 +176,8 @@ def fetch_data_package(engine: SqlEngine,
                                                                            risk_exp,
                                                                            pre_process,
                                                                            post_process)
+
+    alpha_logger.info("Data processing is finished")
 
     ret = dict()
     ret['settlement'] = return_df
