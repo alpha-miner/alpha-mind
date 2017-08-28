@@ -31,14 +31,14 @@ training     - every 4 week
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('zz500', ['zz500'])
-neutralize_risk = industry_styles
+neutralize_risk = ['SIZE'] + industry_styles
 alpha_factors = ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'GREV',
                  'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
 benchmark = 905
 n_bins = 5
 frequency = '1w'
 batch = 4
-start_date = '2012-01-01'
+start_date = '2011-01-05'
 end_date = '2017-08-31'
 
 '''
@@ -146,6 +146,7 @@ for i, predict_date in enumerate(dates):
                                               is_tradable=is_tradable)
 
     final_res[i] = analysis['er']['total'] / benchmark_w.sum()
+    print('trade_date: {0} predicting finished'.format(train_date))
 
 last_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
 

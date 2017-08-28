@@ -139,8 +139,6 @@ def fetch_data_package(engine: SqlEngine,
                                         benchmark,
                                         warm_start)
 
-    alpha_logger.info("Loading data is finished")
-
     if neutralized_risk:
         risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
         used_neutralized_risk = list(set(neutralized_risk).difference(transformer.names))
@@ -167,6 +165,8 @@ def fetch_data_package(engine: SqlEngine,
     return_df['industry'] = train_x['industry']
     return_df['industry_code'] = train_x['industry_code']
     return_df['isOpen'] = train_x['isOpen']
+
+    alpha_logger.info("Loading data is finished")
 
     train_x_buckets, train_y_buckets, predict_x_buckets = batch_processing(x_values,
                                                                            y_values,
