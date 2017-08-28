@@ -84,7 +84,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [Uqer, Tiny, LegacyFactor, Experimental, RiskExposure, Market]
+factor_tables = [Uqer, LegacyFactor, Tiny,  Experimental, RiskExposure, Market]
 
 
 def append_industry_info(df):
@@ -543,7 +543,7 @@ if __name__ == '__main__':
     data2 = engine.fetch_industry(ref_date=ref_date,
                                   codes=codes)
     data2 = engine.fetch_data_range(universe,
-                                    factors=['EPS'],
+                                    factors=None,
                                     start_date=start_date,
                                     end_date=end_date)
     print(codes)

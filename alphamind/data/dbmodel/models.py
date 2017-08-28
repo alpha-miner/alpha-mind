@@ -36,6 +36,9 @@ class Experimental(Base):
     DROE = Column(Float(53))
     IVR = Column(Float(53))
     ROEAfterNonRecurring = Column(Float(53))
+    EPAfterNonRecurring = Column(Float(53))
+    DROEAfterNonRecurring = Column(Float(53))
+    CFinc1 = Column(Float(53))
 
 
 class FactorMaster(Base):
