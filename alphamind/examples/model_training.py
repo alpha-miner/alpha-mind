@@ -29,7 +29,7 @@ re-balance   - 1 week
 training     - every 4 week
 '''
 
-engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
 universe = Universe('hs300', ['hs300'])
 neutralize_risk = ['SIZE'] + industry_styles
 portfolio_risk_neutralize = ['SIZE']
