@@ -165,6 +165,8 @@ def fetch_data_package(engine: SqlEngine,
     return_df['industry'] = train_x['industry']
     return_df['industry_code'] = train_x['industry_code']
     return_df['isOpen'] = train_x['isOpen']
+    for i, name in enumerate(neutralized_risk):
+        return_df.loc[:, name] = risk_exp[:, i]
 
     alpha_logger.info("Loading data is finished")
 

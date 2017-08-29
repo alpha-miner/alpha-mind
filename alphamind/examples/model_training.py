@@ -8,7 +8,7 @@ Created on 2017-8-24
 import numpy as np
 import pandas as pd
 import copy
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import *
 from alphamind.api import *
 from PyFin.api import *
 from matplotlib import pyplot as plt
@@ -30,16 +30,18 @@ training     - every 4 week
 '''
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
-universe = Universe('zz500', ['zz500'])
-neutralize_risk = industry_styles
+universe = Universe('hs300', ['hs300'])
+neutralize_risk = ['SIZE'] + industry_styles
+portfolio_risk_neutralize = ['SIZE']
+portfolio_industry_neutralize = True
 alpha_factors = ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
-benchmark = 905
+benchmark = 300
 n_bins = 5
 frequency = '1w'
-batch = 4
+batch = 8
 start_date = '2012-01-01'
 end_date = '2017-08-31'
-method = 'rank'
+method = 'risk_neutral'
 use_rank = 100
 
 '''
@@ -77,7 +79,7 @@ for train_date in dates:
 
     model.fit(x, y)
     model_df.loc[train_date] = copy.deepcopy(model)
-    print('trade_date: {0} training finished'.format(train_date))
+    alpha_logger.info('trade_date: {0} training finished'.format(train_date))
 
 '''
 predicting phase: using trained model on the re-balance dates
@@ -117,6 +119,8 @@ predicting phase: using trained model on the re-balance dates (optimizing with r
 '''
 
 industry_dummies = pd.get_dummies(settlement['industry_code'].values)
+risk_styles = settlement[portfolio_risk_neutralize].values
+
 final_res = np.zeros(len(dates))
 
 for i, predict_date in enumerate(dates):
@@ -128,14 +132,26 @@ for i, predict_date in enumerate(dates):
     realized_r = settlement[index]['dx'].values
     industry_names = settlement[index]['industry'].values
     is_tradable = settlement[index]['isOpen'].values
-    ind_exp = industry_dummies[index]
 
-    risk_tags = ind_exp.columns
-    cons.add_exposure(risk_tags, ind_exp.values)
-    benchmark_exp = benchmark_w @ ind_exp.values
+    if portfolio_industry_neutralize:
+        ind_exp = industry_dummies[index]
 
-    for k, name in enumerate(risk_tags):
-        cons.set_constraints(name, benchmark_exp[k], benchmark_exp[k])
+        risk_tags = ind_exp.columns
+        cons.add_exposure(risk_tags, ind_exp.values)
+        benchmark_exp = benchmark_w @ ind_exp.values
+
+        for k, name in enumerate(risk_tags):
+            cons.set_constraints(name, benchmark_exp[k], benchmark_exp[k])
+
+    if portfolio_risk_neutralize:
+        risk_exp = risk_styles[index]
+
+        risk_tags = np.array(portfolio_risk_neutralize)
+        cons.add_exposure(risk_tags, risk_exp)
+
+        benchmark_exp = benchmark_w @ risk_exp
+        for k, name in enumerate(risk_tags):
+            cons.set_constraints(name, benchmark_exp[k], benchmark_exp[k])
 
     predict_y = model.predict(x)
     weights, analysis = er_portfolio_analysis(predict_y,
@@ -148,19 +164,19 @@ for i, predict_date in enumerate(dates):
                                               method=method,
                                               use_rank=use_rank)
 
-    model_res = pd.DataFrame({'weight': model.coef_[0],
-                              'factor': np.array(data_package['x_names'])})
+    # model_res = pd.DataFrame({'weight': model.coef_[0],
+    #                           'factor': np.array(data_package['x_names'])})
 
     # model_res.to_csv(r'\\10.63.6.71\sharespace\personal\licheng\portfolio\zz500_model\{0}.csv'.format(predict_date.strftime('%Y-%m-%d')))
 
     final_res[i] = analysis['er']['total'] / benchmark_w.sum()
-    print('trade_date: {0} predicting finished'.format(predict_date))
+    alpha_logger.info('trade_date: {0} predicting finished'.format(predict_date))
 
 last_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
 
 df = pd.Series(final_res, index=dates[1:] + [last_date])
 df.sort_index(inplace=True)
 df.cumsum().plot()
-plt.title('Prod factors model Linear Regression (neutralized Industries rank 100)')
+plt.title('Prod factors model Linear Regression (rank 100)')
 plt.show()
 
