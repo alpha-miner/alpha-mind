@@ -180,6 +180,7 @@ def fetch_data_package(engine: SqlEngine,
     alpha_logger.info("Data processing is finished")
 
     ret = dict()
+    ret['x_names'] = transformer.names
     ret['settlement'] = return_df
     ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets}
     ret['predict'] = {'x': predict_x_buckets}
