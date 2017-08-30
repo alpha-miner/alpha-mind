@@ -1677,6 +1677,9 @@ class FullFactorView(Base):
     AERODEF = Column(BigInteger)
     Conglomerates = Column(BigInteger)
     COUNTRY = Column(BigInteger)
+    d_srisk = Column(Float(53))
+    s_srisk = Column(Float(53))
+    l_srisk = Column(Float(53))
 
 
 if __name__ == '__main__':

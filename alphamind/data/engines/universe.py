@@ -56,35 +56,37 @@ class Universe(object):
         return all_and_conditions, all_or_conditions
 
     def query(self, ref_date):
-        query = select([UniverseTable.trade_date, UniverseTable.code]).distinct()
         all_and_conditions, all_or_conditions = self._create_condition()
 
-        query = query.where(
-            and_(
-                UniverseTable.trade_date == ref_date,
-                or_(
-                    and_(*all_and_conditions),
-                    *all_or_conditions
+        if all_or_conditions:
+            query = and_(
+                    UniverseTable.trade_date == ref_date,
+                    or_(
+                        and_(*all_and_conditions),
+                        *all_or_conditions
+                    )
                 )
+        else:
+            query = and_(
+                UniverseTable.trade_date == ref_date,
+                *all_and_conditions
             )
-        )
 
         return query
 
     def query_range(self, start_date=None, end_date=None, dates=None):
-        query = select([UniverseTable.trade_date, UniverseTable.code]).distinct()
         all_and_conditions, all_or_conditions = self._create_condition()
-
         dates_cond = UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date)
 
-        query = query.where(
-            and_(
-                dates_cond,
-                or_(
-                    and_(*all_and_conditions),
-                    *all_or_conditions
+        if all_or_conditions:
+            query = and_(
+                    dates_cond,
+                    or_(
+                        and_(*all_and_conditions),
+                        *all_or_conditions
+                    )
                 )
-            )
-        )
+        else:
+            query = and_(dates_cond, *all_and_conditions)
 
         return query
