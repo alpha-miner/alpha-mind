@@ -40,4 +40,4 @@ u."AccountsPayablesTDays",u."AccountsPayablesTRate",u."AdminiExpenseRate",u."ART
  left join legacy_factor as l on m.trade_date = l.trade_date and m.code = l.code
  left join tiny as t on m.trade_date = t.trade_date and m.code = t.code
 
-create UNIQUE index on MATERIALIZED (trade_date, code)
+create UNIQUE index on full_factor_view (trade_date, code)
