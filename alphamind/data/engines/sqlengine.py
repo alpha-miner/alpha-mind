@@ -22,18 +22,10 @@ from alphamind.data.dbmodel.models import Strategy
 from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Industry
-from alphamind.data.dbmodel.models import Uqer
-from alphamind.data.dbmodel.models import Tiny
-from alphamind.data.dbmodel.models import LegacyFactor
 from alphamind.data.dbmodel.models import Experimental
-from alphamind.data.dbmodel.models import SpecificRiskDay
-from alphamind.data.dbmodel.models import SpecificRiskShort
-from alphamind.data.dbmodel.models import SpecificRiskLong
 from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
-from alphamind.data.dbmodel.models import RiskExposure
-from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import FullFactorView
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.transformer import Transformer
@@ -86,7 +78,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [Uqer, LegacyFactor, Tiny, Experimental, RiskExposure, Market]
+factor_tables = [FullFactorView, Experimental]
 
 
 def append_industry_info(df):
@@ -109,18 +101,9 @@ def _map_risk_model_table(risk_model: str) -> tuple:
         raise ValueError("risk model name {0} is not recognized".format(risk_model))
 
 
-def _map_factors(factors: Iterable[str]) -> List:
-    factor_cols = []
-    excluded = {'trade_date', 'code', 'isOpen', }
-    for f in factors:
-        if f not in excluded and f in FullFactorView.__table__.columns:
-            factor_cols.append(FullFactorView.__table__.columns[f])
-    return factor_cols
-
-
-def _map_factors_old(factors: Iterable[str]) -> List:
+def _map_factors(factors: Iterable[str]) -> Dict:
     factor_cols = {}
-    excluded = {'trade_date', 'code', 'isOpen', }
+    excluded = {'trade_date', 'code', 'isOpen'}
     for f in factors:
         for t in factor_tables:
             if f not in excluded and f in t.__table__.columns:
@@ -261,8 +244,16 @@ class SqlEngine(object):
         start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
         end_date = ref_date
 
-        query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + factor_cols) \
-            .where(and_(FullFactorView.trade_date.between(start_date, end_date), FullFactorView.code.in_(codes)))
+        big_table = FullFactorView
+
+        for t in set(factor_cols.values()):
+            if t.__table__.name != FullFactorView.__table__.name:
+                big_table = outerjoin(big_table, t, and_(FullFactorView.trade_date == t.trade_date,
+                                                         FullFactorView.code == t.code))
+
+        query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
+            .select_from(big_table).where(and_(FullFactorView.trade_date.between(start_date, end_date),
+                                               FullFactorView.code.in_(codes)))
 
         df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).set_index('trade_date')
         res = transformer.transform('code', df)
@@ -316,12 +307,19 @@ class SqlEngine(object):
 
         cond = universe.query_range(real_start_date, real_end_date, real_dates)
 
-        big_table = join(FullFactorView, UniverseTable,
+        big_table = FullFactorView
+
+        for t in set(factor_cols.values()):
+            if t.__table__.name != FullFactorView.__table__.name:
+                big_table = outerjoin(big_table, t, and_(FullFactorView.trade_date == t.trade_date,
+                                                         FullFactorView.code == t.code))
+
+        big_table = join(big_table, UniverseTable,
                          and_(FullFactorView.trade_date == UniverseTable.trade_date,
                               FullFactorView.code == UniverseTable.code,
                               cond))
 
-        query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + factor_cols) \
+        query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table)
 
         df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).set_index('trade_date')
@@ -551,13 +549,13 @@ if __name__ == '__main__':
     from PyFin.api import *
     from alphamind.api import alpha_logger
 
-    db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
-    # db_url = 'mssql+pymssql://licheng:A12345678!@10.63.6.220/alpha'
+    # db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
+    db_url = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
     ref_date = '2017-08-02'
-    start_date = '2012-01-01'
+    start_date = '2017-01-01'
     end_date = '2017-08-31'
 
     dates = makeSchedule(start_date, end_date, '1w', 'china.sse')
@@ -569,7 +567,7 @@ if __name__ == '__main__':
                                       start_date=start_date,
                                       end_date=end_date,
                                       dates=dates,
-                                      factors=['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted'])
+                                      factors=['EPS'])
     alpha_logger.info('end')
     data2 = engine.fetch_industry_range(universe, start_date=start_date, end_date=end_date, dates=dates)
     alpha_logger.info('end')
@@ -579,4 +577,5 @@ if __name__ == '__main__':
     alpha_logger.info('end')
     data2 = engine.fetch_codes_range(universe, start_date=start_date, end_date=end_date, dates=dates)
     alpha_logger.info('end')
-    alpha_logger.info(len(codes))
+
+    print(data1)
