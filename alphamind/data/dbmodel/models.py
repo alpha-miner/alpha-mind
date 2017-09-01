@@ -216,35 +216,9 @@ class Market(Base):
 
 class Performance(Base):
     __tablename__ = 'performance'
-    __table_args__ = (
-        Index('performance_type_industry_universe_portfolio_index', 'type', 'industry', 'universe', 'portfolio'),
-        Index('performance_Date_type_portfolio_industry_source_universe_uindex', 'trade_date', 'type', 'portfolio',
-              'industry', 'source', 'universe', unique=True)
-    )
-
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     type = Column(String(20), primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
-    industry = Column(String(50), primary_key=True, nullable=False)
-    source = Column(String(20), primary_key=True, nullable=False)
-    universe = Column(String(50), primary_key=True, nullable=False)
-    er = Column(Float(53), nullable=False)
-    turn_over = Column(Float(53))
-    ic = Column(Float(53))
-
-
-class Performance2(Base):
-    __tablename__ = 'performance2'
-    __table_args__ = (
-        Index('performance2_uindex', 'trade_date', 'type', 'portfolio', 'industry', 'source', 'universe', 'benchmark',
-              unique=True),
-        Index('performance2_index', 'type', 'industry', 'universe', 'portfolio')
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    type = Column(String(20), primary_key=True, nullable=False)
-    portfolio = Column(String(50), primary_key=True, nullable=False)
-    industry = Column(String(50), primary_key=True, nullable=False)
     source = Column(String(20), primary_key=True, nullable=False)
     universe = Column(String(50), primary_key=True, nullable=False)
     benchmark = Column(Integer, primary_key=True, nullable=False)
