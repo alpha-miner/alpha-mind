@@ -369,39 +369,6 @@ def update_uqer_universe_ashare_ex(ds, **kwargs):
     df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
 
 
-def update_uqer_universe_pm500_mirror(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'pm500_mirror'
-        )
-    )
-    engine.execute(query)
-
-    ms_user = 'sa'
-    ms_pwd = 'A12345678!'
-    db = 'PortfolioManagements500'
-    old_engine = sqlalchemy.create_engine(
-        'mssql+pymssql://{0}:{1}@10.63.6.219/{2}?charset=utf8'.format(ms_user, ms_pwd, db))
-
-    query = "select applyDate trade_date, Code code, 'pm500_mirror' universe from PortfolioManagements500.dbo.StockUniverse " \
-            "where applyDate = {date}".format(date=ref_date)
-    df = pd.read_sql(query, old_engine)
-
-    if df.empty:
-        return
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
 def update_uqer_index_components(ds, **kwargs):
     ref_date, this_date = process_date(ds)
     flag = check_holiday(this_date)
@@ -726,14 +693,6 @@ universe50_task = PythonOperator(
     task_id='update_uqer_universe_sh50',
     provide_context=True,
     python_callable=update_uqer_universe_sh50,
-    dag=dag
-)
-
-
-_ = PythonOperator(
-    task_id='update_uqer_universe_pm500_mirror',
-    provide_context=True,
-    python_callable=update_uqer_universe_pm500_mirror,
     dag=dag
 )
 
