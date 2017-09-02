@@ -656,64 +656,11 @@ def fetch_date(table, query_date, engine):
     return df
 
 
-def update_legacy_factor(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    ms_user = 'sa'
-    ms_pwd = 'A12345678!'
-    db = 'MultiFactor'
-    old_engine = sqlalchemy.create_engine(
-        'mssql+pymssql://{0}:{1}@10.63.6.219/{2}?charset=cp936'.format(ms_user, ms_pwd, db))
-
-    df = fetch_date('FactorData', ref_date, old_engine)
-
-    del df['申万一级行业']
-    del df['申万二级行业']
-    del df['申万三级行业']
-
-    engine.execute(delete(LegacyFactor).where(LegacyFactor.trade_date == this_date))
-    df.to_sql(LegacyFactor.__table__.name, engine, if_exists='append', index=False)
-
-    return 0
-
-
 def update_materialized_views(ds, **kwargs):
     alpha_logger.info("starting refresh full_factor_view ...")
     engine.execute("REFRESH MATERIALIZED VIEW full_factor_view;")
     alpha_logger.info("starting cluster full_factor_view ...")
     engine.execute("CLUSTER full_factor_view;")
-
-
-def update_tiny_factor(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    ms_user = 'sa'
-    ms_pwd = 'A12345678!'
-    db = 'PortfolioManagements500'
-    old_engine = sqlalchemy.create_engine(
-        'mssql+pymssql://{0}:{1}@10.63.6.219/{2}?charset=utf8'.format(ms_user, ms_pwd, db))
-
-    sql = "select * from AlphaFactors_Difeiyue where Date={date}".format(date=ref_date)
-    df = pd.read_sql(sql, old_engine)
-
-    df = df.rename(columns={'date': 'trade_date'})
-    df['trade_date'] = pd.to_datetime(df.trade_date.astype(str))
-
-    cols = list(df.columns)[:2] + ['CFinc1', 'BDTO', 'RVOL', 'CHV', 'VAL']
-    df = df[cols]
-
-    engine.execute(delete(Tiny).where(Tiny.trade_date == this_date))
-    df.to_sql(Tiny.__table__.name, engine, if_exists='append', index=False)
-
-    return 0
 
 
 uqer_task = PythonOperator(
@@ -836,23 +783,6 @@ _ = PythonOperator(
     dag=dag
 )
 
-
-legacy_factor_task = PythonOperator(
-    task_id='update_legacy_factor',
-    provide_context=True,
-    python_callable=update_legacy_factor,
-    dag=dag
-)
-
-
-tiny_task = PythonOperator(
-    task_id='update_tiny_factor',
-    provide_context=True,
-    python_callable=update_tiny_factor,
-    dag=dag
-)
-
-
 refresh_materialized_views_task = PythonOperator(
     task_id='update_materialized_views',
     provide_context=True,
@@ -863,8 +793,6 @@ refresh_materialized_views_task = PythonOperator(
 
 refresh_materialized_views_task.set_upstream(market_task)
 refresh_materialized_views_task.set_upstream(uqer_task)
-refresh_materialized_views_task.set_upstream(legacy_factor_task)
-refresh_materialized_views_task.set_upstream(tiny_task)
 refresh_materialized_views_task.set_upstream(risk_model_task)
 
 
