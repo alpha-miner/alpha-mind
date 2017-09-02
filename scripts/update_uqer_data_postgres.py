@@ -625,7 +625,7 @@ def fetch_date(table, query_date, engine):
 
 def update_materialized_views(ds, **kwargs):
     alpha_logger.info("starting refresh full_factor_view ...")
-    engine.execute("REFRESH MATERIALIZED VIEW full_factor_view;")
+    engine.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY full_factor_view;")
     alpha_logger.info("starting cluster full_factor_view ...")
     engine.execute("CLUSTER full_factor_view;")
 
