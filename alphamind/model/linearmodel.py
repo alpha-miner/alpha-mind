@@ -18,7 +18,7 @@ from alphamind.utilities import alpha_logger
 class ConstLinearModel(ModelBase):
 
     def __init__(self,
-                 features: np.ndarray=None,
+                 features: list=None,
                  weights: np.ndarray=None):
         super().__init__(features)
         if features is not None and weights is not None:
@@ -46,7 +46,7 @@ class ConstLinearModel(ModelBase):
 
 class LinearRegression(ModelBase):
 
-    def __init__(self, features, fit_intercept: bool=False):
+    def __init__(self, features: list=None, fit_intercept: bool=False):
         super().__init__(features)
         self.impl = LinearRegressionImpl(fit_intercept=fit_intercept)
 

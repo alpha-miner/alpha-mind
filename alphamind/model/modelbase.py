@@ -13,8 +13,9 @@ from alphamind.utilities import alpha_logger
 
 class ModelBase(metaclass=abc.ABCMeta):
 
-    def __init__(self, features: np.ndarray=None):
-        self.features = features
+    def __init__(self, features: list=None):
+        if features is not None:
+            self.features = list(features)
 
     @abc.abstractmethod
     def fit(self, x, y):

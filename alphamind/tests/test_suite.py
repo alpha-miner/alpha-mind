@@ -26,6 +26,7 @@ from alphamind.tests.analysis.test_riskanalysis import TestRiskAnalysis
 from alphamind.tests.analysis.test_perfanalysis import TestPerformanceAnalysis
 from alphamind.tests.analysis.test_factoranalysis import TestFactorAnalysis
 from alphamind.tests.analysis.test_quantilieanalysis import TestQuantileAnalysis
+from alphamind.tests.model.test_linearmodel import TestLinearModel
 
 
 if __name__ == '__main__':
@@ -43,6 +44,7 @@ if __name__ == '__main__':
                          TestRiskAnalysis,
                          TestPerformanceAnalysis,
                          TestFactorAnalysis,
-                         TestQuantileAnalysis],
+                         TestQuantileAnalysis,
+                         TestLinearModel],
                         alpha_logger)
     runner.run()
