@@ -61,7 +61,8 @@ def prepare_data(engine: SqlEngine,
     df = pd.merge(df, industry_df, on=['trade_date', 'code'])
     df['weight'] = df['weight'].fillna(0.)
 
-    return df[['trade_date', 'code', 'dx']], df[['trade_date', 'code', 'weight', 'isOpen', 'industry_code', 'industry'] + transformer.names]
+    return df[['trade_date', 'code', 'dx']], df[
+        ['trade_date', 'code', 'weight', 'isOpen', 'industry_code', 'industry'] + transformer.names]
 
 
 def batch_processing(x_values,
@@ -75,6 +76,7 @@ def batch_processing(x_values,
     train_x_buckets = {}
     train_y_buckets = {}
     predict_x_buckets = {}
+    predict_y_buckets = {}
 
     for i, start in enumerate(groups[:-batch]):
         end = groups[i + batch]
@@ -110,7 +112,16 @@ def batch_processing(x_values,
                                  risk_factors=this_risk_exp,
                                  post_process=post_process)
         predict_x_buckets[end] = ne_x[sub_dates == end]
-    return train_x_buckets, train_y_buckets, predict_x_buckets
+
+        this_raw_y = y_values[index]
+        if len(this_raw_y) > 0:
+            ne_y = factor_processing(this_raw_y,
+                                     pre_process=pre_process,
+                                     risk_factors=this_risk_exp,
+                                     post_process=post_process)
+            predict_y_buckets[end] = ne_y[sub_dates == end]
+
+    return train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets
 
 
 def fetch_data_package(engine: SqlEngine,
@@ -170,14 +181,14 @@ def fetch_data_package(engine: SqlEngine,
 
     alpha_logger.info("Loading data is finished")
 
-    train_x_buckets, train_y_buckets, predict_x_buckets = batch_processing(x_values,
-                                                                           y_values,
-                                                                           dates,
-                                                                           date_label,
-                                                                           batch,
-                                                                           risk_exp,
-                                                                           pre_process,
-                                                                           post_process)
+    train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets = batch_processing(x_values,
+                                                                                              y_values,
+                                                                                              dates,
+                                                                                              date_label,
+                                                                                              batch,
+                                                                                              risk_exp,
+                                                                                              pre_process,
+                                                                                              post_process)
 
     alpha_logger.info("Data processing is finished")
 
@@ -185,7 +196,7 @@ def fetch_data_package(engine: SqlEngine,
     ret['x_names'] = transformer.names
     ret['settlement'] = return_df
     ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets}
-    ret['predict'] = {'x': predict_x_buckets}
+    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets}
     return ret
 
 
