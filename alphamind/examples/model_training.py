@@ -29,17 +29,17 @@ re-balance   - 1 week
 training     - every 4 week
 '''
 
-engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
-universe = Universe('hs300', ['hs300'])
+engine = SqlEngine('postgresql+psycopg2://postgres:we083826@192.168.0.101/alpha')
+universe = Universe('zz500', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
 portfolio_risk_neutralize = ['SIZE']
 portfolio_industry_neutralize = True
 alpha_factors = ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
-benchmark = 300
+benchmark = 905
 n_bins = 5
-frequency = '1w'
+frequency = '2w'
 batch = 8
-start_date = '2012-01-01'
+start_date = '2017-01-01'
 end_date = '2017-08-31'
 method = 'risk_neutral'
 use_rank = 100
