@@ -13,7 +13,7 @@ from alphamind.utilities import alpha_logger
 
 class ModelBase(metaclass=abc.ABCMeta):
 
-    def __init__(self, features: list):
+    def __init__(self, features: np.ndarray=None):
         self.features = features
 
     @abc.abstractmethod
@@ -30,14 +30,13 @@ class ModelBase(metaclass=abc.ABCMeta):
         if self.__class__.__module__ == '__main__':
             alpha_logger.warning("model is defined in a main module. The model_name may not be correct.")
 
-        model_desc = dict(internal_model=self.impl.__class__.__module__ + "." + self.impl.__class__.__name__,
-                          model_name=self.__class__.__module__ + "." + self.__class__.__name__,
+        model_desc = dict(model_name=self.__class__.__module__ + "." + self.__class__.__name__,
                           language='python',
                           timestamp=arrow.now().format(),
-                          features=self.features)
+                          features=list(self.features))
         return model_desc
 
-    @abc.abstractmethod
-    def load(self, model_desc: dict):
-        self.features = model_desc['features']
+    @abc.abstractclassmethod
+    def load(cls, model_desc: dict):
+        pass
 
