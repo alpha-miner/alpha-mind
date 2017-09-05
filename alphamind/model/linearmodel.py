@@ -10,6 +10,7 @@ import numpy as np
 from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
 from sklearn.linear_model import LinearRegression as LinearRegressionImpl
+from PyFin.api import pyFinAssert
 from alphamind.model.modelbase import ModelBase
 from alphamind.utilities import alpha_logger
 
@@ -21,7 +22,9 @@ class ConstLinearModel(ModelBase):
                  weights: np.ndarray=None):
         super().__init__(features)
         if features is not None and weights is not None:
-            assert len(features) == len(weights), "length of features is not equal to length of weights"
+            pyFinAssert(len(features) == len(weights),
+                        ValueError,
+                        "length of features is not equal to length of weights")
             self.weights = np.array(weights).flatten()
 
     def fit(self, x: np.ndarray, y: np.ndarray):
