@@ -221,16 +221,16 @@ def fetch_data_package(engine: SqlEngine,
 
 
 def fetch_train_phase(engine,
-                    alpha_factors: Iterable[object],
-                    ref_date,
-                    frequency,
-                    universe,
-                    batch,
-                    neutralized_risk: Iterable[str] = None,
-                    risk_model: str = 'short',
-                    pre_process: Iterable[object] = None,
-                    post_process: Iterable[object] = None,
-                    warm_start: int = 0):
+                      alpha_factors: Iterable[object],
+                      ref_date,
+                      frequency,
+                      universe,
+                      batch,
+                      neutralized_risk: Iterable[str] = None,
+                      risk_model: str = 'short',
+                      pre_process: Iterable[object] = None,
+                      post_process: Iterable[object] = None,
+                      warm_start: int = 0):
     transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
@@ -290,16 +290,16 @@ def fetch_train_phase(engine,
 
 
 def fetch_predict_phase(engine,
-                    alpha_factors: Iterable[object],
-                    ref_date,
-                    frequency,
-                    universe,
-                    batch,
-                    neutralized_risk: Iterable[str] = None,
-                    risk_model: str = 'short',
-                    pre_process: Iterable[object] = None,
-                    post_process: Iterable[object] = None,
-                    warm_start: int = 0):
+                        alpha_factors: Iterable[object],
+                        ref_date,
+                        frequency,
+                        universe,
+                        batch,
+                        neutralized_risk: Iterable[str] = None,
+                        risk_model: str = 'short',
+                        pre_process: Iterable[object] = None,
+                        post_process: Iterable[object] = None,
+                        warm_start: int = 0):
     transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
@@ -367,17 +367,6 @@ if __name__ == '__main__':
     universe = Universe('zz500', ['ashare_ex'])
     neutralized_risk = ['SIZE']
     res = fetch_train_phase(engine,
-                          ['EPS', 'CFinc1'],
-                          '2017-09-04',
-                          '2w',
-                          universe,
-                          4,
-                          warm_start=1,
-                          neutralized_risk=neutralized_risk)
-
-    print(res)
-
-    res = fetch_predict_phase(engine,
                             ['EPS', 'CFinc1'],
                             '2017-09-04',
                             '2w',
@@ -388,3 +377,13 @@ if __name__ == '__main__':
 
     print(res)
 
+    res = fetch_predict_phase(engine,
+                              ['EPS', 'CFinc1'],
+                              '2017-09-04',
+                              '2w',
+                              universe,
+                              4,
+                              warm_start=1,
+                              neutralized_risk=neutralized_risk)
+
+    print(res)

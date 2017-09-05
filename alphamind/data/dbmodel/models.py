@@ -227,6 +227,18 @@ class Performance(Base):
     ic = Column(Float(53))
 
 
+class PnlLog(Base):
+    __tablename__ = 'pnl_log'
+    __table_args__ = (
+        Index('pnl_log_trade_date_portfolio_name_uindex', 'trade_date', 'portfolio_name', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    excess_return = Column(Float(53))
+    pct_change = Column(Float(53))
+
+
 class Positions(Base):
     __tablename__ = 'positions'
 
@@ -256,6 +268,21 @@ class QuantileAnalysis(Base):
     q8 = Column(Float(53))
     q9 = Column(Float(53))
     q10 = Column(Float(53))
+
+
+class RebalanceLog(Base):
+    __tablename__ = 'rebalance_log'
+    __table_args__ = (
+        Index('rebalance_log_trade_date_code_portfolio_name_uindex', 'trade_date', 'code', 'portfolio_name', unique=True
+),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    factor_date = Column(DateTime, nullable=False)
+    weight = Column(Float(53), nullable=False)
+    price = Column(Float(53), nullable=False)
 
 
 class RiskCovDay(Base):
