@@ -271,8 +271,7 @@ class SqlEngine(object):
                            factors: Union[Transformer, Iterable[object]],
                            start_date: str = None,
                            end_date: str = None,
-                           dates: Iterable[str] = None,
-                           warm_start: int = 0) -> pd.DataFrame:
+                           dates: Iterable[str] = None) -> pd.DataFrame:
 
         if isinstance(factors, Transformer):
             transformer = factors
@@ -282,37 +281,20 @@ class SqlEngine(object):
         dependency = transformer.dependency
         factor_cols = _map_factors(dependency)
 
-        fast_path_optimization = False
-
-        for name in transformer.expressions:
-            if not isinstance(name, SecurityLatestValueHolder) and not isinstance(name, str):
-                break
-        else:
-            fast_path_optimization = True
-
-        if fast_path_optimization:
-            real_start_date = start_date
-            real_end_date = end_date
-            real_dates = dates
-        else:
-            if dates:
-                real_start_date = advanceDateByCalendar('china.sse', dates[0], str(-warm_start) + 'b').strftime(
-                    '%Y-%m-%d')
-                real_end_date = dates[-1]
-            else:
-                real_start_date = advanceDateByCalendar('china.sse', start_date, str(-warm_start) + 'b').strftime(
-                    '%Y-%m-%d')
-                real_end_date = end_date
-            real_dates = None
-
-        cond = universe.query_range(real_start_date, real_end_date, real_dates)
+        cond = universe.query_range(start_date, start_date, dates)
 
         big_table = FullFactorView
 
         for t in set(factor_cols.values()):
             if t.__table__.name != FullFactorView.__table__.name:
-                big_table = outerjoin(big_table, t, and_(FullFactorView.trade_date == t.trade_date,
-                                                         FullFactorView.code == t.code))
+                if dates is not None:
+                    big_table = outerjoin(big_table, t, and_(FullFactorView.trade_date == t.trade_date,
+                                                             FullFactorView.code == t.code,
+                                                             FullFactorView.trade_date.in_(dates)))
+                else:
+                    big_table = outerjoin(big_table, t, and_(FullFactorView.trade_date == t.trade_date,
+                                                             FullFactorView.code == t.code,
+                                                             FullFactorView.trade_date.between(start_date, end_date)))
 
         big_table = join(big_table, UniverseTable,
                          and_(FullFactorView.trade_date == UniverseTable.trade_date,
@@ -328,10 +310,7 @@ class SqlEngine(object):
         for col in res.columns:
             if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
-        if dates:
-            df = df[df.index.isin(dates)]
-        else:
-            df = df[start_date:end_date]
+
         return df.reset_index()
 
     def fetch_benchmark(self,

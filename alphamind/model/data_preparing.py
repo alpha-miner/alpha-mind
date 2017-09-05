@@ -11,6 +11,9 @@ from typing import Iterable
 from typing import Union
 from PyFin.api import makeSchedule
 from PyFin.api import BizDayConventions
+from PyFin.api import advanceDateByCalendar
+from PyFin.DateUtilities import Period
+from PyFin.Enums import TimeUnits
 from alphamind.data.transformer import Transformer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
@@ -19,14 +22,15 @@ from alphamind.utilities import alpha_logger
 
 
 def _map_horizon(frequency: str) -> int:
-    if frequency == '1d':
-        return 0
-    elif frequency == '1w':
-        return 4
-    elif frequency == '1m':
-        return 21
-    elif frequency == '3m':
-        return 62
+    parsed_period = Period(frequency)
+    unit = parsed_period.units()
+    length = parsed_period.length()
+    if unit == TimeUnits.BDays or unit == TimeUnits.Days:
+        return length - 1
+    elif unit == TimeUnits.Weeks:
+        return 5 * length - 1
+    elif unit == TimeUnits.Months:
+        return 22 * length - 1
     else:
         raise ValueError('{0} is an unrecognized frequency rule'.format(frequency))
 
@@ -39,6 +43,9 @@ def prepare_data(engine: SqlEngine,
                  universe: Universe,
                  benchmark: int,
                  warm_start: int = 0):
+    if warm_start > 0:
+        start_date = advanceDateByCalendar('china.sse', start_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
+
     dates = makeSchedule(start_date, end_date, frequency, calendar='china.sse', dateRule=BizDayConventions.Following)
 
     horizon = _map_horizon(frequency)
@@ -50,8 +57,7 @@ def prepare_data(engine: SqlEngine,
 
     factor_df = engine.fetch_factor_range(universe,
                                           factors=transformer,
-                                          dates=dates,
-                                          warm_start=warm_start).sort_values(['trade_date', 'code'])
+                                          dates=dates).sort_values(['trade_date', 'code'])
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
     industry_df = engine.fetch_industry_range(universe, dates=dates)
     benchmark_df = engine.fetch_benchmark_range(benchmark, dates=dates)
@@ -61,7 +67,7 @@ def prepare_data(engine: SqlEngine,
     df = pd.merge(df, industry_df, on=['trade_date', 'code'])
     df['weight'] = df['weight'].fillna(0.)
 
-    return df[['trade_date', 'code', 'dx']], df[
+    return dates, df[['trade_date', 'code', 'dx']], df[
         ['trade_date', 'code', 'weight', 'isOpen', 'industry_code', 'industry'] + transformer.names]
 
 
@@ -140,15 +146,14 @@ def fetch_data_package(engine: SqlEngine,
     alpha_logger.info("Starting data package fetching ...")
 
     transformer = Transformer(alpha_factors)
-    dates = makeSchedule(start_date, end_date, frequency, calendar='china.sse', dateRule=BizDayConventions.Following)
-    return_df, factor_df = prepare_data(engine,
-                                        transformer,
-                                        start_date,
-                                        end_date,
-                                        frequency,
-                                        universe,
-                                        benchmark,
-                                        warm_start)
+    dates, return_df, factor_df = prepare_data(engine,
+                                               transformer,
+                                               start_date,
+                                               end_date,
+                                               frequency,
+                                               universe,
+                                               benchmark,
+                                               warm_start)
 
     if neutralized_risk:
         risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
