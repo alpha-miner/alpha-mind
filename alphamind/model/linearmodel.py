@@ -7,6 +7,7 @@ Created on 2017-5-10
 
 import pickle
 import numpy as np
+import arrow
 from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
 from sklearn.linear_model import LinearRegression as LinearRegressionImpl
@@ -51,9 +52,11 @@ class LinearRegression(ModelBase):
     def __init__(self, features: list=None, fit_intercept: bool=False):
         super().__init__(features)
         self.impl = LinearRegressionImpl(fit_intercept=fit_intercept)
+        self.trained_time = None
 
     def fit(self, x: np.ndarray, y: np.ndarray):
         self.impl.fit(x, y)
+        self.trained_time = arrow.now().format()
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return self.impl.predict(x)
@@ -63,6 +66,7 @@ class LinearRegression(ModelBase):
         model_desc['internal_model'] = self.impl.__class__.__module__ + "." + self.impl.__class__.__name__,
         model_desc['desc'] = pickle.dumps(self.impl)
         model_desc['sklearn_version'] = sklearn_version
+        model_desc['trained_time'] = self.trained_time
         return model_desc
 
     def score(self) -> float:
@@ -72,6 +76,7 @@ class LinearRegression(ModelBase):
     def load(cls, model_desc: dict):
         obj_layout = cls()
         obj_layout.features = model_desc['features']
+        obj_layout.trained_time = model_desc['trained_time']
 
         if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
             alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
@@ -85,7 +90,7 @@ class LinearRegression(ModelBase):
 if __name__ == '__main__':
 
     import pprint
-    ls = ConstLinearModel(np.array(['a', 'b']), np.array([0.5, 0.5]))
+    ls = ConstLinearModel(['a', 'b'], np.array([0.5, 0.5]))
 
     x = np.array([[0.2, 0.2],
                   [0.1, 0.1],
