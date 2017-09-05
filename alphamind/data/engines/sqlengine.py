@@ -27,10 +27,11 @@ from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
 from alphamind.data.dbmodel.models import FullFactorView
+from alphamind.data.dbmodel.models import Models
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.transformer import Transformer
+from alphamind.model.loader import load_model
 from PyFin.api import advanceDateByCalendar
-from PyFin.Analysis.SecurityValueHolders import SecurityLatestValueHolder
 
 risk_styles = ['BETA',
                'MOMENTUM',
@@ -521,6 +522,33 @@ class SqlEngine(object):
         factor_data = pd.merge(factor_data, industry_info, on=['trade_date', 'code'])
         total_data['factor'] = factor_data
         return total_data
+
+    def fetch_model(self,
+                    ref_date,
+                    portfolio=None,
+                    model_type=None,
+                    version=None) -> pd.DataFrame:
+
+        conditions = [Models.trade_date == ref_date]
+
+        if portfolio:
+            conditions.append(Models.portfolio_name == portfolio)
+
+        if model_type:
+            conditions.append(Models.model_type == model_type)
+
+        if version:
+            conditions.append(Models.version == version)
+
+        query = select([Models]).where(and_(*conditions))
+
+        model_df = pd.read_sql(query, self.engine)
+
+        for i, model_desc in enumerate(model_df.model_desc):
+            model_df.loc[i, 'model'] = load_model(model_desc)
+
+        del model_df['model_desc']
+        return model_df
 
 
 if __name__ == '__main__':

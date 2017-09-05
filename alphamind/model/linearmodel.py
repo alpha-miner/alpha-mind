@@ -5,6 +5,7 @@ Created on 2017-5-10
 @author: cheng.li
 """
 
+import base64
 import pickle
 import numpy as np
 import arrow
@@ -63,8 +64,9 @@ class LinearRegression(ModelBase):
 
     def save(self) -> dict:
         model_desc = super().save()
-        model_desc['internal_model'] = self.impl.__class__.__module__ + "." + self.impl.__class__.__name__,
-        model_desc['desc'] = pickle.dumps(self.impl)
+        model_desc['internal_model'] = self.impl.__class__.__module__ + "." + self.impl.__class__.__name__
+        encoded = base64.encodebytes(pickle.dumps(self.impl))
+        model_desc['desc'] = encoded.decode('ascii')
         model_desc['sklearn_version'] = sklearn_version
         model_desc['trained_time'] = self.trained_time
         return model_desc
@@ -83,7 +85,8 @@ class LinearRegression(ModelBase):
                                  'Loaded model may work incorrectly.'.format(
                 sklearn_version, model_desc['sklearn_version']))
 
-        obj_layout.impl = pickle.loads(model_desc['desc'])
+        encoded = model_desc['desc'].encode('ascii')
+        obj_layout.impl = pickle.loads(base64.decodebytes(encoded))
         return obj_layout
 
 

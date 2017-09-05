@@ -1656,6 +1656,20 @@ class FullFactorView(Base):
     l_srisk = Column(Float(53))
 
 
+class Models(Base):
+    __tablename__ = 'models'
+    __table_args__ = (
+        Index('model_pk', 'trade_date', 'portfolio_name', 'model_type', 'version', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    model_desc = Column(JSON, nullable=False)
+    portfolio_name = Column(String(30), primary_key=True, nullable=False)
+    model_type = Column(String(30), primary_key=True, nullable=False)
+    version = Column(BigInteger, primary_key=True, nullable=False)
+    update_time = Column(DateTime, nullable=False)
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
