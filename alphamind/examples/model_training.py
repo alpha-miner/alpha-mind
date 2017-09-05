@@ -29,7 +29,7 @@ re-balance   - 1 week
 training     - every 4 week
 '''
 
-engine = SqlEngine('postgresql+psycopg2://postgres:we083826@192.168.0.101/alpha')
+engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('zz500', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
 portfolio_risk_neutralize = ['SIZE']
@@ -59,7 +59,7 @@ data_package = fetch_data_package(engine,
                                   neutralized_risk=neutralize_risk,
                                   pre_process=[winsorize_normal, standardize],
                                   post_process=[standardize],
-                                  warm_start=20)
+                                  warm_start=8)
 
 '''
 training phase: using Linear - regression from scikit-learn
