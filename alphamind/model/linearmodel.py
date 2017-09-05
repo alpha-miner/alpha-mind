@@ -57,7 +57,7 @@ class LinearRegression(ModelBase):
 
     def fit(self, x: np.ndarray, y: np.ndarray):
         self.impl.fit(x, y)
-        self.trained_time = arrow.now().format()
+        self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return self.impl.predict(x)

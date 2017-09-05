@@ -1663,11 +1663,11 @@ class Models(Base):
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
-    model_desc = Column(JSON, nullable=False)
     portfolio_name = Column(String(30), primary_key=True, nullable=False)
     model_type = Column(String(30), primary_key=True, nullable=False)
     version = Column(BigInteger, primary_key=True, nullable=False)
     update_time = Column(DateTime, nullable=False)
+    model_desc = Column(JSON, nullable=False)
 
 
 if __name__ == '__main__':
