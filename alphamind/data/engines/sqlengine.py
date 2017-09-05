@@ -82,15 +82,6 @@ total_risk_factors = risk_styles + industry_styles + macro_styles
 factor_tables = [FullFactorView, Experimental]
 
 
-def append_industry_info(df):
-    industry_arr = np.array(industry_styles)
-    industry_codes = np.arange(len(industry_styles), dtype=int)
-    industry_dummies = df[industry_styles].values.astype(bool)
-
-    df['industry'], df['industry_code'] = [industry_arr[row][0] for row in industry_dummies], \
-                                          [industry_codes[row][0] for row in industry_dummies]
-
-
 def _map_risk_model_table(risk_model: str) -> tuple:
     if risk_model == 'day':
         return RiskCovDay, FullFactorView.d_srisk
@@ -263,6 +254,7 @@ class SqlEngine(object):
             if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
 
+        df['isOpen'] = df.isOpen.astype(bool)
         df = df.loc[ref_date]
         df.index = list(range(len(df)))
         return df
@@ -272,7 +264,8 @@ class SqlEngine(object):
                            factors: Union[Transformer, Iterable[object]],
                            start_date: str = None,
                            end_date: str = None,
-                           dates: Iterable[str] = None) -> pd.DataFrame:
+                           dates: Iterable[str] = None,
+                           external_data: pd.DataFrame = None) -> pd.DataFrame:
 
         if isinstance(factors, Transformer):
             transformer = factors
@@ -305,13 +298,19 @@ class SqlEngine(object):
         query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table)
 
-        df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).set_index('trade_date')
+        df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code'])
+
+        if external_data is not None:
+            df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
+
+        df.set_index('trade_date', inplace=True)
         res = transformer.transform('code', df)
 
         for col in res.columns:
             if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
 
+        df['isOpen'] = df.isOpen.astype(bool)
         return df.reset_index()
 
     def fetch_benchmark(self,
@@ -462,7 +461,8 @@ class SqlEngine(object):
                    factors: Iterable[str],
                    codes: Iterable[int],
                    benchmark: int = None,
-                   risk_model: str = 'short') -> Dict[str, pd.DataFrame]:
+                   risk_model: str = 'short',
+                   industry: str = 'sw') -> Dict[str, pd.DataFrame]:
 
         total_data = {}
 
@@ -481,9 +481,13 @@ class SqlEngine(object):
             factor_data = pd.merge(factor_data, risk_exp, how='left', on=['code'])
             total_data['risk_cov'] = risk_cov
 
-        total_data['factor'] = factor_data
+        industry_info = self.fetch_industry(ref_date=ref_date,
+                                            codes=codes,
+                                            category=industry)
 
-        append_industry_info(factor_data)
+        factor_data = pd.merge(factor_data, industry_info, on=['code'])
+
+        total_data['factor'] = factor_data
         return total_data
 
     def fetch_data_range(self,
@@ -494,11 +498,17 @@ class SqlEngine(object):
                          dates: Iterable[str] = None,
                          benchmark: int = None,
                          risk_model: str = 'short',
-                         industry: str = 'sw') -> Dict[str, pd.DataFrame]:
+                         industry: str = 'sw',
+                         external_data: pd.DataFrame = None) -> Dict[str, pd.DataFrame]:
 
         total_data = {}
         transformer = Transformer(factors)
-        factor_data = self.fetch_factor_range(universe, transformer, start_date, end_date, dates)
+        factor_data = self.fetch_factor_range(universe,
+                                              transformer,
+                                              start_date,
+                                              end_date,
+                                              dates,
+                                              external_data=external_data)
 
         if benchmark:
             benchmark_data = self.fetch_benchmark_range(benchmark, start_date, end_date, dates)

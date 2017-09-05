@@ -71,13 +71,13 @@ def er_portfolio_analysis(er: np.ndarray,
 
     def create_constraints(benchmark, **kwargs):
         if 'lbound' in kwargs:
-            lbound = kwargs['lbound']
+            lbound = kwargs['lbound'].copy()
             del kwargs['lbound']
         else:
             lbound = 0.
 
         if 'ubound' in kwargs:
-            ubound = kwargs['ubound']
+            ubound = kwargs['ubound'].copy()
             del kwargs['ubound']
         else:
             ubound = 0.01 + benchmark

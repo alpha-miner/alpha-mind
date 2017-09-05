@@ -37,11 +37,11 @@ portfolio_industry_neutralize = True
 alpha_factors = ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
 benchmark = 905
 n_bins = 5
-frequency = '2w'
+frequency = '1w'
 batch = 8
 start_date = '2017-01-01'
-end_date = '2017-08-31'
-method = 'risk_neutral'
+end_date = '2017-09-03'
+method = 'rank'
 use_rank = 100
 
 '''
