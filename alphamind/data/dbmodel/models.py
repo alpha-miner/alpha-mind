@@ -38,6 +38,7 @@ class Experimental(Base):
     EPAfterNonRecurring = Column(Float(53))
     DROEAfterNonRecurring = Column(Float(53))
     CFinc1 = Column(Float(53))
+    xueqiu_hotness = Column(Float(53))
 
 
 class FactorMaster(Base):

@@ -20,6 +20,7 @@ from alphamind.data.transformer import Transformer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
+from alphamind.data.engines.sqlengine import total_risk_factors
 from alphamind.utilities import alpha_logger
 
 
@@ -38,13 +39,13 @@ def _map_horizon(frequency: str) -> int:
 
 
 def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, neutralized_risk):
-    if neutralized_risk:
-        risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
-        used_neutralized_risk = list(set(neutralized_risk).difference(names))
-        risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
+    risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
+    used_neutralized_risk = list(set(total_risk_factors).difference(names))
+    risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
+    return_df = pd.merge(return_df, risk_df, on=['trade_date', 'code'])
 
+    if neutralized_risk:
         train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
-        return_df = pd.merge(return_df, risk_df, on=['trade_date', 'code'])[['trade_date', 'code', 'dx']]
         train_y = return_df.copy()
 
         risk_exp = train_x[neutralized_risk].values.astype(float)
@@ -81,6 +82,8 @@ def prepare_data(engine: SqlEngine,
                          calendar='china.sse',
                          dateRule=BizDayConventions.Following,
                          dateGenerationRule=DateGeneration.Backward)
+
+    dates = [d.strftime('%Y-%m-%d') for d in dates]
 
     horizon = _map_horizon(frequency)
 
