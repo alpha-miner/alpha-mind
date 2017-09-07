@@ -275,7 +275,7 @@ class SqlEngine(object):
         dependency = transformer.dependency
         factor_cols = _map_factors(dependency)
 
-        cond = universe.query_range(start_date, start_date, dates)
+        cond = universe.query_range(start_date, end_date, dates)
 
         big_table = FullFactorView
 
