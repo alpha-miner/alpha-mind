@@ -11,14 +11,15 @@ from PyFin.api import *
 from alphamind.api import *
 from matplotlib import pyplot as plt
 
+plt.style.use('ggplot')
 
-# defind your alpha formula here
-base_factors = ['EPS', 'ROEDiluted', 'BTOP']#, 'ROEDiluted', 'VAL', 'CFinc1']
+import datetime as dt
 
-expression = 0.
+start = dt.datetime.now()
 
-for name in base_factors:
-    expression = expression + LAST(name)
+formula1 = CSRank(DIFF(LOG("turnoverValue")))
+formula2 = CSRank((LAST('closePrice') - LAST('openPrice')) / LAST('openPrice'))
+expression = -CORR(6, formula1 ^ formula2)
 
 alpha_factor_name = 'alpha_factor'
 alpha_factor = {alpha_factor_name: expression}
@@ -29,18 +30,11 @@ engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
 universe = Universe('custom', ['zz500'])
 benchmark_code = 905
 neutralize_risk = ['SIZE'] + industry_styles
-freq = '1w'
+freq = '1d'
 n_bins = 5
 
-if freq == '1m':
-    horizon = 21
-elif freq == '1w':
-    horizon = 4
-elif freq == '1d':
-    horizon = 0
-
-dates = makeSchedule('2012-01-01',
-                     '2012-08-01',
+dates = makeSchedule('2012-04-01',
+                     '2017-09-03',
                      tenor=freq,
                      calendar='china.sse')
 
@@ -48,7 +42,7 @@ factor_all_data = engine.fetch_data_range(universe,
                                           alpha_factor,
                                           dates=dates,
                                           benchmark=905)['factor']
-return_all_data = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+return_all_data = engine.fetch_dx_return_range(universe, dates=dates, horizon=0)
 
 factor_groups = factor_all_data.groupby('trade_date')
 return_groups = return_all_data.groupby('trade_date')
@@ -84,8 +78,10 @@ for i, value in enumerate(factor_groups):
 
 df = pd.DataFrame(final_res, index=dates)
 
-start_date = advanceDateByCalendar('china.sse', dates[0], '-1w')
+start_date = advanceDateByCalendar('china.sse', dates[0], '-1d')
 df.loc[start_date] = 0.
 df.sort_index(inplace=True)
 df = df.cumsum().plot()
 plt.show()
+
+print(dt.datetime.now() - start)
