@@ -69,6 +69,7 @@ class LinearRegression(ModelBase):
         model_desc['desc'] = encoded.decode('ascii')
         model_desc['sklearn_version'] = sklearn_version
         model_desc['trained_time'] = self.trained_time
+        model_desc['coef'] = list(self.impl.coef_)
         return model_desc
 
     def score(self) -> float:

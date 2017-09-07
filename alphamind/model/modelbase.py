@@ -6,6 +6,7 @@ Created on 2017-9-4
 """
 
 import abc
+import arrow
 import numpy as np
 from alphamind.utilities import alpha_logger
 
@@ -32,6 +33,7 @@ class ModelBase(metaclass=abc.ABCMeta):
 
         model_desc = dict(model_name=self.__class__.__module__ + "." + self.__class__.__name__,
                           language='python',
+                          saved_time=arrow.now().format("YYYY-MM-DD HH:mm:ss"),
                           features=list(self.features))
         return model_desc
 
