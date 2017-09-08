@@ -1697,6 +1697,31 @@ class Models(Base):
     model_desc = Column(JSON, nullable=False)
 
 
+class DailyPortfolios(Base):
+    __tablename__ = 'daily_portfolios'
+    __table_args__ = (
+        Index('daily_portfolios_pk', 'trade_date', 'portfolio_name', 'code', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    code = Column(BigInteger, primary_key=True, nullable=False)
+    weight = Column(Float(53), nullable=False)
+
+
+class PortfolioSettings(Base):
+    __tablename__ = 'portfolio_settings'
+    __table_args__ = (
+        Index('portfolio_pk', 'trade_date', 'portfolio_name', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    model_type = Column(String(30), nullable=False)
+    model_date = Column(DateTime, nullable=False)
+    model_version = Column(BigInteger, nullable=False)
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
