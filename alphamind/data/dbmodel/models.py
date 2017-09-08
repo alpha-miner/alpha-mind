@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, JSON, String, Text, Table
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, JSON, String, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -1707,6 +1707,10 @@ class DailyPortfolios(Base):
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
     code = Column(BigInteger, primary_key=True, nullable=False)
     weight = Column(Float(53), nullable=False)
+    er = Column(Float(53), nullable=False)
+    industry = Column(String(50), nullable=False)
+    benchmark_weight = Column(Float(53), nullable=False)
+    is_tradable = Column(Boolean, nullable=False)
 
 
 class PortfolioSettings(Base):

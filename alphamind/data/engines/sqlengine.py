@@ -535,20 +535,16 @@ class SqlEngine(object):
 
     def fetch_model(self,
                     ref_date,
-                    portfolio=None,
                     model_type=None,
-                    version=None) -> pd.DataFrame:
+                    model_version=None) -> pd.DataFrame:
 
         conditions = [Models.trade_date == ref_date]
-
-        if portfolio:
-            conditions.append(Models.portfolio_name == portfolio)
 
         if model_type:
             conditions.append(Models.model_type == model_type)
 
-        if version:
-            conditions.append(Models.version == version)
+        if model_version:
+            conditions.append(Models.model_version == model_version)
 
         query = select([Models]).where(and_(*conditions))
 
