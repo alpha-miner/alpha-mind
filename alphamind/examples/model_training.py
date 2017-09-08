@@ -9,6 +9,9 @@ import numpy as np
 import pandas as pd
 import copy
 from sklearn.linear_model import *
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.svm import NuSVR
 from alphamind.api import *
 from PyFin.api import *
 from matplotlib import pyplot as plt
@@ -34,14 +37,14 @@ universe = Universe('zz500', ['zz500'])
 neutralize_risk = ['SIZE'] + industry_styles
 portfolio_risk_neutralize = ['SIZE']
 portfolio_industry_neutralize = True
-alpha_factors = ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
+alpha_factors = ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'] # ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
 benchmark = 905
 n_bins = 5
-frequency = '1w'
-batch = 8
-start_date = '2017-01-01'
-end_date = '2017-09-03'
-method = 'rank'
+frequency = '2w'
+batch = 1
+start_date = '2017-01-05'
+end_date = '2017-09-05'
+method = 'risk_neutral'
 use_rank = 100
 
 '''
@@ -58,7 +61,7 @@ data_package = fetch_data_package(engine,
                                   batch=batch,
                                   neutralized_risk=neutralize_risk,
                                   pre_process=[winsorize_normal, standardize],
-                                  post_process=[standardize],
+                                  post_process=[winsorize_normal, standardize],
                                   warm_start=8)
 
 '''
@@ -70,15 +73,20 @@ train_y = data_package['train']['y']
 
 dates = sorted(train_x.keys())
 
-model = LinearRegression(fit_intercept=False)
 model_df = pd.Series()
 
 for train_date in dates:
+    #model = LinearRegression(alpha_factors, fit_intercept=False)
+    #model = LassoCV(fit_intercept=False)
+    #model = AdaBoostRegressor(n_estimators=100)
+    #model = RandomForestRegressor(n_estimators=100, n_jobs=4)
+    #model = NuSVR(kernel='rbf', C=1e-3, gamma=0.1)
+    model = ConstLinearModel(alpha_factors, np.array([0.05, 0.3, 0.35, 0.075, 0.15, 0.05]))
     x = train_x[train_date]
     y = train_y[train_date]
 
     model.fit(x, y)
-    model_df.loc[train_date] = copy.deepcopy(model)
+    model_df.loc[train_date] = model
     alpha_logger.info('trade_date: {0} training finished'.format(train_date))
 
 '''
@@ -118,7 +126,7 @@ settlement = data_package['settlement']
 predicting phase: using trained model on the re-balance dates (optimizing with risk neutral)
 '''
 
-industry_dummies = pd.get_dummies(settlement['industry_code'].values)
+industry_dummies = pd.get_dummies(settlement['industry'].values)
 risk_styles = settlement[portfolio_risk_neutralize].values
 
 final_res = np.zeros(len(dates))
@@ -132,6 +140,9 @@ for i, predict_date in enumerate(dates):
     realized_r = settlement[index]['dx'].values
     industry_names = settlement[index]['industry'].values
     is_tradable = settlement[index]['isOpen'].values
+
+    cons.add_exposure(['total'], np.ones((len(is_tradable), 1)))
+    cons.set_constraints('total', benchmark_w.sum(), benchmark_w.sum())
 
     if portfolio_industry_neutralize:
         ind_exp = industry_dummies[index]
@@ -177,6 +188,6 @@ last_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
 df = pd.Series(final_res, index=dates[1:] + [last_date])
 df.sort_index(inplace=True)
 df.cumsum().plot()
-plt.title('Prod factors model Linear Regression (rank 100)')
+plt.title('Prod factors model {1} ({0})'.format(method, model.__class__.__name__))
 plt.show()
 

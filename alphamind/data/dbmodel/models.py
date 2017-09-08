@@ -1687,13 +1687,12 @@ class FullFactorView(Base):
 class Models(Base):
     __tablename__ = 'models'
     __table_args__ = (
-        Index('model_pk', 'trade_date', 'portfolio_name', 'model_type', 'version', unique=True),
+        Index('model_pk', 'trade_date', 'model_type', 'model_version', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio_name = Column(String(30), primary_key=True, nullable=False)
     model_type = Column(String(30), primary_key=True, nullable=False)
-    version = Column(BigInteger, primary_key=True, nullable=False)
+    model_version = Column(BigInteger, primary_key=True, nullable=False)
     update_time = Column(DateTime, nullable=False)
     model_desc = Column(JSON, nullable=False)
 

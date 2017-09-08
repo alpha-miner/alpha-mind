@@ -16,8 +16,18 @@ strategies = {
     'prod': {
         # 'factors': ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
         # 'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
-        'factors': ['CHV'],
-        'weights': [1.]
+        #'factors':  ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
+        #'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
+        'factors': ['VAL', 'RVOL', 'ROEDiluted', 'GREV', 'EPS', 'CHV', 'CFinc1', 'BDTO'],
+        'weights': [0.034129344,
+0.015881607,
+0.048765746,
+0.042747382,
+-0.015900173,
+0.019044573,
+-0.001792638,
+0.014277867,
+]
     },
     # 'candidate': {
     #     'factors': ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'GREV', 'ROEDiluted'],
@@ -31,19 +41,24 @@ universe = Universe('custom', ['zz500'])
 benchmark_code = 905
 neutralize_risk = industry_styles
 constraint_risk = industry_styles
-freq = '1w'
+freq = '2w'
 
 if freq == '1m':
     horizon = 21
 elif freq == '1w':
     horizon = 4
+elif freq == '2w':
+    horizon = 8
+elif freq == '3w':
+    horizon = 12
 elif freq == '1d':
     horizon = 0
 
 dates = makeSchedule('2017-01-01',
-                     '2017-08-20',
+                     '2017-09-05',
                      tenor=freq,
-                     calendar='china.sse')
+                     calendar='china.sse',
+                     dateGenerationRule=DateGeneration.Forward)
 
 total_data_dict = {}
 
@@ -107,10 +122,10 @@ for strategy in strategies:
 
 
 ret_df = pd.DataFrame(total_data_dict, index=dates)
+ret_df.loc[advanceDateByCalendar('china.sse', dates[-1], freq)] = 0.
+ret_df = ret_df.shift(1)
 
-start_date = advanceDateByCalendar('china.sse', dates[0], '-1w')
-ret_df.loc[start_date] = 0.
-ret_df.sort_index(inplace=True)
+ret_df.iloc[0] = 0.
 
 ret_df.cumsum().plot(figsize=(12, 6))
 plt.savefig("backtest_big_universe_20170814.png")
