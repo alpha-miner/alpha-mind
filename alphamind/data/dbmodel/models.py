@@ -1726,6 +1726,20 @@ class PortfolioSettings(Base):
     model_version = Column(BigInteger, nullable=False)
 
 
+class SpecialTreatment(Base):
+    __tablename__ = 'special_treatment'
+    __table_args__ = (
+        Index('special_treament_pk', 'trade_date', 'portfolio_name', 'code', 'treatment', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    code = Column(BigInteger, primary_key=True, nullable=False)
+    treatment = Column(String(30), primary_key=True, nullable=False)
+    comment = Column(Text)
+    weight = Column(Float(53))
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
