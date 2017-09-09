@@ -790,7 +790,7 @@ class Market(Base):
     vwap = Column(Float(53))
 
 
-class Model(Base):
+class Models(Base):
     __tablename__ = 'models'
     __table_args__ = (
         Index('model_pk', 'trade_date', 'model_type', 'model_version', unique=True),
@@ -859,7 +859,7 @@ class Positions(Base):
     weight = Column(JSON)
 
 
-class QuantileAnalysi(Base):
+class QuantileAnalysis(Base):
     __tablename__ = 'quantile_analysis'
     __table_args__ = (
         Index('quantile_idx', 'trade_date', 'portfolio', 'universe', 'benchmark', unique=True),
