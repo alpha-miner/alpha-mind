@@ -37,11 +37,13 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
 ## 安装
 
-alpha - mind 的安装及其简单，只需要在下载源码之后，运行：
+alpha - mind 的安装极其简单，只需要在下载源码之后，运行：
 
 ```python
 python setup.py install
 ```
+
+* *注意事项*: 在Linux系统上,请确保gcc版本大于5
 
 ## 数据源
 
