@@ -5,7 +5,8 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, JSON, String, Text, Boolean, text
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, Boolean, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -800,7 +801,8 @@ class Models(Base):
     model_type = Column(String(30), nullable=False)
     model_version = Column(BigInteger, nullable=False)
     update_time = Column(DateTime, nullable=False)
-    model_desc = Column(JSON, nullable=False)
+    model_desc = Column(JSONB, nullable=False)
+    is_primary = Column(Boolean, default=False)
     model_id = Column(Integer, primary_key=True, server_default=text("nextval('models_model_id_seq'::regclass)"))
 
 
@@ -856,7 +858,7 @@ class Positions(Base):
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
     type = Column(String(50), primary_key=True, nullable=False)
-    weight = Column(JSON)
+    weight = Column(JSONB)
 
 
 class QuantileAnalysis(Base):
