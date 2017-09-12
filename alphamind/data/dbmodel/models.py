@@ -934,6 +934,19 @@ class RiskCovDay(Base):
     FoodBever = Column(Float(53))
     Electronics = Column(Float(53))
     Computer = Column(Float(53))
+    LightIndus = Column(Float(53))
+    Utilities = Column(Float(53))
+    Telecom = Column(Float(53))
+    AgriForest = Column(Float(53))
+    CHEM = Column(Float(53))
+    Media = Column(Float(53))
+    IronSteel = Column(Float(53))
+    NonBankFinan = Column(Float(53))
+    ELECEQP = Column(Float(53))
+    AERODEF = Column(Float(53))
+    Conglomerates = Column(Float(53))
+    COUNTRY = Column(Float(53))
+    updateTime = Column(DateTime)
 
 
 class RiskCovLong(Base):
@@ -1741,5 +1754,5 @@ class Uqer(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
