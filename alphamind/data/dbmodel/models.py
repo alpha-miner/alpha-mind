@@ -5,7 +5,8 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, JSON, String, Text, Boolean, text
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, Boolean, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -614,6 +615,7 @@ class Experimental(Base):
     EPAfterNonRecurring = Column(Float(53))
     DROEAfterNonRecurring = Column(Float(53))
     CFinc1 = Column(Float(53))
+    xueqiu_hotness = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -800,7 +802,8 @@ class Models(Base):
     model_type = Column(String(30), nullable=False)
     model_version = Column(BigInteger, nullable=False)
     update_time = Column(DateTime, nullable=False)
-    model_desc = Column(JSON, nullable=False)
+    model_desc = Column(JSONB, nullable=False)
+    is_primary = Column(Boolean, default=False)
     model_id = Column(Integer, primary_key=True, server_default=text("nextval('models_model_id_seq'::regclass)"))
 
 
@@ -856,7 +859,7 @@ class Positions(Base):
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
     type = Column(String(50), primary_key=True, nullable=False)
-    weight = Column(JSON)
+    weight = Column(JSONB)
 
 
 class QuantileAnalysis(Base):
@@ -931,6 +934,19 @@ class RiskCovDay(Base):
     FoodBever = Column(Float(53))
     Electronics = Column(Float(53))
     Computer = Column(Float(53))
+    LightIndus = Column(Float(53))
+    Utilities = Column(Float(53))
+    Telecom = Column(Float(53))
+    AgriForest = Column(Float(53))
+    CHEM = Column(Float(53))
+    Media = Column(Float(53))
+    IronSteel = Column(Float(53))
+    NonBankFinan = Column(Float(53))
+    ELECEQP = Column(Float(53))
+    AERODEF = Column(Float(53))
+    Conglomerates = Column(Float(53))
+    COUNTRY = Column(Float(53))
+    updateTime = Column(DateTime)
 
 
 class RiskCovLong(Base):
@@ -1738,5 +1754,5 @@ class Uqer(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)

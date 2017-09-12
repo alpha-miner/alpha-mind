@@ -534,17 +534,27 @@ class SqlEngine(object):
         return total_data
 
     def fetch_model(self,
-                    ref_date,
+                    ref_date=None,
                     model_type=None,
-                    model_version=None) -> pd.DataFrame:
+                    model_version=None,
+                    is_primary=True,
+                    model_id=None) -> pd.DataFrame:
 
-        conditions = [Models.trade_date == ref_date]
+        conditions = []
+
+        if ref_date:
+            conditions.append(Models.trade_date == ref_date)
+
+        if model_id:
+            conditions.append(Models.model_id == model_id)
 
         if model_type:
             conditions.append(Models.model_type == model_type)
 
         if model_version:
             conditions.append(Models.model_version == model_version)
+
+        conditions.append(Models.is_primary == is_primary)
 
         query = select([Models]).where(and_(*conditions))
 
