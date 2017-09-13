@@ -81,6 +81,8 @@ total_risk_factors = risk_styles + industry_styles + macro_styles
 
 factor_tables = [FullFactorView, Experimental]
 
+DEFAULT_URL = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
+
 
 def _map_risk_model_table(risk_model: str) -> tuple:
     if risk_model == 'day':
@@ -113,8 +115,12 @@ def _map_industry_category(category: str) -> str:
 
 class SqlEngine(object):
     def __init__(self,
-                 db_url: str):
-        self.engine = sa.create_engine(db_url)
+                 db_url: str=None):
+        if db_url:
+            self.engine = sa.create_engine(db_url)
+        else:
+            self.engine = sa.create_engine(DEFAULT_URL)
+
         self.session = None
         self.create_session()
 
