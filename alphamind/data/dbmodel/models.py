@@ -1302,8 +1302,6 @@ class Tiny(Base):
     RVOL = Column(Float(53))
     CHV = Column(Float(53))
     VAL = Column(Float(53))
-    EPSAfterNonRecurring = Column(Float(53))
-    DivP = Column(Float(53))
 
 
 class Universe(Base):
@@ -1754,5 +1752,5 @@ class Uqer(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:we083826@101.132.104.118/alpha')
     Base.metadata.create_all(engine)
