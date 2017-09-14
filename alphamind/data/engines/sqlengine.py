@@ -512,7 +512,7 @@ class SqlEngine(object):
         total_data = {}
 
         transformer = Transformer(factors)
-        factor_data = self.fetch_factor(ref_date, transformer, codes, [Experimental])
+        factor_data = self.fetch_factor(ref_date, transformer, codes, used_factor_tables=[Experimental])
 
         if benchmark:
             benchmark_data = self.fetch_benchmark(ref_date, benchmark)
@@ -618,7 +618,7 @@ if __name__ == '__main__':
     from alphamind.api import alpha_logger
 
     # db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
-    db_url = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
+    db_url = 'postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
@@ -629,13 +629,11 @@ if __name__ == '__main__':
     dates = makeSchedule(start_date, end_date, '1w', 'china.sse')
 
     alpha_logger.info('start')
-    codes = engine.fetch_codes_range(universe=universe, dates=dates)
+    codes = engine.fetch_codes(ref_date, universe=universe)
 
-    data1 = engine.fetch_factor_range(universe=universe,
-                                      start_date=start_date,
-                                      end_date=end_date,
-                                      dates=dates,
-                                      factors=['EPS'])
+    data1 = engine.fetch_data_experimental(ref_date,
+                                           codes=codes,
+                                           factors=['IVR'])
     alpha_logger.info('end')
     data2 = engine.fetch_industry_range(universe, start_date=start_date, end_date=end_date, dates=dates)
     alpha_logger.info('end')
