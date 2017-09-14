@@ -61,11 +61,8 @@ class Transformer(object):
             factor_translator(expressions)
 
         if expression_dict:
-
-            res = list(zip(*list(expression_dict.items())))
-
-            self.names = list(res[0])
-            self.expressions = list(res[1])
+            self.names = sorted(expression_dict.keys())
+            self.expressions = [expression_dict[n] for n in self.names]
             self.dependency = expression_dependency
         else:
             self.names = []
