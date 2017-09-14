@@ -95,11 +95,11 @@ def _map_risk_model_table(risk_model: str) -> tuple:
         raise ValueError("risk model name {0} is not recognized".format(risk_model))
 
 
-def _map_factors(factors: Iterable[str]) -> Dict:
+def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
     factor_cols = {}
     excluded = {'trade_date', 'code', 'isOpen'}
     for f in factors:
-        for t in factor_tables:
+        for t in used_factor_tables:
             if f not in excluded and f in t.__table__.columns:
                 factor_cols[t.__table__.columns[f]] = t
                 break
@@ -115,7 +115,7 @@ def _map_industry_category(category: str) -> str:
 
 class SqlEngine(object):
     def __init__(self,
-                 db_url: str=None):
+                 db_url: str = None):
         if db_url:
             self.engine = sa.create_engine(db_url)
         else:
@@ -228,7 +228,8 @@ class SqlEngine(object):
                      ref_date: str,
                      factors: Iterable[object],
                      codes: Iterable[int],
-                     warm_start: int = 0) -> pd.DataFrame:
+                     warm_start: int = 0,
+                     used_factor_tables=None) -> pd.DataFrame:
 
         if isinstance(factors, Transformer):
             transformer = factors
@@ -237,7 +238,10 @@ class SqlEngine(object):
 
         dependency = transformer.dependency
 
-        factor_cols = _map_factors(dependency)
+        if used_factor_tables:
+            factor_cols = _map_factors(dependency, used_factor_tables)
+        else:
+            factor_cols = _map_factors(dependency, factor_tables)
 
         start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
         end_date = ref_date
@@ -249,7 +253,8 @@ class SqlEngine(object):
                 big_table = outerjoin(big_table, t, and_(FullFactorView.trade_date == t.trade_date,
                                                          FullFactorView.code == t.code))
 
-        query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
+        query = select(
+            [FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table).where(and_(FullFactorView.trade_date.between(start_date, end_date),
                                                FullFactorView.code.in_(codes)))
 
@@ -301,7 +306,8 @@ class SqlEngine(object):
                               FullFactorView.code == UniverseTable.code,
                               cond))
 
-        query = select([FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
+        query = select(
+            [FullFactorView.trade_date, FullFactorView.code, FullFactorView.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table)
 
         df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code'])
@@ -474,6 +480,39 @@ class SqlEngine(object):
 
         transformer = Transformer(factors)
         factor_data = self.fetch_factor(ref_date, transformer, codes)
+
+        if benchmark:
+            benchmark_data = self.fetch_benchmark(ref_date, benchmark)
+            total_data['benchmark'] = benchmark_data
+            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['code'])
+            factor_data['weight'] = factor_data['weight'].fillna(0.)
+
+        if risk_model:
+            excluded = list(set(total_risk_factors).intersection(transformer.dependency))
+            risk_cov, risk_exp = self.fetch_risk_model(ref_date, codes, risk_model, excluded)
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['code'])
+            total_data['risk_cov'] = risk_cov
+
+        industry_info = self.fetch_industry(ref_date=ref_date,
+                                            codes=codes,
+                                            category=industry)
+
+        factor_data = pd.merge(factor_data, industry_info, on=['code'])
+
+        total_data['factor'] = factor_data
+        return total_data
+
+    def fetch_data_experimental(self, ref_date: str,
+                                factors: Iterable[str],
+                                codes: Iterable[int],
+                                benchmark: int = None,
+                                risk_model: str = 'short',
+                                industry: str = 'sw') -> Dict[str, pd.DataFrame]:
+
+        total_data = {}
+
+        transformer = Transformer(factors)
+        factor_data = self.fetch_factor(ref_date, transformer, codes, [Experimental])
 
         if benchmark:
             benchmark_data = self.fetch_benchmark(ref_date, benchmark)

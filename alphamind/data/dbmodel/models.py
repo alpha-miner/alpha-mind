@@ -1752,5 +1752,5 @@ class Uqer(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@101.132.104.118/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha')
     Base.metadata.create_all(engine)
