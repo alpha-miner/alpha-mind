@@ -39,8 +39,6 @@ install:
   - conda install scikit-learn
   - conda install cython
   - conda install -c conda-forge arrow
-  - pip install cvxopt
-  - pip install cvxpy
   - pip install simpleutils
   - pip install coveralls
   - pip install finance-python
