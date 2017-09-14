@@ -1,0 +1,25 @@
+{
+  "strategy_name": "sample_strategy",
+
+  "data_process":
+  {
+    "pre_process": ["winsorize", "standardize"],
+    "neutralize_risk": ["SIZE"],
+    "post_process": ["winsorize", "standardize"]
+  },
+
+  "risk_model": "short",
+  "model": "LinearRegression",
+  "features": ["EPS", "ROEDiluted"],
+
+  "parameters":
+  {
+    "fit_intercept": false
+  },
+
+  "freq": "2w",
+  "batch": 4,
+  "warm_start": 0,
+  "universe": ["zz500", ["zz500"]],
+  "benchmark": 905
+}
