@@ -17,7 +17,7 @@
     "fit_intercept": false
   },
 
-  "freq": "2w",
+  "freq": "1d",
   "batch": 4,
   "warm_start": 0,
   "universe": ["zz500", ["zz500"]],

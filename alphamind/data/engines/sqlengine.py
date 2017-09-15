@@ -284,7 +284,7 @@ class SqlEngine(object):
             transformer = Transformer(factors)
 
         dependency = transformer.dependency
-        factor_cols = _map_factors(dependency)
+        factor_cols = _map_factors(dependency, factor_tables)
 
         cond = universe.query_range(start_date, end_date, dates)
 

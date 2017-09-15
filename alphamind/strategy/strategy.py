@@ -168,7 +168,7 @@ if __name__ == '__main__':
         dates = strategy.cached_dates()
         print(dates)
 
-        for date in dates:
-            strategy.model_train(date)
-            prediction = strategy.model_predict(date)
-            print(date)
+        # for date in dates:
+        #     strategy.model_train(date)
+        #     prediction = strategy.model_predict(date)
+        #     print(date)
