@@ -5,6 +5,7 @@ Created on 2017-8-24
 @author: cheng.li
 """
 
+import bisect
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -123,11 +124,15 @@ def batch_processing(x_values,
 
     for i, start in enumerate(groups[:-batch]):
         end = groups[i + batch]
-        index = (group_label >= start) & (group_label < end)
-        this_raw_x = x_values[index]
-        this_raw_y = y_values[index]
+
+        left_index = bisect.bisect_left(group_label, start)
+        right_index = bisect.bisect_left(group_label, end)
+
+        this_raw_x = x_values[left_index:right_index]
+        this_raw_y = y_values[left_index:right_index]
+
         if risk_exp is not None:
-            this_risk_exp = risk_exp[index]
+            this_risk_exp = risk_exp[left_index:right_index]
         else:
             this_risk_exp = None
 
@@ -141,12 +146,14 @@ def batch_processing(x_values,
                                                  risk_factors=this_risk_exp,
                                                  post_process=post_process)
 
-        index = (group_label > start) & (group_label <= end)
-        sub_dates = group_label[index]
-        this_raw_x = x_values[index]
+        left_index = bisect.bisect_right(group_label, start)
+        right_index = bisect.bisect_right(group_label, end)
+
+        sub_dates = group_label[left_index:right_index]
+        this_raw_x = x_values[left_index:right_index]
 
         if risk_exp is not None:
-            this_risk_exp = risk_exp[index]
+            this_risk_exp = risk_exp[left_index:right_index]
         else:
             this_risk_exp = None
 
@@ -154,15 +161,18 @@ def batch_processing(x_values,
                                  pre_process=pre_process,
                                  risk_factors=this_risk_exp,
                                  post_process=post_process)
-        predict_x_buckets[end] = ne_x[sub_dates == end]
 
-        this_raw_y = y_values[index]
+        inner_left_index = bisect.bisect_left(sub_dates, end)
+        inner_right_index = bisect.bisect_right(sub_dates, end)
+        predict_x_buckets[end] = ne_x[inner_left_index:inner_right_index]
+
+        this_raw_y = y_values[left_index:right_index]
         if len(this_raw_y) > 0:
             ne_y = factor_processing(this_raw_y,
                                      pre_process=pre_process,
                                      risk_factors=this_risk_exp,
                                      post_process=post_process)
-            predict_y_buckets[end] = ne_y[sub_dates == end]
+            predict_y_buckets[end] = ne_y[inner_left_index:inner_right_index]
 
     return train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets
 
