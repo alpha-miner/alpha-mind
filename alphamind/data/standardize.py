@@ -12,6 +12,7 @@ from alphamind.utilities import aggregate
 from alphamind.utilities import array_index
 from alphamind.utilities import simple_mean
 from alphamind.utilities import simple_std
+from alphamind.utilities import simple_sqrsum
 
 
 def standardize(x: np.ndarray, groups: np.ndarray=None, ddof=1) -> np.ndarray:
@@ -24,6 +25,15 @@ def standardize(x: np.ndarray, groups: np.ndarray=None, ddof=1) -> np.ndarray:
         return (x - mean_values) / std_values
     else:
         return (x - simple_mean(x, axis=0)) / simple_std(x, axis=0, ddof=ddof)
+
+
+def projection(x: np.ndarray, groups: np.ndarray=None, axis=1) -> np.ndarray:
+    if groups is not None and axis == 0:
+        groups = group_mapping(groups)
+        projected = transform(groups, x, 'project')
+        return projected
+    else:
+        return x / simple_sqrsum(x, axis=axis).reshape((-1, 1))
 
 
 class Standardizer(object):

@@ -93,6 +93,27 @@ def simple_abssum(x, axis=0):
     return res
 
 
+def simple_sqrsum(x, axis=0):
+    length, width = x.shape
+
+    if axis == 0:
+        res = np.zeros(width)
+        for i in range(length):
+            for j in range(width):
+                res[j] += x[i, j] * x[i, j]
+
+    elif axis == 1:
+        res = np.zeros(length)
+        for i in range(length):
+            for j in range(width):
+                res[i] += x[i, j] * x[i, j]
+    else:
+        raise ValueError("axis value is not supported")
+
+    res = np.sqrt(res)
+    return res
+
+
 @nb.njit(nogil=True, cache=True)
 def simple_mean(x, axis=0):
     length, width = x.shape
@@ -149,6 +170,19 @@ def agg_sum(groups, x):
     for i in range(length):
         for j in range(width):
             res[groups[i], j] += x[i, j]
+    return res
+
+
+def agg_sqrsum(groups, x):
+    max_g = groups.max()
+    length, width = x.shape
+    res = np.zeros((max_g + 1, width), dtype=np.float64)
+
+    for i in range(length):
+        for j in range(width):
+            res[groups[i], j] += x[i, j] * x[i, j]
+
+    res = np.sqrt(res)
     return res
 
 
@@ -256,10 +290,12 @@ def transform(groups: np.ndarray,
         value_data = agg_sum(groups, x)
     elif func == 'abssum' or func == 'scale':
         value_data = agg_abssum(groups, x)
+    elif func == 'sqrsum' or func == 'project':
+        value_data = agg_sqrsum(groups, x)
     else:
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
-    if func == 'scale':
+    if func == 'scale' or func == 'project':
         return scale_value(groups, value_data, x, scale)
     else:
         return copy_value(groups, value_data)
@@ -274,6 +310,8 @@ def aggregate(groups, x, func, ddof=1):
         value_data = agg_sum(groups, x)
     elif func == 'abssum' or func == 'scale':
         value_data = agg_abssum(groups, x)
+    elif func == 'sqrsum' or func == 'project':
+        value_data = agg_sqrsum(groups, x)
     else:
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
