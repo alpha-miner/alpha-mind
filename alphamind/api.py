@@ -19,6 +19,7 @@ from alphamind.data.engines.sqlengine import industry_styles
 from alphamind.data.engines.sqlengine import macro_styles
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
+from alphamind.data.standardize import projection
 from alphamind.data.neutralize import neutralize
 from alphamind.data.engines.sqlengine import factor_tables
 
@@ -44,6 +45,7 @@ __all__ = [
     'macro_styles',
     'winsorize_normal',
     'standardize',
+    'projection',
     'neutralize',
     'factor_tables',
     'fetch_data_package',
