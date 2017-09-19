@@ -31,6 +31,7 @@ u."AccountsPayablesTDays",u."AccountsPayablesTRate",u."AdminiExpenseRate",u."ART
  l."ROEAfterNonRecurring",l."EPSAfterNonRecurring",l."EODPrice",l."LogFloatCap",l."BPS",l."SPS",l."DebtToAsset",l."DROEAfterNonRecurring",l."LogTotalCap",l."BP",l."SP",l."EPAfterNonRecurring",l."DivToB",l."DivP",l."EBITToSales",l."EBITAToSales",l."EVToSales",l."EVToEBIT",l."EVToEBITDA",l."EVToNOPLAT",l."EVToIC",l."FCFFPS",l."FCFFToEarningAfterNonRecurring",l."FCFFP",l."ProfitToAsset",l."GrossProfitRatio",l."LATO",l."FATO",l."TATO",l."EquityTO",l."PayableTO",l."RecievableTO",l."RevenueGrowth",l."GrossProfitGrowth",l."NetProfitGrowth",l."GrossCFToRevenue",l."CFToRevenue",l."CFToProfit",l."CFToAsset",l."GrossCFGrowth",l."CFGrowth",l."ICFGrowth",l."AveAmount60",l."PeriodReturn60",l."AmountRatio60to250",l."CFPS",l."CFP",l."NetCFGrowth",l."NetCFGrowthP",l."NetCash",l."NetCashP",l."BVPSGrowth",l."EquityPSGrowth",l."WholeSales",l."WholeProfitAfterNonRecurring",l."ExpenseRatio",l."AcidTestRatio",l."TimeInterestEarnedRatio",l."DepositReceivedVsSale",l."DebtRatioExcemptDepRec",l."SNBARatio",
   t."CFinc1",t."BDTO",t."RVOL",t."CHV",t."VAL",
   r."BETA",r."MOMENTUM",r."SIZE",r."EARNYILD",r."RESVOL",r."GROWTH",r."BTOP",r."LEVERAGE",r."LIQUIDTY",r."SIZENL",r."Bank",r."RealEstate",r."Health",r."Transportation",r."Mining",r."NonFerMetal",r."HouseApp",r."LeiService",r."MachiEquip",r."BuildDeco",r."CommeTrade",r."CONMAT",r."Auto",r."Textile",r."FoodBever",r."Electronics",r."Computer",r."LightIndus",r."Utilities",r."Telecom",r."AgriForest",r."CHEM",r."Media",r."IronSteel",r."NonBankFinan",r."ELECEQP",r."AERODEF",r."Conglomerates",r."COUNTRY",
+  e."DROE",e."IVR",e."xueqiu_hotness",
   s1."SRISK" as d_srisk, s2."SRISK" as s_srisk, s3."SRISK" as l_srisk
  FROM market AS m left join uqer AS u on m.trade_date = u.trade_date and m.code = u.code
  inner join risk_exposure AS r on m.trade_date = r.trade_date and m.code = r.code
@@ -39,5 +40,6 @@ u."AccountsPayablesTDays",u."AccountsPayablesTRate",u."AdminiExpenseRate",u."ART
  inner join specific_risk_long as s3 on m.trade_date = s3.trade_date and m.code = s3.code
  left join legacy_factor as l on m.trade_date = l.trade_date and m.code = l.code
  left join tiny as t on m.trade_date = t.trade_date and m.code = t.code
+ left join experimental as e on m.trade_date = e.trade_date and m.code = e.code;
 
 create UNIQUE index on full_factor_view (trade_date, code)
