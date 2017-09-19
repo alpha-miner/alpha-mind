@@ -4,12 +4,12 @@
   "data_process":
   {
     "pre_process": ["winsorize", "standardize"],
-    "neutralize_risk": ["SIZE"],
+    "neutralize_risk": ["SIZE", "industry_styles"],
     "post_process": ["winsorize", "standardize"]
   },
 
   "risk_model": "short",
-  "model": "LinearRegression",
+  "alpha_model": "LinearRegression",
   "features": ["EPS", "ROEDiluted"],
 
   "parameters":
@@ -21,5 +21,11 @@
   "batch": 4,
   "warm_start": 0,
   "universe": ["zz500", ["zz500"]],
-  "benchmark": 905
+  "benchmark": 905,
+
+  "optimizer":
+  {
+    "build_type": "risk_neutral",
+    "neutralize_risk": ["SIZE", "industry_styles"]
+  }
 }

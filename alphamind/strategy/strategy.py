@@ -60,7 +60,7 @@ class Strategy(object):
         self.neutralize_risk = load_neutralize_risks(strategy_desc['data_process']['neutralize_risk'])
         self.risk_model = strategy_desc['risk_model']
 
-        self.model_type = load_model_meta(strategy_desc['model'])
+        self.model_type = load_model_meta(strategy_desc['alpha_model'])
         self.parameters = strategy_desc['parameters']
         self.features = strategy_desc['features']
         self.model = self.model_type(features=self.features, **self.parameters)
@@ -91,6 +91,11 @@ class Strategy(object):
                                                   self.risk_model,
                                                   self.pre_process,
                                                   self.post_process)
+
+            # some cached data to fast processing
+            settlement_data = self.cached_data['settlement']
+            self.settle_dfs = settlement_data.set_index('code').groupby('trade_date')
+
             self.scheduled_dates = set(k.strftime('%Y-%m-%d') for k in self.cached_data['train']['x'].keys())
         else:
             self.cached_data = None
@@ -149,6 +154,9 @@ class Strategy(object):
         return pd.DataFrame({'prediction': prediction,
                              'code': codes})
 
+    def settlement(self, ref_date: str, prediction: pd.DataFrame) -> float:
+        settlement_data = self.settle_dfs.get_group(ref_date)[['dx', 'weight']]
+
 
 if __name__ == '__main__':
     import json
@@ -158,7 +166,7 @@ if __name__ == '__main__':
 
     engine = SqlEngine()
 
-    start_date = '2012-01-01'
+    start_date = '2017-06-01'
     end_date = '2017-09-14'
 
     with open("sample_strategy.json", 'r') as fp:
@@ -168,7 +176,7 @@ if __name__ == '__main__':
         dates = strategy.cached_dates()
         print(dates)
 
-        # for date in dates:
-        #     strategy.model_train(date)
-        #     prediction = strategy.model_predict(date)
-        #     print(date)
+        for date in dates:
+            strategy.model_train(date)
+            prediction = strategy.model_predict(date)
+            strategy.settlement(date, prediction)
