@@ -348,12 +348,14 @@ def fetch_predict_phase(engine,
         end = dates[-1]
         start = dates[-batch]
 
-        index = (date_label >= start) & (date_label <= end)
-        this_raw_x = x_values[index]
-        sub_dates = date_label[index]
+        # index = (date_label >= start) & (date_label <= end)
+        left_index = bisect.bisect_left(date_label, start)
+        right_index = bisect.bisect_right(date_label, end)
+        this_raw_x = x_values[left_index:right_index]
+        sub_dates = date_label[left_index:right_index]
 
         if risk_exp is not None:
-            this_risk_exp = risk_exp[index]
+            this_risk_exp = risk_exp[left_index:right_index]
         else:
             this_risk_exp = None
 
@@ -362,8 +364,15 @@ def fetch_predict_phase(engine,
                                  risk_factors=this_risk_exp,
                                  post_process=post_process)
 
-        ne_x = ne_x[sub_dates == end]
-        codes = train_x.code.values[date_label == end]
+        inner_left_index = bisect.bisect_left(sub_dates, end)
+        inner_right_index = bisect.bisect_right(sub_dates, end)
+
+        ne_x = ne_x[inner_left_index:inner_right_index]
+
+        left_index = bisect.bisect_left(date_label, end)
+        right_index = bisect.bisect_right(date_label, end)
+
+        codes = train_x.code.values[left_index:right_index]
     else:
         ne_x = None
         codes = None
