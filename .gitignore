@@ -10,4 +10,3 @@ Alpha_Mind.egg-info/*
 *.nbc
 *.nbi
 /notebooks/.ipynb_checkpoints
-notebooks/*
