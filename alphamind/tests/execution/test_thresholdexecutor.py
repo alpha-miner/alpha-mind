@@ -12,8 +12,8 @@ from alphamind.execution.thresholdexecutor import ThresholdExecutor
 
 class TestThresholdExecutor(unittest.TestCase):
 
+    @staticmethod
     def test_threshold_executor(self):
-
         target_pos = pd.DataFrame({'code': [1, 2, 3],
                                    'weight': [0.2, 0.3, 0.5],
                                    'industry': ['a', 'b', 'c']})
