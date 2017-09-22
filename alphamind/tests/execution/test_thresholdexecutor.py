@@ -12,7 +12,6 @@ from alphamind.execution.thresholdexecutor import ThresholdExecutor
 
 class TestThresholdExecutor(unittest.TestCase):
 
-    @staticmethod
     def test_threshold_executor(self):
         target_pos = pd.DataFrame({'code': [1, 2, 3],
                                    'weight': [0.2, 0.3, 0.5],
@@ -35,7 +34,7 @@ class TestThresholdExecutor(unittest.TestCase):
         self.assertTrue(executed_pos.equals(executor.current_pos))
         self.assertAlmostEqual(turn_over, 1.2)
 
-        # 3nd round
+        # 3rd round
         target_pos = pd.DataFrame({'code': [1, 3, 4],
                                    'weight': [0.3, 0.2, 0.5],
                                    'industry': ['a', 'c', 'd']})
