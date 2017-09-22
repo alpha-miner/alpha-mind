@@ -9,7 +9,7 @@ import pandas as pd
 from alphamind.execution.baseexecutor import ExecutorBase
 
 
-class NativeExecutor(ExecutorBase):
+class NaiveExecutor(ExecutorBase):
 
     def __init__(self):
         super().__init__()
