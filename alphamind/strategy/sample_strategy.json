@@ -8,13 +8,20 @@
     "post_process": ["winsorize", "standardize"]
   },
 
-  "risk_model": "short",
-  "alpha_model": "LinearRegression",
-  "features": ["EPS", "ROEDiluted"],
-
-  "parameters":
+  "risk_model":
   {
-    "fit_intercept": false
+    "type": "short",
+    "neutralize_risk": ["SIZE", "industry_styles"]
+  },
+
+  "alpha_model":
+  {
+    "model_type": "LinearRegression",
+    "features": ["EPS", "ROEDiluted"],
+    "parameters":
+    {
+      "fit_intercept": false
+    }
   },
 
   "freq": "1d",
@@ -25,7 +32,12 @@
 
   "optimizer":
   {
-    "build_type": "risk_neutral",
+    "type": "risk_neutral",
     "neutralize_risk": ["SIZE", "industry_styles"]
+  },
+
+  "executor":
+  {
+    "type": "naive"
   }
 }
