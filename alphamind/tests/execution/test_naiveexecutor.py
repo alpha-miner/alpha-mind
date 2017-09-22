@@ -35,6 +35,7 @@ class TestNaiveExecutor(unittest.TestCase):
                                    'weight': [0.3, 0.2, 0.5],
                                    'industry': ['a', 'c', 'd']})
         turn_over, executed_pos = executor.execute(target_pos)
+        self.assertAlmostEqual(turn_over, 0.4)
 
 
 if __name__ == '__main__':
