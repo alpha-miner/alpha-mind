@@ -28,6 +28,9 @@ from alphamind.model.linearmodel import ConstLinearModel
 from alphamind.model.loader import load_model
 from alphamind.model.data_preparing import fetch_data_package
 
+from alphamind.execution.nativeexecutor import NativeExecutor
+from alphamind.execution.thresholdexecutor import ThresholdExecutor
+
 from alphamind.utilities import alpha_logger
 
 
@@ -52,5 +55,7 @@ __all__ = [
     'LinearRegression',
     'ConstLinearModel',
     'load_model',
+    'NativeExecutor',
+    'ThresholdExecutor',
     'alpha_logger'
 ]
