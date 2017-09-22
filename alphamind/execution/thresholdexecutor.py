@@ -25,7 +25,7 @@ class ThresholdExecutor(ExecutorBase):
         else:
             turn_over = self.calc_turn_over(target_pos, self.current_pos)
 
-            if turn_over >= self.threshold:
+            if turn_over >= self.threshold * self.current_pos.weight.sum():
                 self.current_pos = target_pos.copy()
                 return turn_over, self.current_pos.copy()
             else:
