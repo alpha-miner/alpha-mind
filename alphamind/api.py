@@ -30,6 +30,7 @@ from alphamind.model.data_preparing import fetch_data_package
 
 from alphamind.execution.naiveexecutor import NaiveExecutor
 from alphamind.execution.thresholdexecutor import ThresholdExecutor
+from alphamind.execution.targetvolexecutor import TargetVolExecutor
 
 from alphamind.utilities import alpha_logger
 
@@ -57,5 +58,6 @@ __all__ = [
     'load_model',
     'NaiveExecutor',
     'ThresholdExecutor',
+    'TargetVolExecutor',
     'alpha_logger'
 ]

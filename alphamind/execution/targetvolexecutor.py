@@ -22,7 +22,7 @@ class TargetVolExecutor(ExecutorBase):
     def execute(self, target_pos: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
         if not self.m_vol.isFull():
             if self.current_pos.empty:
-                turn_over = target_pos.abs().weight.sum()
+                turn_over = target_pos.weight.abs().sum()
             else:
                 turn_over = self.calc_turn_over(target_pos, self.current_pos)
             return turn_over, target_pos
