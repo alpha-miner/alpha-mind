@@ -21,6 +21,7 @@ class TestThresholdExecutor(unittest.TestCase):
 
         # 1st round
         turn_over, executed_pos = executor.execute(target_pos)
+        executor.set_current(executed_pos)
         self.assertTrue(target_pos.equals(executed_pos))
         self.assertAlmostEqual(turn_over, target_pos.weight.sum())
 
@@ -30,6 +31,7 @@ class TestThresholdExecutor(unittest.TestCase):
                                    'industry': ['a', 'b', 'd']})
 
         turn_over, executed_pos = executor.execute(target_pos)
+        executor.set_current(executed_pos)
         self.assertTrue(target_pos.equals(executed_pos))
         self.assertTrue(executed_pos.equals(executor.current_pos))
         self.assertAlmostEqual(turn_over, 1.2)
@@ -39,6 +41,7 @@ class TestThresholdExecutor(unittest.TestCase):
                                    'weight': [0.3, 0.2, 0.5],
                                    'industry': ['a', 'c', 'd']})
         turn_over, executed_pos2 = executor.execute(target_pos)
+        executor.set_current(executed_pos2)
         self.assertTrue(executed_pos.equals(executed_pos2))
         self.assertAlmostEqual(turn_over, 0.)
 
