@@ -12,9 +12,10 @@ from alphamind.execution.baseexecutor import ExecutorBase
 
 class ThresholdExecutor(ExecutorBase):
 
-    def __init__(self, turn_over_threshold: float):
+    def __init__(self, turn_over_threshold: float, is_relative=True):
         super().__init__()
         self.threshold = turn_over_threshold
+        self.is_relative = is_relative
 
     def execute(self, target_pos: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
 
@@ -23,7 +24,9 @@ class ThresholdExecutor(ExecutorBase):
         else:
             turn_over = self.calc_turn_over(target_pos, self.current_pos)
 
-            if turn_over >= self.threshold * self.current_pos.weight.sum():
+            is_break = turn_over >= self.threshold * self.current_pos.weight.sum() if self.is_relative else turn_over >= self.threshold
+
+            if is_break:
                 return turn_over, target_pos
             else:
                 return 0., self.current_pos.copy()
