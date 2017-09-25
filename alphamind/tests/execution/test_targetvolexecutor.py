@@ -25,13 +25,13 @@ class TestTargetVolExecutor(unittest.TestCase):
         return_2 = np.random.randn(2000, n) * 0.2
         return_total = np.concatenate((return_1, return_2))
 
-        weigths = np.ones(n) / n
+        weights = np.ones(n) / n
         codes = np.array(list(range(n)))
 
         ret_deq = deque(maxlen=window)
 
         for i, row in enumerate(return_total):
-            pos = pd.DataFrame({'code': codes, 'weight': weigths})
+            pos = pd.DataFrame({'code': codes, 'weight': weights})
             turn_over, executed_pos = executor.execute(pos)
 
             if i >= window:
@@ -41,7 +41,7 @@ class TestTargetVolExecutor(unittest.TestCase):
                 executed_pos.equals(pos)
 
             executor.set_current(executed_pos)
-            daily_return = row @ weigths
+            daily_return = row @ weights
             data_dict = {'return': daily_return}
             executor.update(data_dict=data_dict)
             ret_deq.append(daily_return)

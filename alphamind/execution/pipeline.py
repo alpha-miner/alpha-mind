@@ -21,7 +21,7 @@ class ExecutionPipeline(object):
         turn_over, planed_pos = 0., target_pos
 
         for executor in self.executors:
-            turn_over, planed_pos = executor.execute(target_pos)
+            turn_over, planed_pos = executor.execute(planed_pos)
 
         executed_pos = planed_pos
 
