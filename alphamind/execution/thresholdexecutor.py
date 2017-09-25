@@ -19,7 +19,7 @@ class ThresholdExecutor(ExecutorBase):
     def execute(self, target_pos: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
 
         if self.current_pos.empty:
-            return target_pos.weight.sum(), target_pos
+            return target_pos.weight.abs().sum(), target_pos
         else:
             turn_over = self.calc_turn_over(target_pos, self.current_pos)
 

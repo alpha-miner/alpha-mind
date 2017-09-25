@@ -30,6 +30,7 @@ from alphamind.tests.model.test_linearmodel import TestLinearModel
 from alphamind.tests.model.test_loader import TestLoader
 from alphamind.tests.execution.test_naiveexecutor import TestNaiveExecutor
 from alphamind.tests.execution.test_thresholdexecutor import TestThresholdExecutor
+from alphamind.tests.execution.test_targetvolexecutor import TestTargetVolExecutor
 
 
 if __name__ == '__main__':
@@ -51,6 +52,7 @@ if __name__ == '__main__':
                          TestLinearModel,
                          TestLoader,
                          TestNaiveExecutor,
-                         TestThresholdExecutor],
+                         TestThresholdExecutor,
+                         TestTargetVolExecutor],
                         alpha_logger)
     runner.run()

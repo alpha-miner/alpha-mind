@@ -30,3 +30,6 @@ class ExecutorBase(metaclass=abc.ABCMeta):
 
     def set_current(self, current_pos: pd.DataFrame):
         self.current_pos = current_pos.copy()
+
+    def update(self, data_dict: dict):
+        pass

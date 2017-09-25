@@ -21,12 +21,18 @@ class TargetVolExecutor(ExecutorBase):
 
     def execute(self, target_pos: pd.DataFrame) -> Tuple[float, pd.DataFrame]:
         if not self.m_vol.isFull():
-            turn_over = self.calc_turn_over(target_pos, self.current_pos)
+            if self.current_pos.empty:
+                turn_over = target_pos.abs().weight.sum()
+            else:
+                turn_over = self.calc_turn_over(target_pos, self.current_pos)
             return turn_over, target_pos
         else:
             c_vol = self.m_vol.result()
             self.multiplier = c_vol / self.target_vol
             candidate_pos = target_pos.copy()
-            candidate_pos['weight'] = candidate_pos.weight * self.multiplier
+            candidate_pos['weight'] = candidate_pos.weight.values / self.multiplier
             turn_over = self.calc_turn_over(candidate_pos, self.current_pos)
             return turn_over, candidate_pos
+
+    def update(self, data_dict: dict):
+        self.m_vol.push(data_dict)
