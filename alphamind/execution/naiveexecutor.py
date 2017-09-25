@@ -21,4 +21,4 @@ class NaiveExecutor(ExecutorBase):
         else:
             turn_over = self.calc_turn_over(target_pos, self.current_pos)
         self.current_pos = target_pos.copy()
-        return turn_over, target_pos.copy()
+        return turn_over, target_pos

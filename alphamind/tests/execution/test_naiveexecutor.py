@@ -20,6 +20,7 @@ class TestNaiveExecutor(unittest.TestCase):
         # 1st round
         executor = NaiveExecutor()
         turn_over, executed_pos = executor.execute(target_pos)
+        executor.set_current(executed_pos)
         self.assertAlmostEqual(turn_over, 1.0)
 
         # 2nd round
@@ -28,6 +29,7 @@ class TestNaiveExecutor(unittest.TestCase):
                                    'industry': ['a', 'b', 'd']})
 
         turn_over, executed_pos = executor.execute(target_pos)
+        executor.set_current(executed_pos)
         self.assertAlmostEqual(turn_over, 1.2)
 
         # 3rd round
@@ -35,6 +37,7 @@ class TestNaiveExecutor(unittest.TestCase):
                                    'weight': [0.3, 0.2, 0.5],
                                    'industry': ['a', 'c', 'd']})
         turn_over, executed_pos = executor.execute(target_pos)
+        executor.set_current(executed_pos)
         self.assertAlmostEqual(turn_over, 0.4)
 
 

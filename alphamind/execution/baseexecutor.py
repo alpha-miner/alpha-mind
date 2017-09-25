@@ -27,3 +27,6 @@ class ExecutorBase(metaclass=abc.ABCMeta):
         pos_merged.fillna(0, inplace=True)
         turn_over = np.abs(pos_merged.weight_x - pos_merged.weight_y).sum()
         return turn_over
+
+    def set_current(self, current_pos: pd.DataFrame):
+        self.current_pos = current_pos.copy()
