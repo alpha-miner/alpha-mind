@@ -1423,7 +1423,7 @@ class Models(Base):
     model_version = Column(BigInteger, nullable=False)
     update_time = Column(DateTime, nullable=False)
     model_desc = Column(JSONB, nullable=False)
-    is_primary = Column(Boolean, default=False)
+    is_primary = Column(Boolean)
     model_id = Column(Integer, primary_key=True, server_default=text("nextval('models_model_id_seq'::regclass)"))
 
 
@@ -1459,12 +1459,12 @@ class PnlLog(Base):
 class PortfolioSettings(Base):
     __tablename__ = 'portfolio_settings'
     __table_args__ = (
-        Index('portfolio_pk', 'trade_date', 'portfolio_name', unique=True),
+        Index('portfolio_pk', 'trade_date', 'portfolio_name', 'model_id', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    model_id = Column(BigInteger, nullable=False)
+    model_id = Column(BigInteger, primary_key=True, nullable=False)
 
 
 class Positions(Base):
@@ -2372,5 +2372,5 @@ class Uqer(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@101.132.104.118/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha')
     Base.metadata.create_all(engine)
