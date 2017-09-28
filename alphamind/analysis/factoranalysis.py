@@ -99,7 +99,7 @@ def er_portfolio_analysis(er: np.ndarray,
             raise ValueError('linear programming optimizer in status: {0}'.format(status))
 
     elif method == 'rank':
-        weights = rank_build(er, use_rank=kwargs['use_rank']).flatten() * benchmark.sum() / kwargs['use_rank']
+        weights = rank_build(er, use_rank=kwargs['use_rank'], masks=is_tradable).flatten() * benchmark.sum() / kwargs['use_rank']
     elif method == 'ls' or method == 'long_short':
         weights = long_short_build(er).flatten()
     elif method == 'mv' or method == 'mean_variance':
