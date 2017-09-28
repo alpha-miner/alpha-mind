@@ -1179,6 +1179,63 @@ class Experimental(Base):
     DROEAfterNonRecurring = Column(Float(53))
     CFinc1 = Column(Float(53))
     xueqiu_hotness = Column(Float(53))
+    con_eps = Column(Float(53))
+    con_pb = Column(Float(53))
+    con_pb_order = Column(Float(53))
+    con_pb_rolling = Column(Float(53))
+    con_pb_rolling_order = Column(Float(53))
+    con_pe = Column(Float(53))
+    con_pe_order = Column(Float(53))
+    con_pe_rolling = Column(Float(53))
+    con_pe_rolling_order = Column(Float(53))
+    con_peg = Column(Float(53))
+    con_peg_order = Column(Float(53))
+    con_peg_rolling = Column(Float(53))
+    con_peg_rolling_order = Column(Float(53))
+    con_ps = Column(Float(53))
+    con_ps_order = Column(Float(53))
+    con_ps_rolling = Column(Float(53))
+    con_ps_rolling_order = Column(Float(53))
+    con_target_price = Column(Float(53))
+    market_confidence_10d = Column(Float(53))
+    market_confidence_15d = Column(Float(53))
+    market_confidence_25d = Column(Float(53))
+    market_confidence_5d = Column(Float(53))
+    market_confidence_75d = Column(Float(53))
+    optimism_confidence_10d = Column(Float(53))
+    optimism_confidence_15d = Column(Float(53))
+    optimism_confidence_25d = Column(Float(53))
+    optimism_confidence_5d = Column(Float(53))
+    optimism_confidence_75d = Column(Float(53))
+    pessimism_confidence_10d = Column(Float(53))
+    pessimism_confidence_15d = Column(Float(53))
+    pessimism_confidence_25d = Column(Float(53))
+    pessimism_confidence_5d = Column(Float(53))
+    pessimism_confidence_75d = Column(Float(53))
+    con_na_yoy = Column(Float(53))
+    con_np_yoy = Column(Float(53))
+    con_npcgrate_13w = Column(Float(53))
+    con_npcgrate_1w = Column(Float(53))
+    con_npcgrate_26w = Column(Float(53))
+    con_npcgrate_2y = Column(Float(53))
+    con_npcgrate_4w = Column(Float(53))
+    con_npcgrate_52w = Column(Float(53))
+    con_or_yoy = Column(Float(53))
+    con_roe_yoy1 = Column(Float(53))
+    con_roe_yoy2 = Column(Float(53))
+    con_roe_yoy3 = Column(Float(53))
+    con_eps_rolling = Column(Float(53))
+    con_np = Column(Float(53))
+    con_np_rolling = Column(Float(53))
+    con_or = Column(Float(53))
+    con_or_rolling = Column(Float(53))
+    con_roe = Column(Float(53))
+    con_na = Column(Float(53))
+    con_na_rolling = Column(Float(53))
+    mcap = Column(Float(53))
+    tcap = Column(Float(53))
+    ta = Column(Float(53))
+    na = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -1366,7 +1423,7 @@ class Models(Base):
     model_version = Column(BigInteger, nullable=False)
     update_time = Column(DateTime, nullable=False)
     model_desc = Column(JSONB, nullable=False)
-    is_primary = Column(Boolean, default=False)
+    is_primary = Column(Boolean)
     model_id = Column(Integer, primary_key=True, server_default=text("nextval('models_model_id_seq'::regclass)"))
 
 
@@ -1402,12 +1459,12 @@ class PnlLog(Base):
 class PortfolioSettings(Base):
     __tablename__ = 'portfolio_settings'
     __table_args__ = (
-        Index('portfolio_pk', 'trade_date', 'portfolio_name', unique=True),
+        Index('portfolio_pk', 'trade_date', 'portfolio_name', 'model_id', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    model_id = Column(BigInteger, nullable=False)
+    model_id = Column(BigInteger, primary_key=True, nullable=False)
 
 
 class Positions(Base):

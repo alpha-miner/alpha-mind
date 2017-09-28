@@ -42,4 +42,4 @@ u."AccountsPayablesTDays",u."AccountsPayablesTRate",u."AdminiExpenseRate",u."ART
  left join tiny as t on m.trade_date = t.trade_date and m.code = t.code
  left join experimental as e on m.trade_date = e.trade_date and m.code = e.code;
 
-create UNIQUE index on full_factor_view (trade_date, code)
+create UNIQUE index on full_factor_view (trade_date, code);

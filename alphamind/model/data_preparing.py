@@ -189,7 +189,7 @@ def fetch_data_package(engine: SqlEngine,
                        neutralized_risk: Iterable[str] = None,
                        risk_model: str = 'short',
                        pre_process: Iterable[object] = None,
-                       post_process: Iterable[object] = None):
+                       post_process: Iterable[object] = None) -> dict:
     alpha_logger.info("Starting data package fetching ...")
 
     transformer = Transformer(alpha_factors)
@@ -243,7 +243,7 @@ def fetch_train_phase(engine,
                       risk_model: str = 'short',
                       pre_process: Iterable[object] = None,
                       post_process: Iterable[object] = None,
-                      warm_start: int = 0):
+                      warm_start: int = 0) -> dict:
     transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
