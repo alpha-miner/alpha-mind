@@ -18,6 +18,7 @@ class TestPercentBuild(unittest.TestCase):
         self.p_included = 0.1
         self.n_groups = 30
         self.n_portfolios = range(1, 10)
+        self.n_mask = 100
 
     def test_percent_build(self):
         n_include = int(self.n_samples * self.p_included)
@@ -52,6 +53,30 @@ class TestPercentBuild(unittest.TestCase):
             masks = (grouped_ordering <= n_include).values
             for j in range(x.shape[1]):
                 expected_weights[masks[:, j], j] = 1.
+
+            np.testing.assert_array_almost_equal(calc_weights, expected_weights)
+
+    def test_percent_build_with_masks(self):
+        for n_portfolio in self.n_portfolios:
+            x = np.random.randn(self.n_samples, n_portfolio)
+            choices = np.random.choice(self.n_samples, self.n_mask, replace=False)
+            masks = np.full(self.n_samples, True, dtype=bool)
+            masks[choices] = False
+
+            calc_weights = percent_build(x, self.p_included, masks=masks)
+
+            expected_weights = np.zeros((len(x), n_portfolio))
+
+            filtered_index = np.arange(len(x))[masks]
+            filtered_x = x[masks]
+            big_boolen = np.full(x.shape, False, dtype=bool)
+
+            n_included = int(self.p_included * len(x))
+            chosen = (-filtered_x).argsort(axis=0).argsort(axis=0) < n_included
+            big_boolen[filtered_index] = chosen
+
+            for j in range(x.shape[1]):
+                expected_weights[big_boolen[:, j], j] = 1.
 
             np.testing.assert_array_almost_equal(calc_weights, expected_weights)
 

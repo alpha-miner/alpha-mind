@@ -13,7 +13,14 @@ from alphamind.utilities import transform
 
 def long_short_build(er: np.ndarray,
                      leverage: float=1.,
-                     groups: np.ndarray=None) -> np.ndarray:
+                     groups: np.ndarray=None,
+                     masks: np.ndarray=None) -> np.ndarray:
+
+    er = er.copy()
+
+    if masks is not None:
+        er[~masks] = 0.
+
     if er.ndim == 1:
         er = er.reshape((-1, 1))
 

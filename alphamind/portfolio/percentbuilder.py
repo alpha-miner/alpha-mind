@@ -12,7 +12,12 @@ from alphamind.utilities import groupby
 from alphamind.utilities import set_value
 
 
-def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None) -> np.ndarray:
+def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None, masks: np.ndarray=None) -> np.ndarray:
+
+    er = er.copy()
+
+    if masks is not None:
+        er[~masks] = -np.inf
 
     if er.ndim == 1 or (er.shape[0] == 1 or er.shape[1] == 1):
         # fast path methods for single column er
