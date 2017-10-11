@@ -1492,6 +1492,7 @@ class QuantileAnalysis(Base):
     portfolio = Column(String(50), primary_key=True, nullable=False)
     universe = Column(String(20), primary_key=True, nullable=False)
     benchmark = Column(Integer, primary_key=True, nullable=False)
+    source = Column(String(20), primary_key=True, nullable=False)
     q1 = Column(Float(53))
     q2 = Column(Float(53))
     q3 = Column(Float(53))
