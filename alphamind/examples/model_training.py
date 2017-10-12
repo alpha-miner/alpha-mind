@@ -34,16 +34,16 @@ training     - every 4 week
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('zz500', ['zz500'])
-neutralize_risk = ['SIZE'] + industry_styles
-portfolio_risk_neutralize = ['SIZE']
+neutralize_risk = industry_styles
+portfolio_risk_neutralize = []
 portfolio_industry_neutralize = True
-alpha_factors = ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'] # ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
+alpha_factors = ['VAL', 'RVOL', 'ROEDiluted', 'GREV', 'EPS', 'CHV', 'CFinc1', 'BDTO'] # ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
 benchmark = 905
 n_bins = 5
 frequency = '2w'
-batch = 1
-start_date = '2017-01-05'
-end_date = '2017-09-05'
+batch = 4
+start_date = '2017-01-01'
+end_date = '2017-09-26'
 method = 'risk_neutral'
 use_rank = 100
 
@@ -62,7 +62,7 @@ data_package = fetch_data_package(engine,
                                   neutralized_risk=neutralize_risk,
                                   pre_process=[winsorize_normal, standardize],
                                   post_process=[winsorize_normal, standardize],
-                                  warm_start=8)
+                                  warm_start=batch)
 
 '''
 training phase: using Linear - regression from scikit-learn
@@ -76,12 +76,22 @@ dates = sorted(train_x.keys())
 model_df = pd.Series()
 
 for train_date in dates:
-    #model = LinearRegression(alpha_factors, fit_intercept=False)
+    model = LinearRegression(alpha_factors, fit_intercept=False)
     #model = LassoCV(fit_intercept=False)
-    #model = AdaBoostRegressor(n_estimators=100)
+    # model = AdaBoostRegressor(n_estimators=100)
     #model = RandomForestRegressor(n_estimators=100, n_jobs=4)
     #model = NuSVR(kernel='rbf', C=1e-3, gamma=0.1)
-    model = ConstLinearModel(alpha_factors, np.array([0.05, 0.3, 0.35, 0.075, 0.15, 0.05]))
+    # model = ConstLinearModel(alpha_factors, np.array([0.034129344,
+    #                 0.015881607,
+    #                 0.048765746,
+    #                 0.042747382,
+    #                 -0.015900173,
+    #                 0.019044573,
+    #                 -0.001792638,
+    #                 0.014277867,
+    #                 ]))
+
+    # model = ConstLinearModel(alpha_factors, np.array([1.] * len(alpha_factors)))
     x = train_x[train_date]
     y = train_y[train_date]
 
@@ -165,6 +175,8 @@ for i, predict_date in enumerate(dates):
             cons.set_constraints(name, benchmark_exp[k], benchmark_exp[k])
 
     predict_y = model.predict(x)
+
+    is_tradable[:] = True
     weights, analysis = er_portfolio_analysis(predict_y,
                                               industry_names,
                                               realized_r,

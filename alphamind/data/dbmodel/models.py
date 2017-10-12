@@ -2370,6 +2370,21 @@ class Uqer(Base):
     NLSIZE = Column(Float(53))
 
 
+class DataLog(Base):
+    __tablename__ = 'data_log'
+    __table_args__ = (
+        Index('data_log_idx', 'trade_date', 'factor', 'source', 'universe', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    factor = Column(String(30), primary_key=True, nullable=False)
+    source = Column(String(30), primary_key=True, nullable=False)
+    universe = Column(String(20), primary_key=True, nullable=False)
+    coverage = Column(Float(53))
+    maximum = Column(Float(53))
+    minimum = Column(Float(53))
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 

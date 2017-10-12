@@ -11,30 +11,28 @@ from matplotlib import pyplot as plt
 from alphamind.api import *
 from PyFin.api import *
 
-
 strategies = {
     'prod': {
         # 'factors': ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
         # 'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
-        #'factors':  ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
-        #'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
+        # 'factors':  ['RVOL', 'EPS', 'DROEAfterNonRecurring', 'DivP', 'CFinc1', 'BDTO'],
+        # 'weights': [0.05, 0.3, 0.35, 0.075, 0.15, 0.05]
         'factors': ['VAL', 'RVOL', 'ROEDiluted', 'GREV', 'EPS', 'CHV', 'CFinc1', 'BDTO'],
         'weights': [0.034129344,
-0.015881607,
-0.048765746,
-0.042747382,
--0.015900173,
-0.019044573,
--0.001792638,
-0.014277867,
-]
+                    0.015881607,
+                    0.048765746,
+                    0.042747382,
+                    -0.015900173,
+                    0.019044573,
+                    -0.001792638,
+                    0.014277867,
+                    ]
     },
     # 'candidate': {
     #     'factors': ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'GREV', 'ROEDiluted'],
     #     'weights': [0.02, 0.2, 0.15, 0.05, 0.2, 0.2, 0.2]
     # }
 }
-
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 universe = Universe('custom', ['zz500'])
@@ -54,8 +52,8 @@ elif freq == '3w':
 elif freq == '1d':
     horizon = 0
 
-dates = makeSchedule('2017-01-01',
-                     '2017-09-05',
+dates = makeSchedule('2012-01-01',
+                     '2017-09-15',
                      tenor=freq,
                      calendar='china.sse',
                      dateGenerationRule=DateGeneration.Forward)
@@ -119,7 +117,6 @@ for strategy in strategies:
             rets.append(analysis.er[-1] / benchmark.sum())
 
     total_data_dict[strategy] = rets
-
 
 ret_df = pd.DataFrame(total_data_dict, index=dates)
 ret_df.loc[advanceDateByCalendar('china.sse', dates[-1], freq)] = 0.
