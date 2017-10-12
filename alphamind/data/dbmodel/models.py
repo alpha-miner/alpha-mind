@@ -2370,10 +2370,10 @@ class Uqer(Base):
     NLSIZE = Column(Float(53))
 
 
-class DataLog(Base):
-    __tablename__ = 'data_log'
+class FactorLog(Base):
+    __tablename__ = 'factor_log'
     __table_args__ = (
-        Index('data_log_idx', 'trade_date', 'factor', 'source', 'universe', unique=True),
+        Index('factor_log_idx', 'trade_date', 'factor', 'source', 'universe', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
