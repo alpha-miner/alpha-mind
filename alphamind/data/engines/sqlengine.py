@@ -79,7 +79,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [FullFactor]
+factor_tables = [FullFactor, Experimental]
 
 DEFAULT_URL = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
 
@@ -479,7 +479,10 @@ class SqlEngine(object):
         total_data = {}
 
         transformer = Transformer(factors)
-        factor_data = self.fetch_factor(ref_date, transformer, codes)
+        factor_data = self.fetch_factor(ref_date,
+                                        transformer,
+                                        codes,
+                                        used_factor_tables=[FullFactor, Experimental])
 
         if benchmark:
             benchmark_data = self.fetch_benchmark(ref_date, benchmark)
