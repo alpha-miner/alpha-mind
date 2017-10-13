@@ -209,19 +209,22 @@ def fetch_data_package(engine: SqlEngine,
     return_df['industry'] = train_x['industry']
     return_df['industry_code'] = train_x['industry_code']
     return_df['isOpen'] = train_x['isOpen']
-    for i, name in enumerate(neutralized_risk):
-        return_df.loc[:, name] = risk_exp[:, i]
+
+    if neutralized_risk:
+        for i, name in enumerate(neutralized_risk):
+            return_df.loc[:, name] = risk_exp[:, i]
 
     alpha_logger.info("Loading data is finished")
 
-    train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets = batch_processing(x_values,
-                                                                                              y_values,
-                                                                                              dates,
-                                                                                              date_label,
-                                                                                              batch,
-                                                                                              risk_exp,
-                                                                                              pre_process,
-                                                                                              post_process)
+    train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets = batch_processing(
+        x_values,
+        y_values,
+        dates,
+        date_label,
+        batch,
+        risk_exp,
+        pre_process,
+        post_process)
 
     alpha_logger.info("Data processing is finished")
 
