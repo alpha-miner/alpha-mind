@@ -90,11 +90,17 @@ def er_portfolio_analysis(er: np.ndarray,
 
     if benchmark is not None and method == 'risk_neutral':
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
+
+        turn_over_target = kwargs.get('turn_over_target')
+        current_position = kwargs.get('current_position')
+
         status, _, weights = linear_build(er,
                                           risk_constraints=cons_exp,
                                           lbound=lbound,
                                           ubound=ubound,
-                                          risk_target=(risk_lbound, risk_ubound))
+                                          risk_target=(risk_lbound, risk_ubound),
+                                          turn_over_target=turn_over_target,
+                                          current_position=current_position)
         if status != 'optimal':
             raise ValueError('linear programming optimizer in status: {0}'.format(status))
 
