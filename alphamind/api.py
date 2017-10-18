@@ -36,6 +36,23 @@ from alphamind.execution.pipeline import ExecutionPipeline
 from alphamind.utilities import alpha_logger
 
 
+def map_freq(freq):
+
+    if freq == '1m':
+        horizon = 21
+    elif freq == '1w':
+        horizon = 4
+    elif freq == '2w':
+        horizon = 8
+    elif freq == '3w':
+        horizon = 12
+    elif freq == '1d':
+        horizon = 0
+    else:
+        raise ValueError("Unrecognized freq: {0}".format(freq))
+    return horizon
+
+
 __all__ = [
     'SqlEngine',
     'factor_analysis',
@@ -61,5 +78,6 @@ __all__ = [
     'ThresholdExecutor',
     'TargetVolExecutor',
     'ExecutionPipeline',
-    'alpha_logger'
+    'alpha_logger',
+    'map_freq'
 ]
