@@ -276,7 +276,8 @@ class SqlEngine(object):
                            start_date: str = None,
                            end_date: str = None,
                            dates: Iterable[str] = None,
-                           external_data: pd.DataFrame = None) -> pd.DataFrame:
+                           external_data: pd.DataFrame = None,
+                           used_factor_tables=None) -> pd.DataFrame:
 
         if isinstance(factors, Transformer):
             transformer = factors
@@ -284,7 +285,11 @@ class SqlEngine(object):
             transformer = Transformer(factors)
 
         dependency = transformer.dependency
-        factor_cols = _map_factors(dependency, factor_tables)
+
+        if used_factor_tables:
+            factor_cols = _map_factors(dependency, used_factor_tables)
+        else:
+            factor_cols = _map_factors(dependency, factor_tables)
 
         cond = universe.query_range(start_date, end_date, dates)
 
