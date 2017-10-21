@@ -55,10 +55,8 @@ python setup.py install
 下面的步骤以Ubuntun上Postgresql为例子，Windows服务器以及SQL server等其他RMDBS的配置类似。
 
 * 安装数据库软件
-
-  ```bash
-  suod apt-get install mysql-server
-  ```
+  
+  请前往[PostgreSQL官网](https://www.postgresql.org/)，根据指导，下载安装PostgreSQL数据库。
 
 * 新建数据库
 
