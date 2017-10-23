@@ -95,7 +95,7 @@ python setup.py install
   
 * 数据库更新
 
-  在目录``scrips`` 下有[airflow]()脚本文件``update_uqer_data.py``可以用来做每天的数据更新。使用之前除了要配置好airflow服务器之外，需要更新脚本中以下两行：
+  在目录``scripts`` 下有[airflow]()脚本文件``update_uqer_data.py``可以用来做每天的数据更新。使用之前除了要配置好airflow服务器之外，需要更新脚本中以下两行：
 
   ```
   _ = uqer.Client(token='')
