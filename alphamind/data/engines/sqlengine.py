@@ -626,7 +626,7 @@ if __name__ == '__main__':
     from alphamind.api import alpha_logger
 
     # db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
-    db_url = 'postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha'
+    db_url = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
 
     universe = Universe('custom', ['zz500'])
     engine = SqlEngine(db_url)
@@ -650,6 +650,8 @@ if __name__ == '__main__':
     data4 = engine.fetch_risk_model_range(universe=universe, start_date=start_date, end_date=end_date, dates=dates)
     alpha_logger.info('end')
     data2 = engine.fetch_codes_range(universe, start_date=start_date, end_date=end_date, dates=dates)
+    alpha_logger.info('end')
+    data2 = engine.fetch_dx_return_range(universe, start_date=start_date, end_date=end_date, dates=dates)
     alpha_logger.info('end')
 
     print(data1)

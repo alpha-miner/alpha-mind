@@ -17,13 +17,17 @@ import datetime as dt
 
 start = dt.datetime.now()
 
-# formula1 = CSRank(DIFF(LOG("turnoverVol")))
-# formula2 = CSRank((LAST('highestPrice') - LAST('lowestPrice')) / LAST('lowestPrice'))
-# expression = -CORR(6, formula1 ^ formula2)
+formula1 = CSRank(DIFF(LOG("turnoverVol")))
+formula2 = CSRank((LAST('closePrice') - LAST('openPrice')) / LAST('openPrice'))
+expression = -CORR(6, formula1 ^ formula2)
+# expression1 = -0.6 * LAST('con_pe_rolling') - 0.6 * LAST('con_pb_rolling') + 0.6 * LAST('con_eps') + 1.2 * LAST('con_target_price')
+# expression2 = LAST("IVR")
 
-factor1 = LAST('RVOL')
-factor2 = LAST('IVR')
-expression = RES(20, factor2 ^ factor1)
+#expression = expression1 + expression2
+
+# factor1 = LAST('RVOL')
+# factor2 = LAST('IVR')
+# expression = RES(20, factor2 ^ factor1)
 
 # expression = MA(1, "EPS")
 
@@ -33,14 +37,14 @@ alpha_factor = {alpha_factor_name: expression}
 # end of formula definition
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
-universe = Universe('custom', ['zz500'])
+universe = Universe('custom', ['ashare_ex'])
 benchmark_code = 905
 neutralize_risk = ['SIZE'] + industry_styles
 freq = '1w'
 n_bins = 5
 
 dates = makeSchedule('2012-01-01',
-                     '2017-09-18',
+                     '2017-10-11',
                      tenor=freq,
                      calendar='china.sse')
 
@@ -71,7 +75,7 @@ for i, value in enumerate(factor_groups):
         er = factor_processing(total_data[[alpha_factor_name]].values,
                                pre_process=[winsorize_normal, standardize],
                                risk_factors=risk_exp,
-                               post_process=[standardize])
+                               post_process=[winsorize_normal, standardize])
         res = er_quantile_analysis(er,
                                    n_bins=n_bins,
                                    dx_return=dx_return,

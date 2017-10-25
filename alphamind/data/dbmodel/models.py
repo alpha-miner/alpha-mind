@@ -2385,8 +2385,30 @@ class FactorLog(Base):
     minimum = Column(Float(53))
 
 
+class FactorCorrelation(Base):
+    __tablename__ = 'factor_correlation'
+    __table_args__ = (
+        Index('factor_correlation_idx', 'trade_date', 'factor', 'source', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    factor = Column(String(30), primary_key=True, nullable=False)
+    source = Column(String(30), primary_key=True, nullable=False)
+
+    BETA = Column(Float(53))
+    MOMENTUM = Column(Float(53))
+    SIZE = Column(Float(53))
+    EARNYILD = Column(Float(53))
+    RESVOL = Column(Float(53))
+    GROWTH = Column(Float(53))
+    BTOP = Column(Float(53))
+    LEVERAGE = Column(Float(53))
+    LIQUIDTY = Column(Float(53))
+    SIZENL = Column(Float(53))
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@192.168.0.102/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
