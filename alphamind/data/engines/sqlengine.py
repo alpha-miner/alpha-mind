@@ -23,6 +23,7 @@ from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Industry
 from alphamind.data.dbmodel.models import Experimental
+from alphamind.data.dbmodel.models import RiskMaster
 from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
@@ -135,6 +136,10 @@ class SqlEngine(object):
 
     def fetch_factors_meta(self) -> pd.DataFrame:
         query = self.session.query(FactorMaster)
+        return pd.read_sql(query.statement, query.session.bind)
+
+    def fetch_risk_meta(self) -> pd.DataFrame:
+        query = self.session.query(RiskMaster)
         return pd.read_sql(query.statement, query.session.bind)
 
     def fetch_strategy(self, ref_date: str, strategy: str) -> pd.DataFrame():
