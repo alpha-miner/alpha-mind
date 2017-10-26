@@ -18,6 +18,7 @@ from sqlalchemy import select, and_, outerjoin, join
 from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
+from alphamind.data.dbmodel.models import FactorLog
 from alphamind.data.dbmodel.models import Strategy
 from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
@@ -136,6 +137,10 @@ class SqlEngine(object):
 
     def fetch_factors_meta(self) -> pd.DataFrame:
         query = self.session.query(FactorMaster)
+        return pd.read_sql(query.statement, query.session.bind)
+
+    def fetch_factor_coverage(self) -> pd.DataFrame:
+        query = self.session.query(FactorLog)
         return pd.read_sql(query.statement, query.session.bind)
 
     def fetch_risk_meta(self) -> pd.DataFrame:
