@@ -31,6 +31,7 @@ from alphamind.tests.model.test_loader import TestLoader
 from alphamind.tests.execution.test_naiveexecutor import TestNaiveExecutor
 from alphamind.tests.execution.test_thresholdexecutor import TestThresholdExecutor
 from alphamind.tests.execution.test_targetvolexecutor import TestTargetVolExecutor
+from alphamind.tests.execution.test_pipeline import TestExecutionPipeline
 
 
 if __name__ == '__main__':
@@ -53,6 +54,7 @@ if __name__ == '__main__':
                          TestLoader,
                          TestNaiveExecutor,
                          TestThresholdExecutor,
-                         TestTargetVolExecutor],
+                         TestTargetVolExecutor,
+                         TestExecutionPipeline],
                         alpha_logger)
     runner.run()

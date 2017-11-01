@@ -14,7 +14,7 @@ from alphamind.execution.thresholdexecutor import ThresholdExecutor
 from alphamind.execution.targetvolexecutor import TargetVolExecutor
 
 
-class TestExecutionPipelin(unittest.TestCase):
+class TestExecutionPipeline(unittest.TestCase):
 
     def test_execution_pipeline(self):
         n = 100
