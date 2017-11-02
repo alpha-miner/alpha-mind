@@ -1236,6 +1236,8 @@ class Experimental(Base):
     tcap = Column(Float(53))
     ta = Column(Float(53))
     na = Column(Float(53))
+    eps_q = Column(Float(53))
+    roe_q = Column(Float(53))
 
 
 class FactorMaster(Base):
