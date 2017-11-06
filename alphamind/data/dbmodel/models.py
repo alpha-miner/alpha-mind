@@ -1852,5 +1852,5 @@ class FactorCorrelation(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('mysql+mysqldb://root:we083826@localhost/alpha')
+    engine = create_engine('mysql+mysqldb://root:password@localhost/alpha')
     Base.metadata.create_all(engine)
