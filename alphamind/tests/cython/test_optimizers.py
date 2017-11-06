@@ -25,7 +25,7 @@ class TestOptimizers(unittest.TestCase):
         self.assertAlmostEqual(optimizer.feval(), 1.2)
         np.testing.assert_array_almost_equal(optimizer.x_value(), [0.8, 0.2])
 
-    def test_mvoptimizer(self):
+    def test_qpoptimizer(self):
         objective = np.array([0.01, 0.02, 0.03])
         cov = np.array([[0.02, 0.01, 0.02],
                         [0.01, 0.02, 0.03],
