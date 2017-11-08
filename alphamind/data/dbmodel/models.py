@@ -678,6 +678,8 @@ class Experimental(Base):
     na = Column(Float(53))
     eps_q = Column(Float(53))
     roe_q = Column(Float(53))
+    cfinc1_q = Column(Float(53))
+    val_q = Column(Float(53))
 
 
 class FactorMaster(Base):

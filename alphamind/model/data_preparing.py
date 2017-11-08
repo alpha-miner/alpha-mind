@@ -82,7 +82,7 @@ def prepare_data(engine: SqlEngine,
                          frequency,
                          calendar='china.sse',
                          dateRule=BizDayConventions.Following,
-                         dateGenerationRule=DateGeneration.Backward)
+                         dateGenerationRule=DateGeneration.Forward)
 
     dates = [d.strftime('%Y-%m-%d') for d in dates]
 

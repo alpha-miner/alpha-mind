@@ -43,9 +43,11 @@ def map_freq(freq):
     elif freq == '1w':
         horizon = 4
     elif freq == '2w':
-        horizon = 8
+        horizon = 9
     elif freq == '3w':
-        horizon = 12
+        horizon = 14
+    elif freq == '4w':
+        horizon = 19
     elif freq == '1d':
         horizon = 0
     else:
