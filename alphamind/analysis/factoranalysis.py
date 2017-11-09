@@ -74,7 +74,7 @@ def er_portfolio_analysis(er: np.ndarray,
             lbound = kwargs['lbound'].copy()
             del kwargs['lbound']
         else:
-            lbound = 0.
+            lbound = np.maximum(0., benchmark - 0.01)
 
         if 'ubound' in kwargs:
             ubound = kwargs['ubound'].copy()
