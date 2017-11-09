@@ -18,9 +18,9 @@ Back test parameter settings
 """
 
 start_date = '2012-01-01'
-end_date = '2017-11-06'
-benchmark_code = 905
-universe_name = 'zz500'
+end_date = '2017-11-07'
+benchmark_code = 300
+universe_name = 'zz800'
 universe = Universe(universe_name, [universe_name])
 frequency = '1w'
 batch = 8
@@ -33,6 +33,9 @@ constraint_risk = ['SIZE'] + industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
 turn_over_target_base = 0.2
+weight_gap = 0.02
+benchmark_total_lower = 1.
+benchmark_total_upper = 1.
 horizon = map_freq(frequency)
 
 executor = NaiveExecutor()
@@ -47,16 +50,8 @@ const_weights = np.array([0.05, 0.2, 0.075, 0.15, 0.05])
 const_model = ConstLinearModel(features=const_features,
                                weights=const_weights)
 
-linear_model_features = {
-    'eps': LAST('eps_q'),
-    'roe': LAST('roe_q'),
-    'bdto': LAST('BDTO'),
-    'cfinc1': LAST('CFinc1'),
-    'chv': LAST('CHV'),
-    'ivr': LAST('IVR'),
-    'val': LAST('VAL'),
-    'grev': LAST('GREV')
-}
+linear_model_features = ['eps_q', 'roe_q', 'BDTO', 'CFinc1', 'CHV', 'IVR', 'VAL', 'GREV']
+total_features = ["IVR", "eps_q", "DivP", "CFinc1", "BDTO",  'roe_q', 'GREV', 'CHV', 'VAL']
 
 """
 Data phase
@@ -87,7 +82,7 @@ settlement = linear_model_factor_data['settlement']
 linear_model_features = linear_model_factor_data['x_names']
 
 const_model_factor_data = engine.fetch_data_range(universe,
-                                                  const_features,
+                                                  total_features,
                                                   dates=ref_dates,
                                                   benchmark=benchmark_code)['factor']
 
@@ -123,7 +118,7 @@ for i, value in enumerate(factor_groups):
     data = value[1]
     ref_date = date.strftime('%Y-%m-%d')
 
-    total_data = data.dropna()
+    total_data = data.fillna(data[total_features].median())
     alpha_logger.info('{0}: {1}'.format(date, len(total_data)))
     risk_exp = total_data[neutralize_risk].values.astype(float)
     industry = total_data.industry_code.values
@@ -135,10 +130,16 @@ for i, value in enumerate(factor_groups):
     risk_names = constraint_risk + ['total']
     risk_target = risk_exp_expand.T @ benchmark_w
 
-    lbound = np.zeros(len(total_data))
-    ubound = 0.015 + benchmark_w * 0.
+    lbound = np.maximum(0., benchmark_w - weight_gap)  # np.zeros(len(total_data))
+    ubound = weight_gap + benchmark_w
+
+    is_in_benchmark = (benchmark_w > 0.).astype(float)
+
+    risk_exp_expand = np.concatenate((risk_exp_expand, is_in_benchmark.reshape((-1, 1))), axis=1).astype(float)
+    risk_names.append('benchmark_total')
 
     constraint = Constraints(risk_exp_expand, risk_names)
+
     for i, name in enumerate(risk_names):
         if name == 'total':
             constraint.set_constraints(name,
@@ -149,6 +150,11 @@ for i, value in enumerate(factor_groups):
             constraint.set_constraints(name,
                                        lower_bound=risk_target[i] + base_target * size_risk_lower,
                                        upper_bound=risk_target[i] + base_target * size_risk_upper)
+        elif name == 'benchmark_total':
+            base_target = benchmark_w.sum()
+            constraint.set_constraints(name,
+                                       lower_bound=benchmark_total_lower * base_target,
+                                       upper_bound=benchmark_total_upper * base_target)
         else:
             constraint.set_constraints(name,
                                        lower_bound=risk_target[i] * industry_lower,
@@ -165,12 +171,17 @@ for i, value in enumerate(factor_groups):
     # linear regression model
     models = models_series[models_series.index <= date]
     model = models[-1]
-    x = predict_x[date]
+
+    # x = predict_x[date]
+    x = factor_processing(total_data[linear_model_features].values,
+                          pre_process=[winsorize_normal, standardize],
+                          risk_factors=risk_exp,
+                          post_process=[winsorize_normal, standardize])
     er2 = model.predict(x)
 
     # combine model
     er1_table = pd.DataFrame({'er1': er1 / er1.std(), 'code': total_data.code.values})
-    er2_table = pd.DataFrame({'er2': er2 / er2.std(), 'code': settlement.loc[settlement.trade_date == date, 'code'].values})
+    er2_table = pd.DataFrame({'er2': er2 / er2.std(), 'code': total_data.code.values})
     er_table = pd.merge(er1_table, er2_table, on=['code'], how='left').fillna(0)
 
     er = (er_table.er1 + er_table.er2).values
@@ -202,7 +213,7 @@ for i, value in enumerate(factor_groups):
                                               lbound=lbound,
                                               ubound=ubound)
     except ValueError:
-        alpha_logger.info('{0} full rebalance'.format(date))
+        alpha_logger.info('{0} full re-balance'.format(date))
         target_pos, _ = er_portfolio_analysis(er,
                                               industry,
                                               None,
