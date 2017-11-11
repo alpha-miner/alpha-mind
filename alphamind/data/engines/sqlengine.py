@@ -323,7 +323,7 @@ class SqlEngine(object):
 
         query = select(
             [FullFactor.trade_date, FullFactor.code, FullFactor.isOpen] + list(factor_cols.keys())) \
-            .select_from(big_table)
+            .select_from(big_table).distinct()
 
         df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code'])
 
@@ -387,7 +387,7 @@ class SqlEngine(object):
 
         risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
         query = select([FullFactor.code, special_risk_col] + risk_exposure_cols) \
-            .where(and_(FullFactor.trade_date == ref_date, FullFactor.code.in_(codes)))
+            .where(and_(FullFactor.trade_date == ref_date, FullFactor.code.in_(codes))).distinct()
 
         risk_exp = pd.read_sql(query, self.engine)
 
@@ -429,7 +429,7 @@ class SqlEngine(object):
 
         query = select(
             [FullFactor.trade_date, FullFactor.code, special_risk_col] + risk_exposure_cols) \
-            .select_from(big_table)
+            .select_from(big_table).distinct()
 
         risk_exp = pd.read_sql(query, self.engine)
 
@@ -450,7 +450,7 @@ class SqlEngine(object):
                 Industry.code.in_(codes),
                 Industry.industry == industry_category_name
             )
-        )
+        ).distinct()
 
         return pd.read_sql(query, self.engine)
 
@@ -481,7 +481,7 @@ class SqlEngine(object):
         query = select([Industry.trade_date,
                         Industry.code,
                         Industry.industryID1.label('industry_code'),
-                        Industry.industryName1.label('industry')]).select_from(big_table)
+                        Industry.industryName1.label('industry')]).select_from(big_table).distinct()
         return pd.read_sql(query, self.engine)
 
     def fetch_data(self, ref_date: str,

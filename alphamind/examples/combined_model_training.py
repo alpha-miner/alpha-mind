@@ -17,11 +17,11 @@ plt.style.use('ggplot')
 Back test parameter settings
 """
 
-start_date = '2012-01-01'
-end_date = '2017-11-07'
+start_date = '2017-01-01'
+end_date = '2017-11-08'
 benchmark_code = 300
-universe_name = 'zz800'
-universe = Universe(universe_name, [universe_name])
+universe_name = ['zz500', 'hs300', 'sh50']
+universe = Universe(universe_name, universe_name)
 frequency = '1w'
 batch = 8
 method = 'risk_neutral'
@@ -85,7 +85,6 @@ const_model_factor_data = engine.fetch_data_range(universe,
                                                   total_features,
                                                   dates=ref_dates,
                                                   benchmark=benchmark_code)['factor']
-
 """
 Training phase
 """
@@ -100,7 +99,6 @@ for ref_date in ref_dates:
     model.fit(x, y)
     models_series.loc[ref_date] = model
     alpha_logger.info('trade_date: {0} training finished'.format(ref_date))
-
 
 """
 Predicting and re-balance phase
