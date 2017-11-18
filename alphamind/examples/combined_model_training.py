@@ -10,6 +10,9 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from alphamind.api import *
 from PyFin.api import *
+from PyFin.Math.Accumulators.StatefulAccumulators import MovingAverage
+from PyFin.Math.Accumulators.StatefulAccumulators import MovingSharp
+from PyFin.Math.Accumulators.StatefulAccumulators import MovingMaxDrawdown
 
 plt.style.use('ggplot')
 
@@ -17,26 +20,27 @@ plt.style.use('ggplot')
 Back test parameter settings
 """
 
-start_date = '2017-01-01'
-end_date = '2017-11-08'
+start_date = '2012-01-01'
+end_date = '2017-11-15'
 benchmark_code = 300
-universe_name = ['zz500', 'hs300', 'sh50']
+universe_name = ['zz500', 'hs300']
 universe = Universe(universe_name, universe_name)
-frequency = '1w'
+frequency = '2w'
 batch = 8
 method = 'risk_neutral'
 use_rank = 100
 industry_lower = 1.
 industry_upper = 1.
 neutralize_risk = ['SIZE'] + industry_styles
-constraint_risk = ['SIZE'] + industry_styles
+constraint_risk = industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
 turn_over_target_base = 0.2
-weight_gap = 0.02
-benchmark_total_lower = 1.
+weight_gap = 0.03
+benchmark_total_lower = 0.8
 benchmark_total_upper = 1.
 horizon = map_freq(frequency)
+hedging_ratio = 1.
 
 executor = NaiveExecutor()
 
@@ -81,10 +85,6 @@ predict_y = linear_model_factor_data['predict']['y']
 settlement = linear_model_factor_data['settlement']
 linear_model_features = linear_model_factor_data['x_names']
 
-const_model_factor_data = engine.fetch_data_range(universe,
-                                                  total_features,
-                                                  dates=ref_dates,
-                                                  benchmark=benchmark_code)['factor']
 """
 Training phase
 """
@@ -100,6 +100,17 @@ for ref_date in ref_dates:
     models_series.loc[ref_date] = model
     alpha_logger.info('trade_date: {0} training finished'.format(ref_date))
 
+
+frequency = '1w'
+ref_dates = makeSchedule(start_date, end_date, frequency, 'china.sse')
+
+const_model_factor_data = engine.fetch_data_range(universe,
+                                                  total_features,
+                                                  dates=ref_dates,
+                                                  benchmark=benchmark_code)['factor']
+
+horizon = map_freq(frequency)
+
 """
 Predicting and re-balance phase
 """
@@ -110,6 +121,8 @@ rets = []
 turn_overs = []
 leverags = []
 previous_pos = pd.DataFrame()
+
+index_dates = []
 
 for i, value in enumerate(factor_groups):
     date = value[0]
@@ -128,8 +141,8 @@ for i, value in enumerate(factor_groups):
     risk_names = constraint_risk + ['total']
     risk_target = risk_exp_expand.T @ benchmark_w
 
-    lbound = np.maximum(0., benchmark_w - weight_gap)  # np.zeros(len(total_data))
-    ubound = weight_gap + benchmark_w
+    lbound = np.maximum(0., hedging_ratio * benchmark_w - weight_gap)  # np.zeros(len(total_data))
+    ubound = weight_gap + hedging_ratio * benchmark_w
 
     is_in_benchmark = (benchmark_w > 0.).astype(float)
 
@@ -168,6 +181,10 @@ for i, value in enumerate(factor_groups):
 
     # linear regression model
     models = models_series[models_series.index <= date]
+    if models.empty:
+        continue
+
+    index_dates.append(date)
     model = models[-1]
 
     # x = predict_x[date]
@@ -235,7 +252,7 @@ for i, value in enumerate(factor_groups):
 
     leverage = result.weight_x.abs().sum()
 
-    ret = (result.weight_x - result.weight_y * leverage / result.weight_y.sum()).values @ result.dx.values
+    ret = (result.weight_x - hedging_ratio * result.weight_y * leverage / result.weight_y.sum()).values @ result.dx.values
     rets.append(ret)
     executor.set_current(executed_pos)
     turn_overs.append(turn_over)
@@ -244,7 +261,7 @@ for i, value in enumerate(factor_groups):
     previous_pos = executed_pos
     alpha_logger.info('{0} is finished'.format(date))
 
-ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverage}, index=ref_dates)
+ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverage}, index=index_dates)
 ret_df.loc[advanceDateByCalendar('china.sse', ref_dates[-1], frequency)] = 0.
 ret_df = ret_df.shift(1)
 ret_df.iloc[0] = 0.
@@ -253,4 +270,34 @@ ret_df['tc_cost'] = ret_df.turn_over * 0.002
 ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
                                              title='Fixed frequency rebalanced: {0}'.format(frequency),
                                              secondary_y='tc_cost')
-plt.show()
+
+ret_df['ret_after_tc'] = ret_df['returns'] - ret_df['tc_cost']
+
+sharp_calc = MovingSharp(52)
+drawdown_calc = MovingMaxDrawdown(52)
+max_drawdown_calc = MovingMaxDrawdown(len(ret_df))
+
+res_df = pd.DataFrame(columns=['daily_return', 'cum_ret', 'sharp', 'drawdown', 'max_drawn'])
+
+total_returns = 0.
+
+for i, ret in enumerate(ret_df['ret_after_tc']):
+    date = ret_df.index[i]
+    total_returns += ret
+    sharp_calc.push({'ret': ret, 'riskFree': 0.})
+    drawdown_calc.push({'ret': ret})
+    max_drawdown_calc.push({'ret': ret})
+
+    res_df.loc[date, 'daily_return'] = ret
+    res_df.loc[date, 'cum_ret'] = total_returns
+    res_df.loc[date, 'drawdown'] = drawdown_calc.result()[0]
+    res_df.loc[date, 'max_drawn'] = max_drawdown_calc.result()[0]
+
+    if i < 10:
+        res_df.loc[date, 'sharp'] = 0.
+    else:
+        res_df.loc[date, 'sharp'] = sharp_calc.result() * np.sqrt(52)
+
+res_df.to_csv('hs300_{0}.csv'.format(int(weight_gap * 100)))
+
+#plt.show()
