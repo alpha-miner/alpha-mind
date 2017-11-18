@@ -10,7 +10,6 @@ from typing import List
 from typing import Dict
 from typing import Tuple
 from typing import Union
-import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
@@ -84,6 +83,8 @@ total_risk_factors = risk_styles + industry_styles + macro_styles
 factor_tables = [FullFactor, Experimental]
 
 DEFAULT_URL = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
+
+DAILY_RETURN_OFFSET = 0
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
@@ -187,18 +188,25 @@ class SqlEngine(object):
         start_date = ref_date
 
         if not expiry_date:
-            end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon) + 'b').strftime('%Y%m%d')
+            end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
         else:
             end_date = expiry_date
 
-        query = select([DailyReturn.code, func.sum(self.ln_func(1. + DailyReturn.d1)).label('dx')]).where(
+        stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
+            partition_by=DailyReturn.code,
+            order_by=DailyReturn.trade_date,
+            rows=(DAILY_RETURN_OFFSET, horizon + DAILY_RETURN_OFFSET)).label('dx')
+
+        query = select([DailyReturn.trade_date, DailyReturn.code, stats]).where(
             and_(
                 DailyReturn.trade_date.between(start_date, end_date),
                 DailyReturn.code.in_(codes)
             )
-        ).group_by(DailyReturn.code)
+        )
 
-        return pd.read_sql(query, self.session.bind)
+        df = pd.read_sql(query, self.session.bind).dropna()
+        df = df[df.trade_date == ref_date]
+        return df[['code', 'dx']]
 
     def fetch_dx_return_range(self,
                               universe,
@@ -211,7 +219,7 @@ class SqlEngine(object):
             start_date = dates[0]
             end_date = dates[-1]
 
-        end_date = advanceDateByCalendar('china.sse', end_date, str(horizon) + 'b').strftime('%Y-%m-%d')
+        end_date = advanceDateByCalendar('china.sse', end_date, str(horizon + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
 
         cond = universe.query_range(start_date, end_date)
         big_table = join(DailyReturn, UniverseTable,
@@ -222,12 +230,12 @@ class SqlEngine(object):
         stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
             partition_by=DailyReturn.code,
             order_by=DailyReturn.trade_date,
-            rows=(0, horizon)).label('dx')
+            rows=(DAILY_RETURN_OFFSET, horizon + DAILY_RETURN_OFFSET)).label('dx')
 
         query = select([DailyReturn.trade_date, DailyReturn.code, stats]) \
             .select_from(big_table)
 
-        df = pd.read_sql(query, self.session.bind)
+        df = pd.read_sql(query, self.session.bind).dropna()
 
         if dates:
             df = df[df.trade_date.isin(dates)]
