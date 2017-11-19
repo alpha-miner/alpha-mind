@@ -49,11 +49,26 @@ class TestOptimizers(unittest.TestCase):
                                 cubound)
 
         # check against matlab result
-        np.testing.assert_array_almost_equal(optimizer.x_value(), [0.1996,
-                                                                   0.3004,
-                                                                   0.5000],
+        np.testing.assert_array_almost_equal(optimizer.x_value(),
+                                             [0.1996, 0.3004, 0.5000],
                                              4)
 
+    def test_qpoptimizer_with_identity_matrix(self):
+        objective = np.array([-0.02, 0.01, 0.03])
+        cov = np.diag([1., 1., 1.])
+        lbound = np.array([-np.inf, -np.inf, -np.inf])
+        ubound = np.array([np.inf, np.inf, np.inf])
 
-if __name__ == '__mai__':
+        optimizer = QPOptimizer(objective,
+                                cov,
+                                lbound,
+                                ubound,
+                                risk_aversion=1.)
+
+        np.testing.assert_array_almost_equal(optimizer.x_value(),
+                                             [-0.02, 0.01, 0.03],
+                                             8)
+
+
+if __name__ == '__main__':
     unittest.main()

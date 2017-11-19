@@ -9,6 +9,7 @@ Created on 2017-7-20
 cimport numpy as cnp
 import numpy as np
 from libcpp.vector cimport vector
+from libcpp cimport nullptr
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
@@ -78,26 +79,41 @@ cdef class QPOptimizer:
                  cnp.ndarray[double, ndim=2] cov_matrix,
                  double[:] lbound,
                  double[:] ubound,
-                 cnp.ndarray[double, ndim=2] cons_matrix,
-                 double[:] clbound,
-                 double[:] cubound,
+                 cnp.ndarray[double, ndim=2] cons_matrix=None,
+                 double[:] clbound=None,
+                 double[:] cubound=None,
                  double risk_aversion=1.0):
 
         cdef int n = lbound.shape[0]
-        cdef int m = cons_matrix.shape[0]
+        cdef int m
         cdef double[:] cov = cov_matrix.flatten(order='C')
-        cdef double[:] cons = cons_matrix.flatten(order='C');
+        cdef double[:] cons
 
-        self.cobj = new MVOptimizer(n,
-                                    &expected_return[0],
-                                    &cov[0],
-                                    &lbound[0],
-                                    &ubound[0],
-                                    m,
-                                    &cons[0],
-                                    &clbound[0],
-                                    &cubound[0],
-                                    risk_aversion)
+        if cons_matrix is not None:
+            m = cons_matrix.shape[0]
+            cons = cons_matrix.flatten(order='C');
+
+            self.cobj = new MVOptimizer(n,
+                                        &expected_return[0],
+                                        &cov[0],
+                                        &lbound[0],
+                                        &ubound[0],
+                                        m,
+                                        &cons[0],
+                                        &clbound[0],
+                                        &cubound[0],
+                                        risk_aversion)
+        else:
+            self.cobj = new MVOptimizer(n,
+                                        &expected_return[0],
+                                        &cov[0],
+                                        &lbound[0],
+                                        &ubound[0],
+                                        0,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        risk_aversion)
 
     def __del__(self):
         del self.cobj
