@@ -184,18 +184,19 @@ class SqlEngine(object):
                         ref_date: str,
                         codes: Iterable[int],
                         expiry_date: str = None,
-                        horizon: int = 0) -> pd.DataFrame:
+                        horizon: int = 0,
+                        offset: int = 0) -> pd.DataFrame:
         start_date = ref_date
 
         if not expiry_date:
-            end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
+            end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
         else:
             end_date = expiry_date
 
         stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
             partition_by=DailyReturn.code,
             order_by=DailyReturn.trade_date,
-            rows=(DAILY_RETURN_OFFSET, horizon + DAILY_RETURN_OFFSET)).label('dx')
+            rows=(DAILY_RETURN_OFFSET + offset, horizon + DAILY_RETURN_OFFSET + offset)).label('dx')
 
         query = select([DailyReturn.trade_date, DailyReturn.code, stats]).where(
             and_(
@@ -213,13 +214,14 @@ class SqlEngine(object):
                               start_date: str = None,
                               end_date: str = None,
                               dates: Iterable[str] = None,
-                              horizon: int = 0) -> pd.DataFrame:
+                              horizon: int = 0,
+                              offset: int = 0) -> pd.DataFrame:
 
         if dates:
             start_date = dates[0]
             end_date = dates[-1]
 
-        end_date = advanceDateByCalendar('china.sse', end_date, str(horizon + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
+        end_date = advanceDateByCalendar('china.sse', end_date, str(horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
 
         cond = universe.query_range(start_date, end_date)
         big_table = join(DailyReturn, UniverseTable,
@@ -230,7 +232,7 @@ class SqlEngine(object):
         stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
             partition_by=DailyReturn.code,
             order_by=DailyReturn.trade_date,
-            rows=(DAILY_RETURN_OFFSET, horizon + DAILY_RETURN_OFFSET)).label('dx')
+            rows=(offset + DAILY_RETURN_OFFSET, horizon + offset + DAILY_RETURN_OFFSET)).label('dx')
 
         query = select([DailyReturn.trade_date, DailyReturn.code, stats]) \
             .select_from(big_table)

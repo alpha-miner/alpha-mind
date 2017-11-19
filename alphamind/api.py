@@ -50,6 +50,8 @@ def map_freq(freq):
         horizon = 19
     elif freq == '1d':
         horizon = 0
+    elif freq[-1] == "b":
+        horizon = int(freq[:-1]) - 1
     else:
         raise ValueError("Unrecognized freq: {0}".format(freq))
     return horizon
