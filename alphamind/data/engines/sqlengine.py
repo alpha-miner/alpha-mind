@@ -20,7 +20,6 @@ from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import FactorLog
 from alphamind.data.dbmodel.models import Strategy
-from alphamind.data.dbmodel.models import DailyReturn
 from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Industry
 from alphamind.data.dbmodel.models import Experimental
@@ -31,6 +30,7 @@ from alphamind.data.dbmodel.models import RiskCovLong
 from alphamind.data.dbmodel.models import FullFactor
 from alphamind.data.dbmodel.models import Models
 from alphamind.data.dbmodel.models import Market
+from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
@@ -191,7 +191,8 @@ class SqlEngine(object):
         start_date = ref_date
 
         if not expiry_date:
-            end_date = advanceDateByCalendar('china.sse', ref_date, str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
+            end_date = advanceDateByCalendar('china.sse', ref_date,
+                                             str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
         else:
             end_date = expiry_date
 
@@ -224,7 +225,8 @@ class SqlEngine(object):
             start_date = dates[0]
             end_date = dates[-1]
 
-        end_date = advanceDateByCalendar('china.sse', end_date, str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
+        end_date = advanceDateByCalendar('china.sse', end_date,
+                                         str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
 
         cond = universe.query_range(start_date, end_date)
         big_table = join(Market, UniverseTable,
@@ -239,6 +241,73 @@ class SqlEngine(object):
 
         query = select([Market.trade_date, Market.code, stats]) \
             .select_from(big_table)
+
+        df = pd.read_sql(query, self.session.bind).dropna()
+
+        if dates:
+            df = df[df.trade_date.isin(dates)]
+
+        df['dx'] = np.exp(df['dx']) - 1.
+        return df
+
+    def fetch_dx_return_index(self,
+                              ref_date: str,
+                              index_code: int,
+                              expiry_date: str = None,
+                              horizon: int = 0,
+                              offset: int = 0) -> pd.DataFrame:
+        start_date = ref_date
+
+        if not expiry_date:
+            end_date = advanceDateByCalendar('china.sse', ref_date,
+                                             str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
+        else:
+            end_date = expiry_date
+
+        stats = func.sum(self.ln_func(1. + IndexMarket.chgPct)).over(
+            partition_by=IndexMarket.indexCode,
+            order_by=IndexMarket.trade_date,
+            rows=(1 + DAILY_RETURN_OFFSET + offset, 1 + horizon + DAILY_RETURN_OFFSET + offset)).label('dx')
+
+        query = select([IndexMarket.trade_date, IndexMarket.indexCode.label('code'), stats]).where(
+            and_(
+                IndexMarket.trade_date.between(start_date, end_date),
+                IndexMarket.indexCode == index_code
+            )
+        )
+
+        df = pd.read_sql(query, self.session.bind).dropna()
+        df = df[df.trade_date == ref_date]
+        df['dx'] = np.exp(df['dx']) - 1.
+        return df[['code', 'dx']]
+
+    def fetch_dx_return_index_range(self,
+                                    index_code,
+                                    start_date: str = None,
+                                    end_date: str = None,
+                                    dates: Iterable[str] = None,
+                                    horizon: int = 0,
+                                    offset: int = 0) -> pd.DataFrame:
+
+        if dates:
+            start_date = dates[0]
+            end_date = dates[-1]
+
+        end_date = advanceDateByCalendar('china.sse', end_date,
+                                         str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
+
+        stats = func.sum(self.ln_func(1. + IndexMarket.chgPct)).over(
+            partition_by=IndexMarket.indexCode,
+            order_by=IndexMarket.trade_date,
+            rows=(1 + offset + DAILY_RETURN_OFFSET, 1 + horizon + offset + DAILY_RETURN_OFFSET)).label('dx')
+
+        query = select([IndexMarket.trade_date, IndexMarket.indexCode.label('code'), stats]) \
+            .where(
+            and_(
+                IndexMarket.trade_date.between(start_date, end_date),
+                IndexMarket.indexCode == index_code
+            )
+        )
 
         df = pd.read_sql(query, self.session.bind).dropna()
 

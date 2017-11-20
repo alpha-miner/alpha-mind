@@ -21,11 +21,11 @@ Back test parameter settings
 """
 
 start_date = '2012-01-01'
-end_date = '2017-11-15'
+end_date = '2012-11-15'
 benchmark_code = 300
 universe_name = ['zz500', 'hs300']
 universe = Universe(universe_name, universe_name)
-frequency = '2b'
+frequency = '5b'
 batch = 8
 method = 'risk_neutral'
 use_rank = 100
@@ -35,12 +35,12 @@ neutralize_risk = ['SIZE'] + industry_styles
 constraint_risk = ['SIZE'] + industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
-turn_over_target_base = 0.1
+turn_over_target_base = 0.25
 weight_gaps = [0.01, 0.02, 0.03, 0.04]
 benchmark_total_lower = 0.8
 benchmark_total_upper = 1.
 horizon = map_freq(frequency)
-hedging_ratio = 1.
+hedging_ratio = 0.
 
 executor = NaiveExecutor()
 
@@ -101,7 +101,7 @@ for ref_date in ref_dates:
     alpha_logger.info('trade_date: {0} training finished'.format(ref_date))
 
 
-frequency = '2b'
+frequency = '5b'
 ref_dates = makeSchedule(start_date, end_date, frequency, 'china.sse')
 
 const_model_factor_data = engine.fetch_data_range(universe,
@@ -144,8 +144,8 @@ for weight_gap in weight_gaps:
         risk_names = constraint_risk + ['total']
         risk_target = risk_exp_expand.T @ benchmark_w
 
-        lbound = np.maximum(0., hedging_ratio * benchmark_w - weight_gap)  # np.zeros(len(total_data))
-        ubound = weight_gap + hedging_ratio * benchmark_w
+        lbound = np.maximum(0., benchmark_w - weight_gap)  # np.zeros(len(total_data))
+        ubound = weight_gap + benchmark_w
 
         is_in_benchmark = (benchmark_w > 0.).astype(float)
 
@@ -256,7 +256,7 @@ for weight_gap in weight_gaps:
         leverage = result.weight_x.abs().sum()
 
         ret = (result.weight_x - hedging_ratio * result.weight_y * leverage / result.weight_y.sum()).values @ result.dx.values
-        rets.append(ret)
+        rets.append(np.log(1. + ret))
         executor.set_current(executed_pos)
         turn_overs.append(turn_over)
         leverags.append(leverage)
@@ -265,10 +265,17 @@ for weight_gap in weight_gaps:
         alpha_logger.info('{0} is finished'.format(date))
 
     ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverage}, index=index_dates)
+
+    # index return
+    index_return = engine.fetch_dx_return_index_range(benchmark_code, start_date, end_date, horizon=horizon,
+                                                      offset=1).set_index('trade_date')
+    ret_df['index'] = np.log(index_return['dx'] + 1.)
+
     ret_df.loc[advanceDateByCalendar('china.sse', ref_dates[-1], frequency)] = 0.
     ret_df = ret_df.shift(1)
     ret_df.iloc[0] = 0.
     ret_df['tc_cost'] = ret_df.turn_over * 0.002
+    ret_df['returns'] = ret_df['leverage'] * (ret_df['returns'] - ret_df['index'])
 
     ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
                                                  title='Fixed frequency rebalanced: {0}'.format(frequency),
@@ -280,7 +287,7 @@ for weight_gap in weight_gaps:
     drawdown_calc = MovingMaxDrawdown(49)
     max_drawdown_calc = MovingMaxDrawdown(len(ret_df))
 
-    res_df = pd.DataFrame(columns=['daily_return', 'cum_ret', 'sharp', 'drawdown', 'max_drawn'])
+    res_df = pd.DataFrame(columns=['daily_return', 'cum_ret', 'sharp', 'drawdown', 'max_drawn', 'leverage'])
 
     total_returns = 0.
 
@@ -295,6 +302,7 @@ for weight_gap in weight_gaps:
         res_df.loc[date, 'cum_ret'] = total_returns
         res_df.loc[date, 'drawdown'] = drawdown_calc.result()[0]
         res_df.loc[date, 'max_drawn'] = max_drawdown_calc.result()[0]
+        res_df.loc[date, 'leverage'] = ret_df.loc[date, 'leverage']
 
         if i < 10:
             res_df.loc[date, 'sharp'] = 0.
