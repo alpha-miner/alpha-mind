@@ -10,6 +10,7 @@ from typing import List
 from typing import Dict
 from typing import Tuple
 from typing import Union
+import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
@@ -207,6 +208,7 @@ class SqlEngine(object):
 
         df = pd.read_sql(query, self.session.bind).dropna()
         df = df[df.trade_date == ref_date]
+        df['dx'] = np.exp(df['dx']) - 1.
         return df[['code', 'dx']]
 
     def fetch_dx_return_range(self,
@@ -242,6 +244,7 @@ class SqlEngine(object):
         if dates:
             df = df[df.trade_date.isin(dates)]
 
+        df['dx'] = np.exp(df['dx']) - 1.
         return df
 
     def fetch_factor(self,
