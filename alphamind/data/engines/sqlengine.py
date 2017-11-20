@@ -210,7 +210,6 @@ class SqlEngine(object):
 
         df = pd.read_sql(query, self.session.bind).dropna()
         df = df[df.trade_date == ref_date]
-        df['dx'] = np.exp(df['dx']) - 1.
         return df[['code', 'dx']]
 
     def fetch_dx_return_range(self,
@@ -246,8 +245,6 @@ class SqlEngine(object):
 
         if dates:
             df = df[df.trade_date.isin(dates)]
-
-        df['dx'] = np.exp(df['dx']) - 1.
         return df
 
     def fetch_dx_return_index(self,
@@ -278,7 +275,6 @@ class SqlEngine(object):
 
         df = pd.read_sql(query, self.session.bind).dropna()
         df = df[df.trade_date == ref_date]
-        df['dx'] = np.exp(df['dx']) - 1.
         return df[['code', 'dx']]
 
     def fetch_dx_return_index_range(self,
@@ -313,8 +309,6 @@ class SqlEngine(object):
 
         if dates:
             df = df[df.trade_date.isin(dates)]
-
-        df['dx'] = np.exp(df['dx']) - 1.
         return df
 
     def fetch_factor(self,
