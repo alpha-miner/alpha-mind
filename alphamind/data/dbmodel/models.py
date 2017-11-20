@@ -1851,6 +1851,24 @@ class FactorCorrelation(Base):
     SIZENL = Column(Float(53))
 
 
+class IndexMarket(Base):
+    __tablename__ = 'index_market'
+    __table_args__ = (
+        Index('index_market_pk', 'trade_date', 'indexCode', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    indexCode = Column(Integer, primary_key=True, nullable=False)
+    preCloseIndex = Column(Float(53))
+    openIndex = Column(Float(53))
+    highestIndex = Column(Float(53))
+    lowestIndex = Column(Float(53))
+    closeIndex = Column(Float(53))
+    turnoverVol = Column(Float(53))
+    turnoverValue = Column(Float(53))
+    chgPct = Column(Float(53))
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
