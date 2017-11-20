@@ -30,6 +30,7 @@ from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
 from alphamind.data.dbmodel.models import FullFactor
 from alphamind.data.dbmodel.models import Models
+from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
@@ -190,19 +191,19 @@ class SqlEngine(object):
         start_date = ref_date
 
         if not expiry_date:
-            end_date = advanceDateByCalendar('china.sse', ref_date, str(horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
+            end_date = advanceDateByCalendar('china.sse', ref_date, str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
         else:
             end_date = expiry_date
 
-        stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
-            partition_by=DailyReturn.code,
-            order_by=DailyReturn.trade_date,
-            rows=(DAILY_RETURN_OFFSET + offset, horizon + DAILY_RETURN_OFFSET + offset)).label('dx')
+        stats = func.sum(self.ln_func(1. + Market.chgPct)).over(
+            partition_by=Market.code,
+            order_by=Market.trade_date,
+            rows=(1 + DAILY_RETURN_OFFSET + offset, 1 + horizon + DAILY_RETURN_OFFSET + offset)).label('dx')
 
-        query = select([DailyReturn.trade_date, DailyReturn.code, stats]).where(
+        query = select([Market.trade_date, Market.code, stats]).where(
             and_(
-                DailyReturn.trade_date.between(start_date, end_date),
-                DailyReturn.code.in_(codes)
+                Market.trade_date.between(start_date, end_date),
+                Market.code.in_(codes)
             )
         )
 
@@ -223,20 +224,20 @@ class SqlEngine(object):
             start_date = dates[0]
             end_date = dates[-1]
 
-        end_date = advanceDateByCalendar('china.sse', end_date, str(horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
+        end_date = advanceDateByCalendar('china.sse', end_date, str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
 
         cond = universe.query_range(start_date, end_date)
-        big_table = join(DailyReturn, UniverseTable,
-                         and_(DailyReturn.trade_date == UniverseTable.trade_date,
-                              DailyReturn.code == UniverseTable.code,
+        big_table = join(Market, UniverseTable,
+                         and_(Market.trade_date == UniverseTable.trade_date,
+                              Market.code == UniverseTable.code,
                               cond))
 
-        stats = func.sum(self.ln_func(1. + DailyReturn.d1)).over(
-            partition_by=DailyReturn.code,
-            order_by=DailyReturn.trade_date,
-            rows=(offset + DAILY_RETURN_OFFSET, horizon + offset + DAILY_RETURN_OFFSET)).label('dx')
+        stats = func.sum(self.ln_func(1. + Market.chgPct)).over(
+            partition_by=Market.code,
+            order_by=Market.trade_date,
+            rows=(1 + offset + DAILY_RETURN_OFFSET, 1 + horizon + offset + DAILY_RETURN_OFFSET)).label('dx')
 
-        query = select([DailyReturn.trade_date, DailyReturn.code, stats]) \
+        query = select([Market.trade_date, Market.code, stats]) \
             .select_from(big_table)
 
         df = pd.read_sql(query, self.session.bind).dropna()

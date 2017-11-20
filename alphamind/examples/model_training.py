@@ -28,8 +28,8 @@ base factors - all the risk styles
 quantiles    - 5
 start_date   - 2012-01-01
 end_date     - 2017-08-01
-re-balance   - 1 week
-training     - every 4 week
+re-balance   - 2 week
+training     - every 8 week
 '''
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
@@ -37,13 +37,24 @@ universe = Universe('zz500', ['zz500'])
 neutralize_risk = industry_styles
 portfolio_risk_neutralize = []
 portfolio_industry_neutralize = True
-alpha_factors = ['VAL', 'RVOL', 'ROEDiluted', 'GREV', 'EPS', 'CHV', 'CFinc1', 'BDTO'] # ['RVOL', 'EPS', 'CFinc1', 'BDTO', 'VAL', 'CHV', 'GREV', 'ROEDiluted']  # ['BDTO', 'RVOL', 'CHV', 'VAL', 'CFinc1'] # risk_styles
+
+alpha_factors = {
+    'eps': LAST('eps_q'),
+    'roe': LAST('roe_q'),
+    'bdto': LAST('BDTO'),
+    'cfinc1': LAST('CFinc1'),
+    'chv': LAST('CHV'),
+    'rvol': LAST('RVOL'),
+    'val': LAST('VAL'),
+    'grev': LAST('GREV'),
+    'droeafternonorecurring': LAST('DROEAfterNonRecurring')}
+
 benchmark = 905
 n_bins = 5
 frequency = '2w'
-batch = 4
-start_date = '2017-01-01'
-end_date = '2017-09-26'
+batch = 8
+start_date = '2012-01-01'
+end_date = '2017-11-05'
 method = 'risk_neutral'
 use_rank = 100
 
@@ -74,24 +85,10 @@ train_y = data_package['train']['y']
 dates = sorted(train_x.keys())
 
 model_df = pd.Series()
+features = data_package['x_names']
 
 for train_date in dates:
-    model = LinearRegression(alpha_factors, fit_intercept=False)
-    #model = LassoCV(fit_intercept=False)
-    # model = AdaBoostRegressor(n_estimators=100)
-    #model = RandomForestRegressor(n_estimators=100, n_jobs=4)
-    #model = NuSVR(kernel='rbf', C=1e-3, gamma=0.1)
-    # model = ConstLinearModel(alpha_factors, np.array([0.034129344,
-    #                 0.015881607,
-    #                 0.048765746,
-    #                 0.042747382,
-    #                 -0.015900173,
-    #                 0.019044573,
-    #                 -0.001792638,
-    #                 0.014277867,
-    #                 ]))
-
-    # model = ConstLinearModel(alpha_factors, np.array([1.] * len(alpha_factors)))
+    model = LinearRegression(features, fit_intercept=False)
     x = train_x[train_date]
     y = train_y[train_date]
 
@@ -99,42 +96,13 @@ for train_date in dates:
     model_df.loc[train_date] = model
     alpha_logger.info('trade_date: {0} training finished'.format(train_date))
 
-'''
-predicting phase: using trained model on the re-balance dates
-'''
-
-predict_x = data_package['predict']['x']
-settlement = data_package['settlement']
-
-# final_res = np.zeros((len(dates), n_bins))
-#
-# for i, predict_date in enumerate(dates):
-#     model = model_df[predict_date]
-#     x = predict_x[predict_date]
-#     benchmark_w = settlement[settlement.trade_date == predict_date]['weight'].values
-#     realized_r = settlement[settlement.trade_date == predict_date]['dx'].values
-#
-#     predict_y = model.predict(x)
-#
-#     res = er_quantile_analysis(predict_y,
-#                                n_bins,
-#                                dx_return=realized_r,
-#                                benchmark=benchmark_w)
-#
-#     final_res[i] = res / benchmark_w.sum()
-#     print('trade_date: {0} predicting finished'.format(train_date))
-#
-# last_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
-#
-# df = pd.DataFrame(final_res, index=dates[1:] + [last_date])
-# df.sort_index(inplace=True)
-# df.cumsum().plot()
-# plt.title('Risk style factors model training with Linear Regression from 2012 - 2017')
-# plt.show()
 
 '''
 predicting phase: using trained model on the re-balance dates (optimizing with risk neutral)
 '''
+
+predict_x = data_package['predict']['x']
+settlement = data_package['settlement']
 
 industry_dummies = pd.get_dummies(settlement['industry'].values)
 risk_styles = settlement[portfolio_risk_neutralize].values
@@ -186,11 +154,6 @@ for i, predict_date in enumerate(dates):
                                               is_tradable=is_tradable,
                                               method=method,
                                               use_rank=use_rank)
-
-    # model_res = pd.DataFrame({'weight': model.coef_[0],
-    #                           'factor': np.array(data_package['x_names'])})
-
-    # model_res.to_csv(r'\\10.63.6.71\sharespace\personal\licheng\portfolio\zz500_model\{0}.csv'.format(predict_date.strftime('%Y-%m-%d')))
 
     final_res[i] = analysis['er']['total'] / benchmark_w.sum()
     alpha_logger.info('trade_date: {0} predicting finished'.format(predict_date))
