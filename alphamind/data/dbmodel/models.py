@@ -1854,7 +1854,7 @@ class FactorCorrelation(Base):
 class IndexMarket(Base):
     __tablename__ = 'index_market'
     __table_args__ = (
-        Index('index_market_pk', 'trade_date', 'indexCode', unique=True),
+        Index('index_market_idx', 'trade_date', 'indexCode', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
@@ -1872,5 +1872,5 @@ class IndexMarket(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('mysql+mysqldb://root:password@localhost/alpha')
+    engine = create_engine('postgres+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
