@@ -36,10 +36,18 @@ class TestQuantileAnalysis(unittest.TestCase):
         q_groups = quantile(x, n_bins)
 
         s = pd.Series(self.r, index=q_groups)
-        expected_res = s.groupby(level=0).mean()
+        grouped_return = s.groupby(level=0).mean().values.flatten()
+
+        expected_res = grouped_return.copy()
+        res = n_bins - 1
+        res_weight = 1. / res
+
+        for i, value in enumerate(expected_res):
+            expected_res[i] = (1. + res_weight) * value - res_weight * grouped_return.sum()
+
         calculated_res = er_quantile_analysis(x, n_bins, self.r)
 
-        np.testing.assert_array_almost_equal(expected_res.values, calculated_res)
+        np.testing.assert_array_almost_equal(expected_res, calculated_res)
 
     def test_quantile_analysis_simple(self):
         f_df = pd.DataFrame(self.x)
@@ -71,26 +79,6 @@ class TestQuantileAnalysis(unittest.TestCase):
                                           self.risk_exp,
                                           [standardize]).T
         expected = er_quantile_analysis(er, self.n_bins, self.r)
-        np.testing.assert_array_almost_equal(calculated, expected)
-
-    def test_quantile_analysis_with_benchmark(self):
-        f_df = pd.DataFrame(self.x)
-        calculated = quantile_analysis(f_df,
-                                       self.x_w,
-                                       self.r,
-                                       n_bins=self.n_bins,
-                                       do_neutralize=True,
-                                       benchmark=self.b_w,
-                                       risk_exp=self.risk_exp,
-                                       pre_process=[winsorize_normal, standardize],
-                                       post_process=[standardize])
-
-        er = self.x_w @ factor_processing(self.x,
-                                          [winsorize_normal, standardize],
-                                          self.risk_exp,
-                                          [standardize]).T
-        raw_er = er_quantile_analysis(er, self.n_bins, self.r)
-        expected = raw_er * self.b_w.sum() - np.dot(self.b_w, self.r)
         np.testing.assert_array_almost_equal(calculated, expected)
 
 

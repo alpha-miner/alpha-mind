@@ -19,7 +19,6 @@ def quantile_analysis(factors: pd.DataFrame,
                       factor_weights: np.ndarray,
                       dx_return: np.ndarray,
                       n_bins: int=5,
-                      benchmark: Optional[np.ndarray]=None,
                       risk_exp: Optional[np.ndarray]=None,
                       **kwargs):
 
@@ -36,13 +35,12 @@ def quantile_analysis(factors: pd.DataFrame,
         post_process = [standardize]
 
     er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
-    return er_quantile_analysis(er, n_bins, dx_return, benchmark)
+    return er_quantile_analysis(er, n_bins, dx_return)
 
 
 def er_quantile_analysis(er: np.ndarray,
                          n_bins: int,
-                         dx_return: np.ndarray,
-                         benchmark: Optional[np.ndarray]=None,) -> np.ndarray:
+                         dx_return: np.ndarray) -> np.ndarray:
 
     er = er.flatten()
     q_groups = quantile(er, n_bins)
@@ -51,12 +49,15 @@ def er_quantile_analysis(er: np.ndarray,
         dx_return.shape = -1, 1
 
     group_return = agg_mean(q_groups, dx_return).flatten()
-    if benchmark is not None:
-        b_ret = np.dot(benchmark, dx_return)
-        b_total = benchmark.sum()
-        return group_return * b_total - b_ret
-    else:
-        return group_return
+    total_return = group_return.sum()
+    ret = group_return.copy()
+
+    resid = n_bins - 1
+    res_weight = 1. / resid
+    for i, value in enumerate(ret):
+        ret[i] = (1. + res_weight) * value - res_weight * total_return
+
+    return ret
 
 
 if __name__ == '__main__':
