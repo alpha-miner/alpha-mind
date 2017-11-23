@@ -8,7 +8,6 @@ Created on 2017-7-7
 from typing import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
-from sqlalchemy import select
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 
 
