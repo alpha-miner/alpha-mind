@@ -27,6 +27,7 @@ from alphamind.model.linearmodel import LinearRegression
 from alphamind.model.linearmodel import ConstLinearModel
 from alphamind.model.loader import load_model
 from alphamind.model.data_preparing import fetch_data_package
+from alphamind.model.data_preparing import fetch_train_phase
 
 from alphamind.execution.naiveexecutor import NaiveExecutor
 from alphamind.execution.thresholdexecutor import ThresholdExecutor
@@ -75,6 +76,7 @@ __all__ = [
     'neutralize',
     'factor_tables',
     'fetch_data_package',
+    'fetch_train_phase',
     'LinearRegression',
     'ConstLinearModel',
     'load_model',
