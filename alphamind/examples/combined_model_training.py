@@ -21,8 +21,8 @@ Back test parameter settings
 """
 
 start_date = '2012-01-01'
-end_date = '2012-11-15'
-benchmark_code = 300
+end_date = '2017-11-20'
+benchmark_code = 905
 universe_name = ['zz500', 'hs300']
 universe = Universe(universe_name, universe_name)
 frequency = '5b'
@@ -35,9 +35,9 @@ neutralize_risk = ['SIZE'] + industry_styles
 constraint_risk = ['SIZE'] + industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
-turn_over_target_base = 0.25
+turn_over_target_base = 0.05
 weight_gaps = [0.01, 0.02, 0.03, 0.04]
-benchmark_total_lower = 0.8
+benchmark_total_lower = 1.
 benchmark_total_upper = 1.
 horizon = map_freq(frequency)
 hedging_ratio = 0.
@@ -101,7 +101,7 @@ for ref_date in ref_dates:
     alpha_logger.info('trade_date: {0} training finished'.format(ref_date))
 
 
-frequency = '5b'
+frequency = '1b'
 ref_dates = makeSchedule(start_date, end_date, frequency, 'china.sse')
 
 const_model_factor_data = engine.fetch_data_range(universe,
@@ -255,7 +255,7 @@ for weight_gap in weight_gaps:
 
         leverage = result.weight_x.abs().sum()
 
-        ret = (result.weight_x - hedging_ratio * result.weight_y * leverage / result.weight_y.sum()).values @ result.dx.values
+        ret = (result.weight_x - hedging_ratio * result.weight_y * leverage / result.weight_y.sum()).values @ (np.exp(result.dx.values) - 1.)
         rets.append(np.log(1. + ret))
         executor.set_current(executed_pos)
         turn_overs.append(turn_over)
@@ -269,7 +269,7 @@ for weight_gap in weight_gaps:
     # index return
     index_return = engine.fetch_dx_return_index_range(benchmark_code, start_date, end_date, horizon=horizon,
                                                       offset=1).set_index('trade_date')
-    ret_df['index'] = np.log(index_return['dx'] + 1.)
+    ret_df['index'] = index_return['dx']
 
     ret_df.loc[advanceDateByCalendar('china.sse', ref_dates[-1], frequency)] = 0.
     ret_df = ret_df.shift(1)

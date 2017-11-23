@@ -90,6 +90,10 @@ class LinearRegression(ModelBase):
         obj_layout.impl = pickle.loads(base64.decodebytes(encoded))
         return obj_layout
 
+    @property
+    def weights(self):
+        return self.impl.coef_.tolist()
+
 
 if __name__ == '__main__':
 

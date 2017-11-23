@@ -590,6 +590,7 @@ class DailyPortfolios(Base):
     industry = Column(String(50), nullable=False)
     benchmark_weight = Column(Float(53), nullable=False)
     is_tradable = Column(Boolean, nullable=False)
+    factor = Column(JSONB)
 
 
 class DailyReturn(Base):
