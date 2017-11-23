@@ -16,6 +16,7 @@ from alphamind.tests.data.test_standardize import TestStandardize
 from alphamind.tests.data.test_winsorize import TestWinsorize
 from alphamind.tests.data.test_quantile import TestQuantile
 from alphamind.tests.portfolio.test_constraints import TestConstraints
+from alphamind.tests.portfolio.test_evolver import TestEvolver
 from alphamind.tests.portfolio.test_longshortbuild import TestLongShortBuild
 from alphamind.tests.portfolio.test_rankbuild import TestRankBuild
 from alphamind.tests.portfolio.test_percentbuild import TestPercentBuild
@@ -41,6 +42,7 @@ if __name__ == '__main__':
                          TestWinsorize,
                          TestQuantile,
                          TestConstraints,
+                         TestEvolver,
                          TestLongShortBuild,
                          TestRankBuild,
                          TestPercentBuild,

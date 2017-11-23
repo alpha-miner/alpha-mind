@@ -35,7 +35,7 @@ n_bins = 5
 horizon = map_freq(freq)
 
 start_date = '2012-01-01'
-end_date = '2017-11-20'
+end_date = '2017-11-21'
 
 dates = makeSchedule(start_date,
                      end_date,
