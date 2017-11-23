@@ -12,7 +12,9 @@ from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.analysis.quantileanalysis import er_quantile_analysis
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
+
 from alphamind.portfolio.constraints import Constraints
+from alphamind.portfolio.evolver import evolve_positions
 
 from alphamind.data.engines.sqlengine import risk_styles
 from alphamind.data.engines.sqlengine import industry_styles
@@ -67,6 +69,7 @@ __all__ = [
     'Universe',
     'factor_processing',
     'Constraints',
+    'evolve_positions',
     'risk_styles',
     'industry_styles',
     'macro_styles',
