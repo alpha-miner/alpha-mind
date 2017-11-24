@@ -681,6 +681,8 @@ class Experimental(Base):
     roe_q = Column(Float(53))
     cfinc1_q = Column(Float(53))
     val_q = Column(Float(53))
+    ep_q = Column(Float(53))
+    ep_q_d_1w = Column(Float(53))
 
 
 class FactorMaster(Base):
