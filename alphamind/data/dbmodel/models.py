@@ -593,6 +593,17 @@ class DailyPortfolios(Base):
     factor = Column(JSONB)
 
 
+class DailyPortfoliosSchedule(Base):
+    __tablename__ = 'daily_portfolios_schedule'
+    __table_args__ = (
+        Index('daily_portfolios_schedule_trade_date_portfolio_name_uindex', 'trade_date', 'portfolio_name', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+
+
+
 class DailyReturn(Base):
     __tablename__ = 'daily_return'
     __table_args__ = (
