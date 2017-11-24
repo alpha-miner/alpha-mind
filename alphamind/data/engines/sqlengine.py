@@ -462,7 +462,11 @@ class SqlEngine(object):
         )
         risk_cov = pd.read_sql(query, self.engine).sort_values('FactorID')
 
-        risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
+        if excluded:
+            risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
+        else:
+            risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors]
+
         query = select([FullFactor.code, special_risk_col] + risk_exposure_cols) \
             .where(and_(FullFactor.trade_date == ref_date, FullFactor.code.in_(codes))).distinct()
 
