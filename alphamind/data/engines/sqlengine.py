@@ -737,6 +737,14 @@ class SqlEngine(object):
         if not df.empty:
             return decode_formula(df.loc[0, 'formula_desc']['desc'])
 
+    def load_all_formulas(self):
+        query = select([Formulas])
+
+        df = pd.read_sql(query, self.engine, index_col='formula')
+
+        if not df.empty:
+            return pd.Series({name: decode_formula(df.loc[name, 'formula_desc']['desc']) for name in df.index})
+
 
 if __name__ == '__main__':
     from PyFin.api import RES, LAST
@@ -750,3 +758,5 @@ if __name__ == '__main__':
 
         formula = RES(20, -LAST(name) ^ LAST('roe_q'))
         engine.save_formula(f'{name}_neg_res', formula)
+
+    print(engine.load_all_formulas())
