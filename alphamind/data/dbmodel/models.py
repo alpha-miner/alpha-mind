@@ -1883,6 +1883,14 @@ class IndexMarket(Base):
     chgPct = Column(Float(53))
 
 
+class Formulas(Base):
+    __tablename__ = 'formulas'
+
+    formula = Column(String(50), primary_key=True)
+    formula_desc = Column(JSONB, nullable=False)
+    comment = Column(Text)
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 

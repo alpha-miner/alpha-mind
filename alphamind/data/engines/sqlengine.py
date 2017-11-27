@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_, outerjoin, join
+from sqlalchemy import select, and_, outerjoin, join, delete, insert
 from sqlalchemy.sql import func
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
@@ -32,8 +32,11 @@ from alphamind.data.dbmodel.models import Models
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
+from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
+from alphamind.formula.utilities import encode_formula
+from alphamind.formula.utilities import decode_formula
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -710,39 +713,40 @@ class SqlEngine(object):
         del model_df['model_desc']
         return model_df
 
+    def save_formula(self, formula_name, formula_obj, comment=None):
+        dict_repr = encode_formula(formula=formula_obj)
+
+        query = delete(Formulas).where(
+            Formulas.formula == formula_name
+        )
+
+        self.engine.execute(query)
+
+        query = insert(Formulas, values=dict(formula=formula_name,
+                                             formula_desc=dict_repr,
+                                             comment=comment))
+        self.engine.execute(query)
+
+    def load_formula(self, formula_name):
+        query = select([Formulas]).where(
+            Formulas.formula == formula_name
+        )
+
+        df = pd.read_sql(query, self.engine)
+
+        if not df.empty:
+            return decode_formula(df.loc[0, 'formula_desc']['desc'])
+
 
 if __name__ == '__main__':
-    import datetime as dt
-    from PyFin.api import *
-    from alphamind.api import alpha_logger
+    from PyFin.api import RES, LAST
+    engine = SqlEngine()
 
-    # db_url = 'postgresql+psycopg2://postgres:we083826@localhost/alpha'
-    db_url = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
+    names = ['eps_q', 'BDTO', 'CFinc1', 'CHV', 'IVR', 'VAL', 'GREV', 'DivP', 'Volatility']
 
-    universe = Universe('custom', ['zz500'])
-    engine = SqlEngine(db_url)
-    ref_date = '2017-08-02'
-    start_date = '2017-01-01'
-    end_date = '2017-08-31'
+    for name in names:
+        formula = RES(20, LAST(name) ^ LAST('roe_q'))
+        engine.save_formula(f'{name}_res', formula)
 
-    dates = makeSchedule(start_date, end_date, '1w', 'china.sse')
-
-    alpha_logger.info('start')
-    codes = engine.fetch_codes(ref_date, universe=universe)
-
-    data1 = engine.fetch_data_experimental(ref_date,
-                                           codes=codes,
-                                           factors=['IVR'])
-    alpha_logger.info('end')
-    data2 = engine.fetch_industry_range(universe, start_date=start_date, end_date=end_date, dates=dates)
-    alpha_logger.info('end')
-    data3 = engine.fetch_benchmark_range(905, start_date=start_date, end_date=end_date, dates=dates)
-    alpha_logger.info('end')
-    data4 = engine.fetch_risk_model_range(universe=universe, start_date=start_date, end_date=end_date, dates=dates)
-    alpha_logger.info('end')
-    data2 = engine.fetch_codes_range(universe, start_date=start_date, end_date=end_date, dates=dates)
-    alpha_logger.info('end')
-    data2 = engine.fetch_dx_return_range(universe, start_date=start_date, end_date=end_date, dates=dates)
-    alpha_logger.info('end')
-
-    print(data1)
+        formula = RES(20, -LAST(name) ^ LAST('roe_q'))
+        engine.save_formula(f'{name}_neg_res', formula)
