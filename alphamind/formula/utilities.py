@@ -18,8 +18,7 @@ def encode_formula(formula):
 
 
 def decode_formula(str_repr):
-    encoded = str_repr.encode('ascii')
-    formula = decode(encoded)
+    formula = decode(str_repr)
     return formula
 
 
