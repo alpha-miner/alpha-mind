@@ -16,6 +16,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy import select, and_, outerjoin, join, delete, insert
 from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import bindparam
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import FactorLog
@@ -33,6 +34,7 @@ from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Formulas
+from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -713,7 +715,7 @@ class SqlEngine(object):
         del model_df['model_desc']
         return model_df
 
-    def save_formula(self, formula_name, formula_obj, comment=None):
+    def insert_formula(self, formula_name, formula_obj, comment=None):
         dict_repr = encode_formula(formula=formula_obj)
 
         query = delete(Formulas).where(
@@ -745,18 +747,21 @@ class SqlEngine(object):
         if not df.empty:
             return pd.Series({name: decode_formula(df.loc[name, 'formula_desc']['desc']) for name in df.index})
 
+    def insert_portfolio_schedule(self, df):
+        query = insert(DailyPortfoliosSchedule).values(
+            {
+                DailyPortfoliosSchedule.portfolio_name: bindparam('portfolio_name'),
+                DailyPortfoliosSchedule.trade_date: bindparam('trade_date')
+            }
+        )
+
+        self.engine.execute(query, df.to_dict('record'))
+
 
 if __name__ == '__main__':
-    from PyFin.api import RES, LAST
     engine = SqlEngine()
 
-    names = ['eps_q', 'BDTO', 'CFinc1', 'CHV', 'IVR', 'VAL', 'GREV', 'DivP', 'Volatility']
+    df = pd.DataFrame(dict(trade_date=['2017-11-24'],
+                           portfolio_name=['test']))
 
-    for name in names:
-        formula = RES(20, LAST(name) ^ LAST('roe_q'))
-        engine.save_formula(f'{name}_res', formula)
-
-        formula = RES(20, -LAST(name) ^ LAST('roe_q'))
-        engine.save_formula(f'{name}_neg_res', formula)
-
-    print(engine.load_all_formulas())
+    engine.insert_portfolio_schedule(df)
