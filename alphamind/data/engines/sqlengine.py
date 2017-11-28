@@ -36,6 +36,7 @@ from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
+from alphamind.data.dbmodel.models import Positions
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -778,6 +779,29 @@ class SqlEngine(object):
 
         self.engine.execute(query)
         df.to_sql(Performance.__table__.name, self.engine, if_exists='append', index=False)
+
+    def upsert_positions(self, ref_date, df):
+        universes = df.universe.unique()
+        benchmarks = df.benchmark.unique()
+        build_types = df.type.unique()
+        sources = df.source.unique()
+        portfolios = df.portfolio.unique()
+
+        query = delete(Positions).where(
+            Positions.trade_date == ref_date,
+            Positions.type.in_(build_types),
+            Positions.universe.in_(universes),
+            Positions.benchmark.in_(benchmarks),
+            Positions.source.in_(sources),
+            Positions.portfolio.in_(portfolios)
+        )
+
+        self.engine.execute(query)
+        df.to_sql(Positions.__table__.name,
+                  self.engine,
+                  if_exists='append',
+                  index=False,
+                  dtype={'weight': sa.types.JSON})
 
 
 if __name__ == '__main__':
