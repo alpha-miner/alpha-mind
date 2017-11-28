@@ -788,12 +788,14 @@ class SqlEngine(object):
         portfolios = df.portfolio.unique()
 
         query = delete(Positions).where(
-            Positions.trade_date == ref_date,
-            Positions.type.in_(build_types),
-            Positions.universe.in_(universes),
-            Positions.benchmark.in_(benchmarks),
-            Positions.source.in_(sources),
-            Positions.portfolio.in_(portfolios)
+            and_(
+                Positions.trade_date == ref_date,
+                Positions.type.in_(build_types),
+                Positions.universe.in_(universes),
+                Positions.benchmark.in_(benchmarks),
+                Positions.source.in_(sources),
+                Positions.portfolio.in_(portfolios)
+            )
         )
 
         self.engine.execute(query)
