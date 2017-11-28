@@ -35,6 +35,7 @@ from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
+from alphamind.data.dbmodel.models import Performance
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -756,6 +757,27 @@ class SqlEngine(object):
         )
 
         self.engine.execute(query, df.to_dict('record'))
+
+    def upsert_performance(self, ref_date, df):
+        build_types= df['type'].unique()
+        universes = df['universe'].unique()
+        benchmarks = df['benchmark'].unique()
+        portfolios = df['portfolio'].unique()
+        sources = df['source'].unique()
+
+        query = delete(Performance).where(
+            and_(
+                Performance.trade_date == ref_date,
+                Performance.type.in_(build_types),
+                Performance.universe.in_(universes),
+                Performance.benchmark.in_(benchmarks),
+                Performance.source.in_(sources),
+                Performance.portfolio.in_(portfolios)
+            )
+        )
+
+        self.engine.execute(query)
+        df.to_sql(Performance.__table__.name, self.engine, if_exists='append', index=False)
 
 
 if __name__ == '__main__':
