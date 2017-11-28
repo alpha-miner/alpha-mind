@@ -760,11 +760,11 @@ class SqlEngine(object):
         self.engine.execute(query, df.to_dict('record'))
 
     def upsert_performance(self, ref_date, df):
-        build_types= df['type'].unique()
-        universes = df['universe'].unique()
-        benchmarks = df['benchmark'].unique()
-        portfolios = df['portfolio'].unique()
-        sources = df['source'].unique()
+        build_types = df['type'].unique().tolist()
+        universes = df['universe'].unique().tolist()
+        benchmarks = df['benchmark'].unique().tolist()
+        portfolios = df['portfolio'].unique().tolist()
+        sources = df['source'].unique().tolist()
 
         query = delete(Performance).where(
             and_(
@@ -781,11 +781,11 @@ class SqlEngine(object):
         df.to_sql(Performance.__table__.name, self.engine, if_exists='append', index=False)
 
     def upsert_positions(self, ref_date, df):
-        universes = df.universe.unique()
-        benchmarks = df.benchmark.unique()
-        build_types = df.type.unique()
-        sources = df.source.unique()
-        portfolios = df.portfolio.unique()
+        universes = df.universe.unique().tolist()
+        benchmarks = df.benchmark.unique().tolist()
+        build_types = df.type.unique().tolist()
+        sources = df.source.unique().tolist()
+        portfolios = df.portfolio.unique().tolist()
 
         query = delete(Positions).where(
             and_(
