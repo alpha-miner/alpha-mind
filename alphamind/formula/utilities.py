@@ -5,13 +5,12 @@ Created on 2017-11-27
 @author: cheng.li
 """
 
-import pickle
-import base64
+from alphamind.utilities import encode
+from alphamind.utilities import decode
 
 
 def encode_formula(formula):
-    encoded = base64.encodebytes(pickle.dumps(formula))
-    str_repr = encoded.decode('ascii')
+    str_repr = encode(formula)
     return {'desc': str_repr,
             'formula_type': formula.__class__.__module__ + "." + formula.__class__.__name__,
             'dependency': formula.fields,
@@ -20,7 +19,7 @@ def encode_formula(formula):
 
 def decode_formula(str_repr):
     encoded = str_repr.encode('ascii')
-    formula = pickle.loads(base64.decodebytes(encoded))
+    formula = decode(encoded)
     return formula
 
 

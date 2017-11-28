@@ -5,8 +5,6 @@ Created on 2017-5-10
 @author: cheng.li
 """
 
-import base64
-import pickle
 import numpy as np
 import arrow
 from distutils.version import LooseVersion
@@ -15,6 +13,8 @@ from sklearn.linear_model import LinearRegression as LinearRegressionImpl
 from PyFin.api import pyFinAssert
 from alphamind.model.modelbase import ModelBase
 from alphamind.utilities import alpha_logger
+from alphamind.utilities import encode
+from alphamind.utilities import decode
 
 
 class ConstLinearModel(ModelBase):
@@ -65,8 +65,7 @@ class LinearRegression(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['internal_model'] = self.impl.__class__.__module__ + "." + self.impl.__class__.__name__
-        encoded = base64.encodebytes(pickle.dumps(self.impl))
-        model_desc['desc'] = encoded.decode('ascii')
+        model_desc['desc'] = encode(self.impl)
         model_desc['sklearn_version'] = sklearn_version
         model_desc['trained_time'] = self.trained_time
         model_desc['weight'] = self.impl.coef_.tolist()
@@ -86,8 +85,7 @@ class LinearRegression(ModelBase):
                                  'Loaded model may work incorrectly.'.format(
                 sklearn_version, model_desc['sklearn_version']))
 
-        encoded = model_desc['desc'].encode('ascii')
-        obj_layout.impl = pickle.loads(base64.decodebytes(encoded))
+        obj_layout.impl = decode(model_desc['desc'])
         return obj_layout
 
     @property

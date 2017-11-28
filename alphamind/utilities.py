@@ -5,6 +5,8 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
+import base64
+import pickle
 import math
 from simpleutils import CustomLogger
 import numpy as np
@@ -316,3 +318,13 @@ def aggregate(groups, x, func, ddof=1):
         raise ValueError('({0}) is not recognized as valid functor'.format(func))
 
     return value_data
+
+
+def encode(obj: object) -> str:
+    encoded = base64.encodebytes(pickle.dumps(obj))
+    return encoded.decode('ascii')
+
+
+def decode(str_repr: str):
+    encoded = str_repr.encode('ascii')
+    return pickle.loads(base64.decodebytes(encoded))
