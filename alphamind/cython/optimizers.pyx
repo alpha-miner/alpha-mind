@@ -24,7 +24,7 @@ cdef class LPOptimizer:
 
     cdef LpOptimizer* cobj
 
-    def __init__(self,
+    def __cinit__(self,
                  cnp.ndarray[double, ndim=2] cons_matrix,
                  double[:] lbound,
                  double[:] ubound,
@@ -40,7 +40,7 @@ cdef class LPOptimizer:
                                     &ubound[0],
                                     &objective[0])
 
-    def __del__(self):
+    def __dealloc__(self):
         del self.cobj
 
     def status(self):
@@ -74,7 +74,7 @@ cdef class QPOptimizer:
 
     cdef MVOptimizer* cobj
 
-    def __init__(self,
+    def __cinit__(self,
                  double[:] expected_return,
                  cnp.ndarray[double, ndim=2] cov_matrix,
                  double[:] lbound,
@@ -115,7 +115,7 @@ cdef class QPOptimizer:
                                         NULL,
                                         risk_aversion)
 
-    def __del__(self):
+    def __dealloc__(self):
         del self.cobj
 
     def feval(self):
