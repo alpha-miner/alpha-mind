@@ -717,7 +717,8 @@ class SqlEngine(object):
         del model_df['model_desc']
         return model_df
 
-    def insert_formula(self, formula_name, formula_obj, comment=None):
+    def insert_formula(self, formula_name, formula_obj):
+        comment = str(formula_obj)
         dict_repr = encode_formula(formula=formula_obj)
 
         query = delete(Formulas).where(
