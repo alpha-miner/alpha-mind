@@ -6,8 +6,13 @@ Created on 2017-5-2
 """
 
 from alphamind.model.linearmodel import LinearRegression
+from alphamind.model.linearmodel import LassoRegression
 from alphamind.model.linearmodel import ConstLinearModel
+
+from alphamind.model.treemodel import RandomForestRegressor
 
 
 __all__ = ['LinearRegression',
-           'ConstLinearModel']
+           'LassoRegression',
+           'ConstLinearModel',
+           'RandomForestRegressor']

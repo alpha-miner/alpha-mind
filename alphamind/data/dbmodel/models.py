@@ -923,6 +923,7 @@ class PortfolioSettings(Base):
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
     model_id = Column(BigInteger, primary_key=True, nullable=False)
+    weight = Column(Float(53), nullable=False)
 
 
 class Positions(Base):

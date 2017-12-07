@@ -26,7 +26,9 @@ from alphamind.data.neutralize import neutralize
 from alphamind.data.engines.sqlengine import factor_tables
 
 from alphamind.model.linearmodel import LinearRegression
+from alphamind.model.linearmodel import LassoRegression
 from alphamind.model.linearmodel import ConstLinearModel
+from alphamind.model.treemodel import RandomForestRegressor
 from alphamind.model.loader import load_model
 from alphamind.model.data_preparing import fetch_data_package
 from alphamind.model.data_preparing import fetch_train_phase
@@ -81,7 +83,9 @@ __all__ = [
     'fetch_data_package',
     'fetch_train_phase',
     'LinearRegression',
+    'LassoRegression',
     'ConstLinearModel',
+    'RandomForestRegressor',
     'load_model',
     'NaiveExecutor',
     'ThresholdExecutor',
