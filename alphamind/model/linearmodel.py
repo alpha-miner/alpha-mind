@@ -122,7 +122,7 @@ class LassoRegression(ModelBase):
 
     @classmethod
     def load(cls, model_desc: dict):
-        obj_layout = cls()
+        obj_layout = cls(alpha=0.)
         obj_layout.features = model_desc['features']
         obj_layout.trained_time = model_desc['trained_time']
 
