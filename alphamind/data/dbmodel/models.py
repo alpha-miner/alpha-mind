@@ -603,18 +603,6 @@ class DailyPortfoliosSchedule(Base):
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
 
 
-
-class DailyReturn(Base):
-    __tablename__ = 'daily_return'
-    __table_args__ = (
-        Index('daily_return_Date_Code_uindex', 'trade_date', 'code', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    d1 = Column(Float(53))
-
-
 class Experimental(Base):
     __tablename__ = 'experimental'
     __table_args__ = (
