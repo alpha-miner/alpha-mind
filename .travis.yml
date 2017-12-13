@@ -8,10 +8,10 @@ dist: trusty
 install:
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update
-  - sudo apt-get upgrade
-  - sudo apt-get dist-upgrade
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get -qq update
+  - sudo apt-get -qq upgrade
+  - sudo apt-get -qq dist-upgrade
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get -qq update
   - sudo apt-get -qq install g++-5
