@@ -870,7 +870,8 @@ class Models(Base):
     update_time = Column(DateTime, nullable=False)
     model_desc = Column(JSONB, nullable=False)
     is_primary = Column(Boolean)
-    model_id = Column(Integer, primary_key=True, server_default=text("nextval('models_model_id_seq'::regclass)"))
+    #model_id = Column(Integer, primary_key=True, server_default=text("nextval('models_model_id_seq'::regclass)"))
+    model_id = Column(Integer, primary_key=True, autoincrement=True)
 
 
 class Performance(Base):
