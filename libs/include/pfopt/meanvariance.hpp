@@ -60,6 +60,7 @@ namespace pfopt {
         VectorXd expectReturn_;
         MatrixXd varMatrix_;
         const int numOfAssets_;
+        int numCons_;
         VectorXd xReal_;
         const double riskAversion_;
 
@@ -73,7 +74,6 @@ namespace pfopt {
         std::vector<double> g_grad_values_;
         const double* clb_;
         const double* cub_;
-        Index m_;
     };
 }
 #endif

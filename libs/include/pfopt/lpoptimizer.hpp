@@ -16,13 +16,14 @@ namespace pfopt {
                     double* upperBound,
                     double* objective);
 
-        std::vector<double> xValue() const;
+        std::vector<double> xValue() const { return sol_; }
         double feval() const;
         int status() const { return model_.status(); }
 
     private:
         ClpSimplex model_;
         size_t numberOfProb_;
+        std::vector<double> sol_;
     };
 }
 

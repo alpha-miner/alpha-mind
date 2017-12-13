@@ -46,7 +46,7 @@ else:
                                 "./libs/include/alglib"],
                   libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils', 'libipopt', 'libcoinhsl', 'libcoinblas', 'libcoinlapack', 'libcoinmetis'],
                   library_dirs=['./libs/lib/windows'],
-                  extra_compile_args=['/MT']),
+                  extra_compile_args=['/MD']),
     ]
 
 setup(

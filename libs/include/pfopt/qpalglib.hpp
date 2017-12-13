@@ -1,5 +1,5 @@
 #ifndef pfopt_qp_alglib_hpp
-#define PFOPT_qp_alglib_HPP
+#define pfopt_qp_alglib_hpp
 
 #include "types.hpp"
 #include <optimization.h>
