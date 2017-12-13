@@ -4,7 +4,7 @@ python:
   - "3.6"
 # command to install dependencies
 sudo: enabled
-dist: trusty
+dist: xenial
 addons:
   apt:
     packages:
