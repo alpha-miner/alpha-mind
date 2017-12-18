@@ -5,6 +5,7 @@ python:
 # command to install dependencies
 sudo: enabled
 dist: trusty
+group: travis_lts
 install:
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
