@@ -7,13 +7,14 @@ Created on 2017-7-20
 """
 
 cimport numpy as cnp
+from libcpp.vector cimport vector
 import numpy as np
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
     cdef cppclass LpOptimizer:
         LpOptimizer(int, int, double*, double*, double*, double*) except +
-        double* xValue()
+        vector[double] xValue()
         double feval()
         int status()
 
@@ -50,13 +51,7 @@ cdef class LPOptimizer:
         return self.cobj.feval()
 
     def x_value(self):
-        cdef cnp.ndarray[double, ndim=1] res = np.zeros(self.n)
-        cdef double* c_arr = self.cobj.xValue()
-
-        for i in range(self.n):
-            res[i] = c_arr[i]
-
-        return res
+        return np.array(self.cobj.xValue())
 
 
 cdef extern from "mvoptimizer.hpp" namespace "pfopt":
@@ -71,7 +66,7 @@ cdef extern from "mvoptimizer.hpp" namespace "pfopt":
                     double*,
                     double*,
                     double) except +
-        double* xValue()
+        vector[double] xValue()
         double feval()
         int status()
 
@@ -130,13 +125,7 @@ cdef class QPOptimizer:
         return self.cobj.feval()
 
     def x_value(self):
-        cdef cnp.ndarray[double, ndim=1] res = np.zeros(self.n)
-        cdef double* c_arr = self.cobj.xValue()
-
-        for i in range(self.n):
-            res[i] = c_arr[i]
-
-        return res
+        return np.array(self.cobj.xValue())
 
     def status(self):
         return self.cobj.status()

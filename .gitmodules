@@ -1,0 +1,3 @@
+[submodule "alphamind/pfopt"]
+	path = alphamind/pfopt
+	url = https://github.com/alpha-miner/portfolio-optimizer.git

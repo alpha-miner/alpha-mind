@@ -26,13 +26,13 @@ if platform.system() != "Windows":
     extensions = [
         Extension('alphamind.cython.optimizers',
                   ['alphamind/cython/optimizers.pyx'],
-                  include_dirs=["./libs/include/linux/clp",
-                                "./libs/include/linux/ipopt",
-                                "./libs/include/linux/pfopt",
-                                "./libs/include/linux/eigen",
-                                "./libs/include/linux/alglib"],
+                  include_dirs=["alphamind/pfopt/include/clp",
+                                "alphamind/pfopt/include/ipopt",
+                                "alphamind/pfopt/include/pfopt",
+                                "alphamind/pfopt/include/eigen",
+                                "alphamind/pfopt/include/alglib"],
                   libraries=['pfopt'],
-                  library_dirs=['./libs/lib/linux'],
+                  library_dirs=['alphamind/pfopt/lib'],
                   extra_compile_args=['-std=c++11']),
         ]
 else:
