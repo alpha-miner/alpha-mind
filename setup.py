@@ -39,13 +39,13 @@ else:
     extensions = [
         Extension('alphamind.cython.optimizers',
                   ['alphamind/cython/optimizers.pyx'],
-                  include_dirs=["./libs/include/windows/clp",
-                                "./libs/include/windows/ipopt",
-                                "./libs/include/windows/pfopt",
-                                "./libs/include/windows/eigen",
-                                "./libs/include/windows/alglib"],
+                  include_dirs=["alphamind/pfopt/include/clp",
+                                "alphamind/pfopt/include/ipopt",
+                                "alphamind/pfopt/include/pfopt",
+                                "alphamind/pfopt/include/eigen",
+                                "alphamind/pfopt/include/alglib"],
                   libraries=['pfopt', 'alglib', 'libClp', 'libCoinUtils', 'libipopt', 'libcoinhsl', 'libcoinblas', 'libcoinlapack', 'libcoinmetis'],
-                  library_dirs=['./libs/lib/windows'],
+                  library_dirs=['alphamind/pfopt/lib'],
                   extra_compile_args=['/MD']),
     ]
 
