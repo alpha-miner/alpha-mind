@@ -12,6 +12,7 @@ addons:
       - gcc
       - gfortran
       - g++
+      - libgtest-dev
 install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-4.3.30-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
@@ -34,6 +35,12 @@ install:
   - pip install simpleutils
   - pip install coveralls
   - pip install finance-python
+  - export CWD=$PWD
+  - cd /usr/src/gtest
+  - sudo cmake CMakeLists.txt
+  - sudo make
+  - sudo cp *.a /usr/lib
+  - cd $CWD
 script:
   - bash build_linux_dependencies.sh
   - export NUMBA_DISABLE_JIT=1
