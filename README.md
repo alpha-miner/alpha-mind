@@ -44,7 +44,9 @@ alpha - mind 的安装极其简单，只需要在下载源码之后，运行：
 python setup.py install
 ```
 
-* *注意事项*: 在Linux系统上,请确保gcc版本大于5
+* *注意事项*: 
+1. 在Linux系统上,请确保gcc版本大于4.8;
+2. 在libs下面提供了依赖的一些库的二进制文件。linux版本的是在一台具有两个intel cpu的docker虚机上面编译完成的。如果需要实现最佳的性能，建议用户在目标机器上编译相关依赖的库。依赖的库源码地址：[portfolio-optimizer](https://github.com/alpha-miner/portfolio-optimizer)
 
 ## 数据源
 
