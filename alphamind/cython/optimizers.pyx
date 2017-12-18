@@ -8,14 +8,12 @@ Created on 2017-7-20
 
 cimport numpy as cnp
 import numpy as np
-from libcpp.vector cimport vector
-from libcpp cimport nullptr
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
     cdef cppclass LpOptimizer:
         LpOptimizer(int, int, double*, double*, double*, double*) except +
-        vector[double] xValue()
+        double* xValue()
         double feval()
         int status()
 
@@ -23,18 +21,20 @@ cdef extern from "lpoptimizer.hpp" namespace "pfopt":
 cdef class LPOptimizer:
 
     cdef LpOptimizer* cobj
+    cdef int n
+    cdef int m
 
     def __cinit__(self,
                  cnp.ndarray[double, ndim=2] cons_matrix,
                  double[:] lbound,
                  double[:] ubound,
                  double[:] objective):
-        cdef int n = lbound.shape[0]
-        cdef int m = cons_matrix.shape[0]
+        self.n = lbound.shape[0]
+        self.m = cons_matrix.shape[0]
         cdef double[:] cons = cons_matrix.flatten(order='C');
 
-        self.cobj = new LpOptimizer(n,
-                                    m,
+        self.cobj = new LpOptimizer(self.n,
+                                    self.m,
                                     &cons[0],
                                     &lbound[0],
                                     &ubound[0],
@@ -50,7 +50,13 @@ cdef class LPOptimizer:
         return self.cobj.feval()
 
     def x_value(self):
-        return np.array(self.cobj.xValue())
+        cdef cnp.ndarray[double, ndim=1] res = np.zeros(self.n)
+        cdef double* c_arr = self.cobj.xValue()
+
+        for i in range(self.n):
+            res[i] = c_arr[i]
+
+        return res
 
 
 cdef extern from "mvoptimizer.hpp" namespace "pfopt":
@@ -65,7 +71,7 @@ cdef extern from "mvoptimizer.hpp" namespace "pfopt":
                     double*,
                     double*,
                     double) except +
-        vector[double] xValue()
+        double* xValue()
         double feval()
         int status()
 
@@ -73,6 +79,8 @@ cdef extern from "mvoptimizer.hpp" namespace "pfopt":
 cdef class QPOptimizer:
 
     cdef MVOptimizer* cobj
+    cdef int n
+    cdef int m
 
     def __cinit__(self,
                  double[:] expected_return,
@@ -84,27 +92,27 @@ cdef class QPOptimizer:
                  double[:] cubound=None,
                  double risk_aversion=1.0):
 
-        cdef int n = lbound.shape[0]
-        cdef int m
+        self.n = lbound.shape[0]
+        self.m = 0
         cdef double[:] cov = cov_matrix.flatten(order='C')
         cdef double[:] cons
 
         if cons_matrix is not None:
-            m = cons_matrix.shape[0]
+            self.m = cons_matrix.shape[0]
             cons = cons_matrix.flatten(order='C');
 
-            self.cobj = new MVOptimizer(n,
+            self.cobj = new MVOptimizer(self.n,
                                         &expected_return[0],
                                         &cov[0],
                                         &lbound[0],
                                         &ubound[0],
-                                        m,
+                                        self.m,
                                         &cons[0],
                                         &clbound[0],
                                         &cubound[0],
                                         risk_aversion)
         else:
-            self.cobj = new MVOptimizer(n,
+            self.cobj = new MVOptimizer(self.n,
                                         &expected_return[0],
                                         &cov[0],
                                         &lbound[0],
@@ -122,7 +130,13 @@ cdef class QPOptimizer:
         return self.cobj.feval()
 
     def x_value(self):
-        return np.array(self.cobj.xValue())
+        cdef cnp.ndarray[double, ndim=1] res = np.zeros(self.n)
+        cdef double* c_arr = self.cobj.xValue()
+
+        for i in range(self.n):
+            res[i] = c_arr[i]
+
+        return res
 
     def status(self):
         return self.cobj.status()

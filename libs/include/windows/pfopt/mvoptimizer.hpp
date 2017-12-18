@@ -18,7 +18,7 @@ namespace pfopt {
                     double *cub = nullptr,
                     double riskAversion = 1.);
 
-        std::vector<double> xValue() const { return mvImpl_->xValue(); }
+        double* xValue() const { return mvImpl_->xValue(); }
 
         double feval() const { return mvImpl_->feval(); }
 
