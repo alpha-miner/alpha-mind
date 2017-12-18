@@ -2,7 +2,6 @@
 #define pfopt_linear_programming_optimizer_hpp
 
 #include "types.hpp"
-#include <vector>
 #include "ClpSimplex.hpp"
 
 namespace pfopt {
@@ -16,14 +15,16 @@ namespace pfopt {
                     double* upperBound,
                     double* objective);
 
-        std::vector<double> xValue() const { return sol_; }
+        ~LpOptimizer() { delete [] sol_;}
+
+        double* xValue() const { return sol_; }
         double feval() const;
         int status() const { return model_.status(); }
 
     private:
         ClpSimplex model_;
         size_t numberOfProb_;
-        std::vector<double> sol_;
+        double* sol_;
     };
 }
 
