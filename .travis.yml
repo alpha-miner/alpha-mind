@@ -35,7 +35,7 @@ install:
   - pip install coveralls
   - pip install finance-python
 script:
-  - bash build_linux_dependencies
+  - bash build_linux_dependencies.sh
   - export NUMBA_DISABLE_JIT=1
   - export LD_LIBRARY_PATH="$PWD/alphamind/pfopt/lib:$LD_LIBRARY_PATH"
   - python setup.py build_ext --inplace
