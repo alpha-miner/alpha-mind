@@ -8,7 +8,6 @@ Created on 2017-7-20
 
 cimport numpy as cnp
 import numpy as np
-from libcpp cimport nullptr
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
