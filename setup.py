@@ -7,6 +7,7 @@ Created on 2017-4-25
 
 import platform
 import io
+import os
 from setuptools import setup
 from setuptools import find_packages
 from Cython.Build import cythonize
@@ -35,6 +36,12 @@ if platform.system() != "Windows":
                   library_dirs=['alphamind/pfopt/lib'],
                   extra_compile_args=['-std=c++11']),
         ]
+
+    lib_files = []
+    lib_folder = 'alphamind/pfopt/lib'
+    for file in os.listdir(lib_folder):
+        lib_files.append(os.path.join(lib_folder, file))
+
 else:
     extensions = [
         Extension('alphamind.cython.optimizers',
@@ -49,6 +56,14 @@ else:
                   extra_compile_args=['/MD']),
     ]
 
+    lib_files = []
+
+
+lib_files = []
+lib_folder = 'alphamind/pfopt/lib'
+for file in os.listdir(lib_folder):
+    lib_files.append(os.path.join(lib_folder, file))
+
 setup(
     name='Alpha-Mind',
     version=VERSION,
@@ -61,5 +76,7 @@ setup(
     install_requires=io.open('requirements.txt', encoding='utf8').read(),
     include_dirs=[np.get_include()],
     ext_modules=cythonize(extensions),
-    description=''
+    data_files=[('alphamind/pfopt/lib', lib_files)],
+    description='',
+    include_package_data=True
 )
