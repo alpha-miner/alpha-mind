@@ -36,9 +36,27 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 * pandas
 * scipy
 
+## 编译依赖
+
+* Windows
+
+  在Windows上完整安装，需要有C++编译器(例如msvc）以及fortran编译器（例如intel ifort)：
+
+```bash
+build_windows_dependencies.bat
+```
+
+* Linux
+
+在linux上，需要c++编译器（例如g++）以及fortran编译器（例如gfortran)
+
+```bash
+build_linux_dependencies.sh
+```
+
 ## 安装
 
-alpha - mind 的安装极其简单，只需要在下载源码之后，运行：
+alpha - mind 的安装极其简单，在编译完成依赖之后，运行：
 
 ```python
 python setup.py install
