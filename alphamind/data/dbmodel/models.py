@@ -1881,6 +1881,58 @@ class Formulas(Base):
     comment = Column(Text)
 
 
+class Gogoal(Base):
+    __tablename__ = 'gogoal'
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
+    con_eps = Column(Float(53))
+    con_eps_rolling = Column(Float(53))
+    con_na = Column(Float(53))
+    con_na_rolling = Column(Float(53))
+    con_np = Column(Float(53))
+    con_npcgrate_1w = Column(Float(53))
+    con_npcgrate_4w = Column(Float(53))
+    con_npcgrate_13w = Column(Float(53))
+    con_npcgrate_26w = Column(Float(53))
+    con_npcgrate_52w = Column(Float(53))
+    con_npcgrate_2y = Column(Float(53))
+    con_np_rolling = Column(Float(53))
+    con_np_yoy = Column(Float(53))
+    con_pb = Column(Float(53))
+    con_pb_order = Column(Float(53))
+    con_pb_rolling = Column(Float(53))
+    con_pb_rolling_order = Column(Float(53))
+    con_or = Column(Float(53))
+    con_pe = Column(Float(53))
+    con_pe_order = Column(Float(53))
+    con_pe_rolling = Column(Float(53))
+    con_pe_rolling_order = Column(Float(53))
+    con_peg = Column(Float(53))
+    con_peg_order = Column(Float(53))
+    con_peg_rolling = Column(Float(53))
+    con_peg_rolling_order = Column(Float(53))
+    con_roe = Column(Float(53))
+    con_target_price = Column(Float(53))
+    market_confidence_5d = Column(Float(53))
+    market_confidence_10d = Column(Float(53))
+    market_confidence_15d = Column(Float(53))
+    market_confidence_25d = Column(Float(53))
+    market_confidence_75d = Column(Float(53))
+    mcap = Column(Float(53))
+    optimism_confidence_5d = Column(Float(53))
+    optimism_confidence_10d = Column(Float(53))
+    optimism_confidence_15d = Column(Float(53))
+    optimism_confidence_25d = Column(Float(53))
+    optimism_confidence_75d = Column(Float(53))
+    pessimism_confidence_5d = Column(Float(53))
+    pessimism_confidence_10d = Column(Float(53))
+    pessimism_confidence_15d = Column(Float(53))
+    pessimism_confidence_25d = Column(Float(53))
+    pessimism_confidence_75d = Column(Float(53))
+    tcap = Column(Float(53))
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
