@@ -40,7 +40,7 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
 * Windows
 
-  在Windows上完整安装，需要有C++编译器(例如msvc）以及fortran编译器（例如intel ifort)：
+  在Windows上完整安装，需要有C++编译器(例如msvc）:
 
 ```bash
 build_windows_dependencies.bat
