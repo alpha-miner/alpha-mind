@@ -44,6 +44,10 @@ install:
   - sudo cp *.a /usr/lib
   - cd $CWD
 script:
+  - cd alphamind/pfopt
+  - git submodule init
+  - git submodule update
+  - cd ../..
   - bash build_linux_dependencies.sh
   - export NUMBA_DISABLE_JIT=1
   - export LD_LIBRARY_PATH="$PWD/alphamind/pfopt/lib:$LD_LIBRARY_PATH"

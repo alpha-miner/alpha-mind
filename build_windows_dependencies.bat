@@ -1,9 +1,6 @@
 @echo off
 
-cd alphamind/pfopt
-
-git submodule init
-git submodule update
+cd alphamind\pfopt
 
 call build_windows.bat
 
