@@ -29,6 +29,7 @@ from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
 from alphamind.data.dbmodel.models import FullFactor
+from alphamind.data.dbmodel.models import Gogoal
 from alphamind.data.dbmodel.models import Models
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
@@ -89,7 +90,7 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-factor_tables = [FullFactor, Experimental]
+factor_tables = [FullFactor, Gogoal, Experimental]
 
 DEFAULT_URL = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
 
