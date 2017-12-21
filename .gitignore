@@ -9,5 +9,8 @@ Alpha_Mind.egg-info/*
 *.html
 *.nbc
 *.nbi
-/notebooks/.ipynb_checkpoints
+/notebooks/.ipynb_checkpoints/*
+/notebooks/machine learning/.ipynb_checkpoints/*
 alphamind/cython/*.so
+alphamind/examples/*.xlsx
+alphamind/examples/*.csv
