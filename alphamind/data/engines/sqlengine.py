@@ -10,7 +10,6 @@ from typing import List
 from typing import Dict
 from typing import Tuple
 from typing import Union
-import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
