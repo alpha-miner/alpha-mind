@@ -6,9 +6,18 @@ Created on 2017-7-7
 """
 
 from typing import Iterable
+import pandas as pd
 from sqlalchemy import and_
 from sqlalchemy import or_
+from sqlalchemy import select
+from sqlalchemy import join
+from sqlalchemy import outerjoin
+from PyFin.api import pyFinAssert
 from alphamind.data.dbmodel.models import Universe as UniverseTable
+from alphamind.data.dbmodel.models import FullFactor
+from alphamind.data.engines.utilities import _map_factors
+from alphamind.data.engines.utilities import factor_tables
+from alphamind.data.transformer import Transformer
 
 
 class Universe(object):
@@ -89,3 +98,68 @@ class Universe(object):
             query = and_(dates_cond, *all_and_conditions)
 
         return query
+
+
+class UniverseNew(object):
+
+    def __init__(self, name, base_universe):
+        self.name = name
+        self.base_universe = base_universe
+
+    def query(self, engine, ref_date: str, filter_cond=None) -> pd.DataFrame:
+
+        if filter_cond is None:
+            # simple case
+            query = select([UniverseTable.trade_date, UniverseTable.code]).where(
+                and_(
+                    UniverseTable.trade_date == ref_date,
+                    UniverseTable.universe.in_(self.base_universe)
+                )
+            )
+            return pd.read_sql(query, engine.engine)
+        else:
+            if isinstance(filter_cond, Transformer):
+                transformer = filter_cond
+            else:
+                transformer = Transformer(filter_cond)
+
+            dependency = transformer.dependency
+            factor_cols = _map_factors(dependency, factor_tables)
+            big_table = FullFactor
+
+            for t in set(factor_cols.values()):
+                if t.__table__.name != FullFactor.__table__.name:
+                    big_table = outerjoin(big_table, t, and_(FullFactor.trade_date == t.trade_date,
+                                                             FullFactor.code == t.code,
+                                                             FullFactor.trade_date == ref_date))
+
+            universe_cond = and_(
+                UniverseTable.trade_date == ref_date,
+                UniverseTable.universe.in_(self.base_universe)
+            )
+
+            big_table = join(big_table, UniverseTable,
+                             and_(FullFactor.trade_date == UniverseTable.trade_date,
+                                  FullFactor.code == UniverseTable.code,
+                                  universe_cond))
+
+            query = select(
+                [FullFactor.trade_date, FullFactor.code] + list(factor_cols.keys())) \
+                .select_from(big_table).distinct()
+
+            df = pd.read_sql(query, engine.engine).sort_values(['trade_date', 'code']).dropna()
+            df.set_index('trade_date', inplace=True)
+            filter_fields = transformer.names
+            pyFinAssert(len(filter_fields) == 1, ValueError, "filter fields can only be 1")
+            df = transformer.transform('code', df)
+            return df[df[filter_fields[0]] == 1].reset_index()[['trade_date', 'code']]
+
+
+if __name__ == '__main__':
+    from PyFin.api import *
+    from alphamind.data.engines.sqlengine import SqlEngine
+    engine = SqlEngine()
+    universe = UniverseNew('ss', ['hs300'])
+    print(universe.query(engine, '2017-12-21', LAST('closePrice') < 5))
+
+
