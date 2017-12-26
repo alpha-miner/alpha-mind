@@ -1977,6 +1977,18 @@ class Gogoal(Base):
     tcap = Column(Float(53))
 
 
+class Outright(Base):
+    __tablename__ = 'outright'
+    __table_args__ = (
+        Index('outright_trade_date_code_portfolio_name_uindex', 'trade_date', 'code', 'portfolio_name', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    volume = Column(Integer, nullable=False)
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
