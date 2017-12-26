@@ -24,11 +24,11 @@ class Universe(object):
 
     def __init__(self,
                  name,
-                 base_universe: Iterable[str]=None,
-                 include_universe: Iterable[str]=None,
-                 exclude_universe: Iterable[str]=None,
-                 include_codes: Iterable[str]=None,
-                 exclude_codes: Iterable[str]=None):
+                 base_universe: Iterable[str] = None,
+                 include_universe: Iterable[str] = None,
+                 exclude_universe: Iterable[str] = None,
+                 include_codes: Iterable[str] = None,
+                 exclude_codes: Iterable[str] = None):
 
         self.name = name
         self.base_universe = base_universe
@@ -68,12 +68,12 @@ class Universe(object):
 
         if all_or_conditions:
             query = and_(
-                    UniverseTable.trade_date == ref_date,
-                    or_(
-                        and_(*all_and_conditions),
-                        *all_or_conditions
-                    )
+                UniverseTable.trade_date == ref_date,
+                or_(
+                    and_(*all_and_conditions),
+                    *all_or_conditions
                 )
+            )
         else:
             query = and_(
                 UniverseTable.trade_date == ref_date,
@@ -84,16 +84,17 @@ class Universe(object):
 
     def query_range(self, start_date=None, end_date=None, dates=None):
         all_and_conditions, all_or_conditions = self._create_condition()
-        dates_cond = UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date)
+        dates_cond = UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date,
+                                                                                                        end_date)
 
         if all_or_conditions:
             query = and_(
-                    dates_cond,
-                    or_(
-                        and_(*all_and_conditions),
-                        *all_or_conditions
-                    )
+                dates_cond,
+                or_(
+                    and_(*all_and_conditions),
+                    *all_or_conditions
                 )
+            )
         else:
             query = and_(dates_cond, *all_and_conditions)
 
@@ -102,26 +103,29 @@ class Universe(object):
 
 class UniverseNew(object):
 
-    def __init__(self, name, base_universe):
+    def __init__(self, name, base_universe, filter_cond=None):
         self.name = name
         self.base_universe = base_universe
+        self.filter_cond = filter_cond
 
-    def query(self, engine, ref_date: str, filter_cond=None) -> pd.DataFrame:
+    def query(self, engine, start_date: str=None, end_date: str=None, dates=None) -> pd.DataFrame:
 
-        if filter_cond is None:
+        universe_cond = and_(
+            UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date),
+            UniverseTable.universe.in_(self.base_universe)
+        )
+
+        if self.filter_cond is None:
             # simple case
             query = select([UniverseTable.trade_date, UniverseTable.code]).where(
-                and_(
-                    UniverseTable.trade_date == ref_date,
-                    UniverseTable.universe.in_(self.base_universe)
-                )
+                universe_cond
             )
             return pd.read_sql(query, engine.engine)
         else:
-            if isinstance(filter_cond, Transformer):
-                transformer = filter_cond
+            if isinstance(self.filter_cond, Transformer):
+                transformer = self.filter_cond
             else:
-                transformer = Transformer(filter_cond)
+                transformer = Transformer(self.filter_cond)
 
             dependency = transformer.dependency
             factor_cols = _map_factors(dependency, factor_tables)
@@ -131,13 +135,9 @@ class UniverseNew(object):
                 if t.__table__.name != FullFactor.__table__.name:
                     big_table = outerjoin(big_table, t, and_(FullFactor.trade_date == t.trade_date,
                                                              FullFactor.code == t.code,
-                                                             FullFactor.trade_date == ref_date))
-
-            universe_cond = and_(
-                UniverseTable.trade_date == ref_date,
-                UniverseTable.universe.in_(self.base_universe)
-            )
-
+                                                             FullFactor.trade_date.in_(
+                                                                 dates) if dates else FullFactor.trade_date.between(
+                                                                 start_date, end_date)))
             big_table = join(big_table, UniverseTable,
                              and_(FullFactor.trade_date == UniverseTable.trade_date,
                                   FullFactor.code == UniverseTable.code,
@@ -152,14 +152,19 @@ class UniverseNew(object):
             filter_fields = transformer.names
             pyFinAssert(len(filter_fields) == 1, ValueError, "filter fields can only be 1")
             df = transformer.transform('code', df)
-            return df[df[filter_fields[0]] == 1].reset_index()[['trade_date', 'code']]
+            df = df[df[filter_fields[0]] == 1].reset_index()[['trade_date', 'code']]
+            return df
 
 
 if __name__ == '__main__':
     from PyFin.api import *
     from alphamind.data.engines.sqlengine import SqlEngine
+
     engine = SqlEngine()
     universe = UniverseNew('ss', ['hs300'])
-    print(universe.query(engine, '2017-12-21', LAST('closePrice') < 5))
+    print(universe.query(engine,
+                         start_date='2017-12-21',
+                         end_date='2017-12-25'))
 
-
+    print(universe.query(engine,
+                         dates=['2017-12-21', '2017-12-25']))
