@@ -95,6 +95,7 @@ def simple_abssum(x, axis=0):
     return res
 
 
+@nb.njit(nogil=True, cache=True)
 def simple_sqrsum(x, axis=0):
     length, width = x.shape
 
@@ -175,6 +176,7 @@ def agg_sum(groups, x):
     return res
 
 
+@nb.njit(nogil=True, cache=True)
 def agg_sqrsum(groups, x):
     max_g = groups.max()
     length, width = x.shape
