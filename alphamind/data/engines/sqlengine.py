@@ -203,21 +203,29 @@ class SqlEngine(object):
         end_date = advanceDateByCalendar('china.sse', end_date,
                                          str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
 
-        codes = universe.query(self, start_date, end_date, dates)
-
         stats = func.sum(self.ln_func(1. + Market.chgPct)).over(
             partition_by=Market.code,
             order_by=Market.trade_date,
             rows=(1 + offset + DAILY_RETURN_OFFSET, 1 + horizon + offset + DAILY_RETURN_OFFSET)).label('dx')
 
-        query = select([Market.trade_date, Market.code, stats]) \
-            .where(
-            and_(Market.trade_date.in_(codes.trade_date.dt.strftime('%Y-%m-%d').unique()),
-                 Market.code.in_(codes.code.tolist()))
+        cond = universe._query_statements(start_date, end_date, None)
+
+        big_table = join(Market, UniverseTable,
+            and_(
+                Market.trade_date == UniverseTable.trade_date,
+                Market.code == UniverseTable.code,
+                cond
+            )
         )
 
+        query = select([Market.trade_date, Market.code, stats]) \
+            .select_from(big_table)
+
         df = pd.read_sql(query, self.session.bind).dropna()
-        df = pd.merge(df, codes, how='inner', on=['trade_date', 'code'])
+
+        if universe.is_filtered:
+            codes = universe.query(self, start_date, end_date, dates)
+            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code'])
 
         if dates:
             df = df[df.trade_date.isin(dates)]
@@ -354,8 +362,6 @@ class SqlEngine(object):
         else:
             factor_cols = _map_factors(dependency, factor_tables)
 
-        codes = universe.query(self, start_date, end_date, dates)
-
         big_table = FullFactor
 
         for t in set(factor_cols.values()):
@@ -369,15 +375,24 @@ class SqlEngine(object):
                                                              FullFactor.code == t.code,
                                                              FullFactor.trade_date.between(start_date, end_date)))
 
+        cond = universe._query_statements(start_date, end_date, dates)
+
+        big_table = join(big_table, UniverseTable,
+                         and_(
+                             FullFactor.trade_date == UniverseTable.trade_date,
+                             FullFactor.code == UniverseTable.code,
+                             cond
+                         )
+                    )
+
         query = select(
             [FullFactor.trade_date, FullFactor.code, FullFactor.isOpen] + list(factor_cols.keys())) \
-            .select_from(big_table).where(
-            and_(FullFactor.trade_date.in_(codes.trade_date.dt.strftime('%Y-%m-%d').unique()),
-                 FullFactor.code.in_(codes.code.tolist()))
-        ).distinct()
+            .select_from(big_table).distinct()
 
         df = pd.read_sql(query, self.engine)
-        df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
+        if universe.is_filtered:
+            codes = universe.query(self, start_date, end_date, dates)
+            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
 
         if external_data is not None:
             df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
@@ -477,16 +492,25 @@ class SqlEngine(object):
 
         risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
 
-        codes = universe.query(self, start_date, end_date, dates)
+        cond = universe._query_statements(start_date, end_date, dates)
+
+        big_table = join(FullFactor, UniverseTable,
+                         and_(
+                             FullFactor.trade_date == UniverseTable.trade_date,
+                             FullFactor.code == UniverseTable.code,
+                             cond
+                         )
+                    )
 
         query = select(
-            [FullFactor.trade_date, FullFactor.code, special_risk_col] + risk_exposure_cols).where(
-            and_(FullFactor.trade_date.in_(codes.trade_date.dt.strftime('%Y-%m-%d').unique()),
-                 FullFactor.code.in_(codes.code.tolist()))
-        ).distinct()
+            [FullFactor.trade_date, FullFactor.code, special_risk_col] + risk_exposure_cols).select_from(big_table) \
+            .distinct()
 
         risk_exp = pd.read_sql(query, self.engine)
-        risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
+
+        if universe.is_filtered:
+            codes = universe.query(self, start_date, end_date, dates)
+            risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
 
         return risk_cov, risk_exp
 
@@ -516,19 +540,27 @@ class SqlEngine(object):
                              dates: Iterable[str] = None,
                              category: str = 'sw'):
         industry_category_name = _map_industry_category(category)
-        codes = universe.query(self, start_date, end_date, dates)
+
+        cond = universe._query_statements(start_date, end_date, dates)
+
+        big_table = join(Industry, UniverseTable,
+                         and_(
+                             Industry.trade_date == UniverseTable.trade_date,
+                             Industry.code == UniverseTable.code,
+                             Industry.industry == industry_category_name,
+                             cond
+                         )
+                    )
 
         query = select([Industry.trade_date,
                         Industry.code,
                         Industry.industryID1.label('industry_code'),
-                        Industry.industryName1.label('industry')]).where(
-            and_(Industry.trade_date.in_(codes.trade_date.dt.strftime('%Y-%m-%d').unique()),
-                 Industry.code.in_(codes.code.tolist()),
-                 Industry.industry == industry_category_name)
-        ).distinct()
+                        Industry.industryName1.label('industry')]).select_from(big_table).distinct()
 
         df = pd.read_sql(query, self.engine)
-        df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
+        if universe.is_filtered:
+            codes = universe.query(self, start_date, end_date, dates)
+            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
         return df
 
     def fetch_data(self, ref_date: str,
@@ -773,8 +805,8 @@ if __name__ == '__main__':
     engine = SqlEngine()
 
     df = engine.fetch_factor_range(universe,
-                                   ['closePrice'],
-                                   start_date='2012-12-21',
+                                      ['closePrice'],
+                                   start_date='2015-12-21',
                                    end_date='2017-12-25')
 
     print(df)

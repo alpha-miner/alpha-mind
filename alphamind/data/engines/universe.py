@@ -27,12 +27,19 @@ class Universe(object):
         self.base_universe = base_universe
         self.filter_cond = filter_cond
 
-    def query(self, engine, start_date: str=None, end_date: str=None, dates=None) -> pd.DataFrame:
+    @property
+    def is_filtered(self):
+        return True if self.filter_cond is not None else False
 
-        universe_cond = and_(
+    def _query_statements(self, start_date, end_date, dates):
+        return and_(
             UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date),
             UniverseTable.universe.in_(self.base_universe)
         )
+
+    def query(self, engine, start_date: str=None, end_date: str=None, dates=None) -> pd.DataFrame:
+
+        universe_cond = self._query_statements(start_date, end_date, dates)
 
         if self.filter_cond is None:
             # simple case
