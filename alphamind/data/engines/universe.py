@@ -51,7 +51,7 @@ class Universe(object):
 
         and_conditions = []
         if self.exclude_universe:
-            and_conditions.append(~UniverseTable.universe.in_(self.exclude_universe))
+            and_conditions.append(UniverseTable.universe.notin_(self.exclude_universe))
 
         return and_(
             query,
@@ -67,7 +67,7 @@ class Universe(object):
             # simple case
             query = select([UniverseTable.trade_date, UniverseTable.code]).where(
                 universe_cond
-            )
+            ).distinct()
             return pd.read_sql(query, engine.engine)
         else:
             if isinstance(self.filter_cond, Transformer):
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     from alphamind.data.engines.sqlengine import SqlEngine
 
     engine = SqlEngine()
-    universe = Universe('ss', ['hs300'], special_codes=[603138])
+    universe = Universe('ss', ['ashare_ex'], exclude_universe=['hs300', 'zz500'], special_codes=[603138])
     print(universe.query(engine,
                          start_date='2017-12-21',
                          end_date='2017-12-25'))

@@ -143,20 +143,15 @@ class SqlEngine(object):
         return strategy_names
 
     def fetch_codes(self, ref_date: str, universe: Universe) -> List[int]:
-        cond = universe.query(ref_date)
-        query = select([UniverseTable.trade_date, UniverseTable.code]).distinct().where(cond)
-        cursor = self.engine.execute(query)
-        codes_set = {c[1] for c in cursor.fetchall()}
-        return sorted(codes_set)
+        df = universe.query(self, ref_date, ref_date)
+        return sorted(df.code.tolist())
 
     def fetch_codes_range(self,
                           universe: Universe,
                           start_date: str = None,
                           end_date: str = None,
                           dates: Iterable[str] = None) -> pd.DataFrame:
-        cond = universe.query_range(start_date, end_date, dates)
-        query = select([UniverseTable.trade_date, UniverseTable.code]).distinct().where(cond)
-        return pd.read_sql(query, self.engine)
+        return universe.query(self, start_date, end_date, dates)
 
     def fetch_dx_return(self,
                         ref_date: str,
