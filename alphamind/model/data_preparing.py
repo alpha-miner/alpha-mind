@@ -119,8 +119,10 @@ def batch_processing(x_values,
                      post_process):
     train_x_buckets = {}
     train_y_buckets = {}
+    train_risk_buckets = {}
     predict_x_buckets = {}
     predict_y_buckets = {}
+    predict_risk_buckets = {}
 
     for i, start in enumerate(groups[:-batch]):
         end = groups[i + batch]
@@ -146,6 +148,8 @@ def batch_processing(x_values,
                                                  risk_factors=this_risk_exp,
                                                  post_process=post_process)
 
+        train_risk_buckets[end] = this_risk_exp
+
         left_index = bisect.bisect_right(group_label, start)
         right_index = bisect.bisect_right(group_label, end)
 
@@ -165,6 +169,7 @@ def batch_processing(x_values,
         inner_left_index = bisect.bisect_left(sub_dates, end)
         inner_right_index = bisect.bisect_right(sub_dates, end)
         predict_x_buckets[end] = ne_x[inner_left_index:inner_right_index]
+        predict_risk_buckets[end] = this_risk_exp[inner_left_index:inner_right_index]
 
         this_raw_y = y_values[left_index:right_index]
         if len(this_raw_y) > 0:
@@ -174,7 +179,7 @@ def batch_processing(x_values,
                                      post_process=post_process)
             predict_y_buckets[end] = ne_y[inner_left_index:inner_right_index]
 
-    return train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets
+    return train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets
 
 
 def fetch_data_package(engine: SqlEngine,
@@ -216,7 +221,7 @@ def fetch_data_package(engine: SqlEngine,
 
     alpha_logger.info("Loading data is finished")
 
-    train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets = batch_processing(
+    train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets = batch_processing(
         x_values,
         y_values,
         dates,
@@ -231,8 +236,8 @@ def fetch_data_package(engine: SqlEngine,
     ret = dict()
     ret['x_names'] = transformer.names
     ret['settlement'] = return_df
-    ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets}
-    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets}
+    ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets, 'risk': train_risk_buckets}
+    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets, 'risk': predict_risk_buckets}
     return ret
 
 

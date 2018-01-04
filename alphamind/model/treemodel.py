@@ -29,12 +29,16 @@ class RandomForestRegressor(ModelBase):
     def predict(self, x: np.ndarray) -> np.ndarray:
         return self.impl.predict(x)
 
+    def score(self, x: np.ndarray, y: np.ndarray) -> float:
+        return self.impl.score(x, y)
+
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['internal_model'] = self.impl.__class__.__module__ + "." + self.impl.__class__.__name__
         model_desc['desc'] = encode(self.impl)
         model_desc['sklearn_version'] = sklearn_version
         model_desc['trained_time'] = self.trained_time
+
     @classmethod
     def load(cls, model_desc: dict):
         obj_layout = cls()
