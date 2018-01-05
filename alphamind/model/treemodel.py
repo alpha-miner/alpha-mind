@@ -10,7 +10,7 @@ import numpy as np
 from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
-from xgboost import XGBRegressor as XGBRegressorImpl
+# from xgboost import XGBRegressor as XGBRegressorImpl
 from alphamind.model.modelbase import ModelBase
 from alphamind.utilities import alpha_logger
 
@@ -40,17 +40,17 @@ class RandomForestRegressor(ModelBase):
         return obj_layout
 
 
-class XGBRegressor(ModelBase):
-
-    def __init__(self,
-                 n_estimators: int=100,
-                 learning_rate: float=0.1,
-                 max_depth: int=3,
-                 features: List=None, **kwargs):
-        super().__init__(features)
-        self.impl = XGBRegressorImpl(n_estimators=n_estimators,
-                                     learning_rate=learning_rate,
-                                     max_depth=max_depth,
-                                     **kwargs)
+# class XGBRegressor(ModelBase):
+#
+#     def __init__(self,
+#                  n_estimators: int=100,
+#                  learning_rate: float=0.1,
+#                  max_depth: int=3,
+#                  features: List=None, **kwargs):
+#         super().__init__(features)
+#         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
+#                                      learning_rate=learning_rate,
+#                                      max_depth=max_depth,
+#                                      **kwargs)
 
 
