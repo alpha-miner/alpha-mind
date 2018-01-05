@@ -22,11 +22,14 @@ class ModelBase(metaclass=abc.ABCMeta):
         self.trained_time = None
 
     def fit(self, x, y):
-        self.impl.fit(x, y)
+        self.impl.fit(x, x.flatten())
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         return self.impl.predict(x)
+
+    def score(self, x: np.ndarray, y: np.ndarray) -> float:
+        return self.impl.score(x, y)
 
     @abc.abstractmethod
     def save(self) -> dict:

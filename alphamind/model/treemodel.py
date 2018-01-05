@@ -6,7 +6,6 @@ Created on 2017-12-4
 """
 
 from typing import List
-import numpy as np
 from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
@@ -22,9 +21,6 @@ class RandomForestRegressor(ModelBase):
         super().__init__(features)
         self.impl = RandomForestRegressorImpl(n_estimators, **kwargs)
         self.trained_time = None
-
-    def score(self, x: np.ndarray, y: np.ndarray) -> float:
-        return self.impl.score(x, y)
 
     def save(self) -> dict:
         model_desc = super().save()

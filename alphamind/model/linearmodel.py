@@ -66,9 +66,6 @@ class LinearRegression(ModelBase):
         model_desc['weight'] = self.impl.coef_.tolist()
         return model_desc
 
-    def score(self,  x: np.ndarray, y: np.ndarray) -> float:
-        return self.impl.score(x, y)
-
     @classmethod
     def load(cls, model_desc: dict):
         obj_layout = super().load(model_desc)
@@ -96,9 +93,6 @@ class LassoRegression(ModelBase):
         model_desc['sklearn_version'] = sklearn_version
         model_desc['weight'] = self.impl.coef_.tolist()
         return model_desc
-
-    def score(self, x: np.ndarray, y: np.ndarray) -> float:
-        return self.impl.score(x, y)
 
     @classmethod
     def load(cls, model_desc: dict):
