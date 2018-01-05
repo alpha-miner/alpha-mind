@@ -9,8 +9,8 @@ from typing import List
 import numpy as np
 from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
-from xgboost import __version__ as xgbboot_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
+from xgboost import __version__ as xgbboot_version
 from xgboost import XGBRegressor as XGBRegressorImpl
 from alphamind.model.modelbase import ModelBase
 from alphamind.utilities import alpha_logger

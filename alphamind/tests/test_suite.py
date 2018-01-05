@@ -28,6 +28,7 @@ from alphamind.tests.analysis.test_perfanalysis import TestPerformanceAnalysis
 from alphamind.tests.analysis.test_factoranalysis import TestFactorAnalysis
 from alphamind.tests.analysis.test_quantilieanalysis import TestQuantileAnalysis
 from alphamind.tests.model.test_linearmodel import TestLinearModel
+from alphamind.tests.model.test_treemodel import TestTreeModel
 from alphamind.tests.model.test_loader import TestLoader
 from alphamind.tests.execution.test_naiveexecutor import TestNaiveExecutor
 from alphamind.tests.execution.test_thresholdexecutor import TestThresholdExecutor
@@ -54,6 +55,7 @@ if __name__ == '__main__':
                          TestFactorAnalysis,
                          TestQuantileAnalysis,
                          TestLinearModel,
+                         TestTreeModel,
                          TestLoader,
                          TestNaiveExecutor,
                          TestThresholdExecutor,
