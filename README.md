@@ -42,16 +42,16 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
   在Windows上完整安装，需要有C++编译器(例如msvc）:
 
-```bash
-build_windows_dependencies.bat
-```
+    ```bash
+    build_windows_dependencies.bat
+    ```
 
 * Linux
 
-在linux上，需要c++编译器（例如g++）以及fortran编译器（例如gfortran)
+    在linux上，需要c++编译器（例如g++）以及fortran编译器（例如gfortran)
 
-```bash
-build_linux_dependencies.sh
+    ```bash
+    build_linux_dependencies.sh
 ```
 
 ## 安装

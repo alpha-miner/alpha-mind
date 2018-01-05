@@ -1,3 +1,6 @@
 [submodule "alphamind/pfopt"]
 	path = alphamind/pfopt
 	url = https://github.com/alpha-miner/portfolio-optimizer.git
+[submodule "xgboost"]
+	path = xgboost
+	url = https://github.com/dmlc/xgboost.git
