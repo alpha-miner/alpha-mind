@@ -25,11 +25,12 @@ from alphamind.data.standardize import projection
 from alphamind.data.neutralize import neutralize
 from alphamind.data.engines.sqlengine import factor_tables
 
-from alphamind.model.linearmodel import LinearRegression
-from alphamind.model.linearmodel import LassoRegression
-from alphamind.model.linearmodel import ConstLinearModel
-from alphamind.model.treemodel import RandomForestRegressor
-from alphamind.model.loader import load_model
+from alphamind.model import LinearRegression
+from alphamind.model import LassoRegression
+from alphamind.model import ConstLinearModel
+from alphamind.model import RandomForestRegressor
+from alphamind.model import XGBRegressor
+from alphamind.model import load_model
 from alphamind.model.data_preparing import fetch_data_package
 from alphamind.model.data_preparing import fetch_train_phase
 
@@ -86,6 +87,7 @@ __all__ = [
     'LassoRegression',
     'ConstLinearModel',
     'RandomForestRegressor',
+    'XGBRegressor',
     'load_model',
     'NaiveExecutor',
     'ThresholdExecutor',
