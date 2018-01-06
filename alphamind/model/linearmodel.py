@@ -10,6 +10,7 @@ from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
 from sklearn.linear_model import LinearRegression as LinearRegressionImpl
 from sklearn.linear_model import Lasso
+from sklearn.linear_model import LogisticRegression as LogisticRegressionImpl
 from PyFin.api import pyFinAssert
 from alphamind.model.modelbase import ModelBase
 from alphamind.utilities import alpha_logger
@@ -87,6 +88,33 @@ class LassoRegression(ModelBase):
         super().__init__(features)
         self.impl = Lasso(alpha=alpha, fit_intercept=fit_intercept, **kwargs)
         self.trained_time = None
+
+    def save(self) -> dict:
+        model_desc = super().save()
+        model_desc['sklearn_version'] = sklearn_version
+        model_desc['weight'] = self.impl.coef_.tolist()
+        return model_desc
+
+    @classmethod
+    def load(cls, model_desc: dict):
+        obj_layout = super().load(model_desc)
+
+        if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
+            alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
+                                 'Loaded model may work incorrectly.'.format(
+                sklearn_version, model_desc['sklearn_version']))
+        return obj_layout
+
+    @property
+    def weights(self):
+        return self.impl.coef_.tolist()
+
+
+class LogisticRegression(ModelBase):
+
+    def __init__(self, features: list=None, fit_intercept: bool=False, **kwargs):
+        super().__init__(features)
+        self.impl = LogisticRegressionImpl(fit_intercept=fit_intercept, **kwargs)
 
     def save(self) -> dict:
         model_desc = super().save()

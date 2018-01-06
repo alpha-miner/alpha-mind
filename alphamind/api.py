@@ -28,6 +28,7 @@ from alphamind.data.engines.sqlengine import factor_tables
 from alphamind.model import LinearRegression
 from alphamind.model import LassoRegression
 from alphamind.model import ConstLinearModel
+from alphamind.model import LogisticRegression
 from alphamind.model import RandomForestRegressor
 from alphamind.model import XGBRegressor
 from alphamind.model import load_model
@@ -40,27 +41,7 @@ from alphamind.execution.targetvolexecutor import TargetVolExecutor
 from alphamind.execution.pipeline import ExecutionPipeline
 
 from alphamind.utilities import alpha_logger
-
-
-def map_freq(freq):
-
-    if freq == '1m':
-        horizon = 21
-    elif freq == '1w':
-        horizon = 4
-    elif freq == '2w':
-        horizon = 9
-    elif freq == '3w':
-        horizon = 14
-    elif freq == '4w':
-        horizon = 19
-    elif freq == '1d':
-        horizon = 0
-    elif freq[-1] == "b":
-        horizon = int(freq[:-1]) - 1
-    else:
-        raise ValueError("Unrecognized freq: {0}".format(freq))
-    return horizon
+from alphamind.utilities import map_freq
 
 
 __all__ = [
@@ -86,6 +67,7 @@ __all__ = [
     'LinearRegression',
     'LassoRegression',
     'ConstLinearModel',
+    'LogisticRegression',
     'RandomForestRegressor',
     'XGBRegressor',
     'load_model',

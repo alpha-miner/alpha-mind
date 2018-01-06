@@ -16,27 +16,13 @@ from PyFin.api import BizDayConventions
 from PyFin.api import DateGeneration
 from PyFin.api import advanceDateByCalendar
 from PyFin.DateUtilities import Period
-from PyFin.Enums import TimeUnits
 from alphamind.data.transformer import Transformer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 from alphamind.data.engines.sqlengine import total_risk_factors
 from alphamind.utilities import alpha_logger
-
-
-def _map_horizon(frequency: str) -> int:
-    parsed_period = Period(frequency)
-    unit = parsed_period.units()
-    length = parsed_period.length()
-    if unit == TimeUnits.BDays or unit == TimeUnits.Days:
-        return length - 1
-    elif unit == TimeUnits.Weeks:
-        return 5 * length - 1
-    elif unit == TimeUnits.Months:
-        return 22 * length - 1
-    else:
-        raise ValueError('{0} is an unrecognized frequency rule'.format(frequency))
+from alphamind.utilities import map_freq
 
 
 def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, neutralized_risk):
@@ -86,7 +72,7 @@ def prepare_data(engine: SqlEngine,
 
     dates = [d.strftime('%Y-%m-%d') for d in dates]
 
-    horizon = _map_horizon(frequency)
+    horizon = map_freq(frequency)
 
     if isinstance(factors, Transformer):
         transformer = factors
@@ -265,7 +251,7 @@ def fetch_train_phase(engine,
                          dateRule=BizDayConventions.Following,
                          dateGenerationRule=DateGeneration.Backward)
 
-    horizon = _map_horizon(frequency)
+    horizon = map_freq(frequency)
 
     factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates)
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
@@ -344,10 +330,10 @@ def fetch_predict_phase(engine,
         risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
         train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
         risk_exp = train_x[neutralized_risk].values.astype(float)
-        x_values = train_x[names].values.astype(float)
     else:
         train_x = factor_df.copy()
         risk_exp = None
+    x_values = train_x[names].values.astype(float)
 
     date_label = pd.DatetimeIndex(factor_df.trade_date).to_pydatetime()
     dates = np.unique(date_label)

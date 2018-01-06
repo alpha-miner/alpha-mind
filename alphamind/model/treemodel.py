@@ -25,6 +25,7 @@ class RandomForestRegressor(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['sklearn_version'] = sklearn_version
+        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -36,6 +37,10 @@ class RandomForestRegressor(ModelBase):
                                  'Loaded model may work incorrectly.'.format(
                 sklearn_version, model_desc['sklearn_version']))
         return obj_layout
+
+    @property
+    def importances(self):
+        return self.impl.feature_importances_.tolist()
 
 
 class XGBRegressor(ModelBase):
@@ -54,6 +59,7 @@ class XGBRegressor(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
+        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -65,6 +71,10 @@ class XGBRegressor(ModelBase):
                                  'Loaded model may work incorrectly.'.format(
                 xgbboot_version, model_desc['xgbboot_version']))
         return obj_layout
+
+    @property
+    def importances(self):
+        return self.impl.feature_importances_.tolist()
 
 
 

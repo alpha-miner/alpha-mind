@@ -16,6 +16,27 @@ import numba as nb
 alpha_logger = CustomLogger('ALPHA_MIND', 'info')
 
 
+def map_freq(freq):
+
+    if freq == '1m':
+        horizon = 21
+    elif freq == '1w':
+        horizon = 4
+    elif freq == '2w':
+        horizon = 9
+    elif freq == '3w':
+        horizon = 14
+    elif freq == '4w':
+        horizon = 19
+    elif freq == '1d':
+        horizon = 0
+    elif freq[-1] == "b":
+        horizon = int(freq[:-1]) - 1
+    else:
+        raise ValueError("Unrecognized freq: {0}".format(freq))
+    return horizon
+
+
 def groupby(groups):
     order = groups.argsort()
     t = groups[order]
