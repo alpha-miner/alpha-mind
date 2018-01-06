@@ -22,7 +22,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         self.trained_time = None
 
     def fit(self, x, y):
-        self.impl.fit(x, x.flatten())
+        self.impl.fit(x, y.flatten())
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
     def predict(self, x: np.ndarray) -> np.ndarray:
