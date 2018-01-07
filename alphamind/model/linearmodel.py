@@ -18,7 +18,7 @@ from alphamind.utilities import alpha_logger
 
 class ConstLinearModelImpl(object):
 
-    def __init__(self, weights: np.ndarray=None):
+    def __init__(self, weights: np.ndarray = None):
         self.weights = np.array(weights).flatten()
 
     def fit(self, x: np.ndarray, y: np.ndarray):
@@ -31,8 +31,8 @@ class ConstLinearModelImpl(object):
 class ConstLinearModel(ModelBase):
 
     def __init__(self,
-                 features: list=None,
-                 weights: np.ndarray=None):
+                 features: list = None,
+                 weights: np.ndarray = None):
         super().__init__(features)
         if features is not None and weights is not None:
             pyFinAssert(len(features) == len(weights),
@@ -56,7 +56,7 @@ class ConstLinearModel(ModelBase):
 
 class LinearRegression(ModelBase):
 
-    def __init__(self, features: list=None, fit_intercept: bool=False, **kwargs):
+    def __init__(self, features: list = None, fit_intercept: bool = False, **kwargs):
         super().__init__(features)
         self.impl = LinearRegressionImpl(fit_intercept=fit_intercept, **kwargs)
         self.trained_time = None
@@ -73,8 +73,8 @@ class LinearRegression(ModelBase):
 
         if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
             alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(
-                sklearn_version, model_desc['sklearn_version']))
+                                 'Loaded model may work incorrectly.'.format(sklearn_version,
+                                                                             model_desc['sklearn_version']))
         return obj_layout
 
     @property
@@ -84,7 +84,7 @@ class LinearRegression(ModelBase):
 
 class LassoRegression(ModelBase):
 
-    def __init__(self, alpha=0.01, features: list=None, fit_intercept: bool=False, **kwargs):
+    def __init__(self, alpha=0.01, features: list = None, fit_intercept: bool = False, **kwargs):
         super().__init__(features)
         self.impl = Lasso(alpha=alpha, fit_intercept=fit_intercept, **kwargs)
         self.trained_time = None
@@ -101,8 +101,8 @@ class LassoRegression(ModelBase):
 
         if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
             alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(
-                sklearn_version, model_desc['sklearn_version']))
+                                 'Loaded model may work incorrectly.'.format(sklearn_version,
+                                                                             model_desc['sklearn_version']))
         return obj_layout
 
     @property
@@ -112,7 +112,7 @@ class LassoRegression(ModelBase):
 
 class LogisticRegression(ModelBase):
 
-    def __init__(self, features: list=None, fit_intercept: bool=False, **kwargs):
+    def __init__(self, features: list = None, fit_intercept: bool = False, **kwargs):
         super().__init__(features)
         self.impl = LogisticRegressionImpl(fit_intercept=fit_intercept, **kwargs)
 
@@ -128,8 +128,8 @@ class LogisticRegression(ModelBase):
 
         if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
             alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(
-                sklearn_version, model_desc['sklearn_version']))
+                                 'Loaded model may work incorrectly.'.format(sklearn_version,
+                                                                             model_desc['sklearn_version']))
         return obj_layout
 
     @property
@@ -138,8 +138,8 @@ class LogisticRegression(ModelBase):
 
 
 if __name__ == '__main__':
-
     import pprint
+
     ls = ConstLinearModel(['a', 'b'], np.array([0.5, 0.5]))
 
     x = np.array([[0.2, 0.2],
