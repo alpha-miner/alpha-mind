@@ -31,6 +31,7 @@ from alphamind.model import ConstLinearModel
 from alphamind.model import LogisticRegression
 from alphamind.model import RandomForestRegressor
 from alphamind.model import XGBRegressor
+from alphamind.model import XGBClassifier
 from alphamind.model import load_model
 from alphamind.model.data_preparing import fetch_data_package
 from alphamind.model.data_preparing import fetch_train_phase
@@ -70,6 +71,7 @@ __all__ = [
     'LogisticRegression',
     'RandomForestRegressor',
     'XGBRegressor',
+    'XGBClassifier',
     'load_model',
     'NaiveExecutor',
     'ThresholdExecutor',
