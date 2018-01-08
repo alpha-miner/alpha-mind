@@ -27,6 +27,7 @@ from alphamind.utilities import map_freq
 
 def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, neutralized_risk):
     risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
+    alpha_logger.info("risk data loading finished")
     used_neutralized_risk = list(set(total_risk_factors).difference(names))
     risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
     return_df = pd.merge(return_df, risk_df, on=['trade_date', 'code'])
@@ -45,9 +46,10 @@ def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, 
         x_values = train_x[names].values.astype(float)
         y_values = train_y[['dx']].values
 
+    codes = train_x['code'].values
     date_label = pd.DatetimeIndex(factor_df.trade_date).to_pydatetime()
     dates = np.unique(date_label)
-    return return_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y
+    return return_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes
 
 
 def prepare_data(engine: SqlEngine,
@@ -82,9 +84,13 @@ def prepare_data(engine: SqlEngine,
     factor_df = engine.fetch_factor_range(universe,
                                           factors=transformer,
                                           dates=dates).sort_values(['trade_date', 'code'])
+    alpha_logger.info("factor data loading finished")
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+    alpha_logger.info("return data loading finished")
     industry_df = engine.fetch_industry_range(universe, dates=dates)
+    alpha_logger.info("industry data loading finished")
     benchmark_df = engine.fetch_benchmark_range(benchmark, dates=dates)
+    alpha_logger.info("benchmark data loading finished")
 
     df = pd.merge(factor_df, return_df, on=['trade_date', 'code']).dropna()
     df = pd.merge(df, benchmark_df, on=['trade_date', 'code'], how='left')
@@ -102,13 +108,15 @@ def batch_processing(x_values,
                      batch,
                      risk_exp,
                      pre_process,
-                     post_process):
+                     post_process,
+                     codes):
     train_x_buckets = {}
     train_y_buckets = {}
     train_risk_buckets = {}
     predict_x_buckets = {}
     predict_y_buckets = {}
     predict_risk_buckets = {}
+    predict_codes_bucket = {}
 
     for i, start in enumerate(groups[:-batch]):
         end = groups[i + batch]
@@ -141,6 +149,7 @@ def batch_processing(x_values,
 
         sub_dates = group_label[left_index:right_index]
         this_raw_x = x_values[left_index:right_index]
+        this_codes = codes[left_index:right_index]
 
         if risk_exp is not None:
             this_risk_exp = risk_exp[left_index:right_index]
@@ -156,6 +165,7 @@ def batch_processing(x_values,
         inner_right_index = bisect.bisect_right(sub_dates, end)
         predict_x_buckets[end] = ne_x[inner_left_index:inner_right_index]
         predict_risk_buckets[end] = this_risk_exp[inner_left_index:inner_right_index]
+        predict_codes_bucket[end] = this_codes[inner_left_index:inner_right_index]
 
         this_raw_y = y_values[left_index:right_index]
         if len(this_raw_y) > 0:
@@ -165,7 +175,13 @@ def batch_processing(x_values,
                                      post_process=post_process)
             predict_y_buckets[end] = ne_y[inner_left_index:inner_right_index]
 
-    return train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets
+    return train_x_buckets, \
+           train_y_buckets, \
+           train_risk_buckets, \
+           predict_x_buckets, \
+           predict_y_buckets, \
+           predict_risk_buckets, \
+           predict_codes_bucket
 
 
 def fetch_data_package(engine: SqlEngine,
@@ -193,8 +209,10 @@ def fetch_data_package(engine: SqlEngine,
                                                benchmark,
                                                warm_start)
 
-    return_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y = \
+    return_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes = \
         _merge_df(engine, transformer.names, factor_df, return_df, universe, dates, risk_model, neutralized_risk)
+
+    alpha_logger.info("data merging finished")
 
     return_df['weight'] = train_x['weight']
     return_df['industry'] = train_x['industry']
@@ -207,15 +225,16 @@ def fetch_data_package(engine: SqlEngine,
 
     alpha_logger.info("Loading data is finished")
 
-    train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets = batch_processing(
-        x_values,
-        y_values,
-        dates,
-        date_label,
-        batch,
-        risk_exp,
-        pre_process,
-        post_process)
+    train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets, predict_codes_bucket \
+        = batch_processing(x_values,
+                           y_values,
+                           dates,
+                           date_label,
+                           batch,
+                           risk_exp,
+                           pre_process,
+                           post_process,
+                           codes)
 
     alpha_logger.info("Data processing is finished")
 
@@ -223,7 +242,7 @@ def fetch_data_package(engine: SqlEngine,
     ret['x_names'] = transformer.names
     ret['settlement'] = return_df
     ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets, 'risk': train_risk_buckets}
-    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets, 'risk': predict_risk_buckets}
+    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets, 'risk': predict_risk_buckets, 'code': predict_codes_bucket}
     return ret
 
 
@@ -382,14 +401,15 @@ if __name__ == '__main__':
     engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     universe = Universe('zz500', ['ashare_ex'])
     neutralized_risk = ['SIZE']
-    res = fetch_train_phase(engine,
-                            ['EPS', 'CFinc1'],
-                            '2017-09-04',
-                            '2w',
-                            universe,
-                            4,
-                            warm_start=1,
-                            neutralized_risk=neutralized_risk)
+    res = fetch_data_package(engine,
+                             ['EPS', 'CFinc1'],
+                             '2017-09-01',
+                             '2017-09-04',
+                             '1w',
+                             universe,
+                             benchmark=905,
+                             warm_start=1,
+                             neutralized_risk=neutralized_risk)
 
     print(res)
 
