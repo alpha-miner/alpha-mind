@@ -16,27 +16,13 @@ from PyFin.api import BizDayConventions
 from PyFin.api import DateGeneration
 from PyFin.api import advanceDateByCalendar
 from PyFin.DateUtilities import Period
-from PyFin.Enums import TimeUnits
 from alphamind.data.transformer import Transformer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 from alphamind.data.engines.sqlengine import total_risk_factors
 from alphamind.utilities import alpha_logger
-
-
-def _map_horizon(frequency: str) -> int:
-    parsed_period = Period(frequency)
-    unit = parsed_period.units()
-    length = parsed_period.length()
-    if unit == TimeUnits.BDays or unit == TimeUnits.Days:
-        return length - 1
-    elif unit == TimeUnits.Weeks:
-        return 5 * length - 1
-    elif unit == TimeUnits.Months:
-        return 22 * length - 1
-    else:
-        raise ValueError('{0} is an unrecognized frequency rule'.format(frequency))
+from alphamind.utilities import map_freq
 
 
 def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, neutralized_risk):
@@ -86,7 +72,7 @@ def prepare_data(engine: SqlEngine,
 
     dates = [d.strftime('%Y-%m-%d') for d in dates]
 
-    horizon = _map_horizon(frequency)
+    horizon = map_freq(frequency)
 
     if isinstance(factors, Transformer):
         transformer = factors
@@ -119,8 +105,10 @@ def batch_processing(x_values,
                      post_process):
     train_x_buckets = {}
     train_y_buckets = {}
+    train_risk_buckets = {}
     predict_x_buckets = {}
     predict_y_buckets = {}
+    predict_risk_buckets = {}
 
     for i, start in enumerate(groups[:-batch]):
         end = groups[i + batch]
@@ -146,6 +134,8 @@ def batch_processing(x_values,
                                                  risk_factors=this_risk_exp,
                                                  post_process=post_process)
 
+        train_risk_buckets[end] = this_risk_exp
+
         left_index = bisect.bisect_right(group_label, start)
         right_index = bisect.bisect_right(group_label, end)
 
@@ -165,6 +155,7 @@ def batch_processing(x_values,
         inner_left_index = bisect.bisect_left(sub_dates, end)
         inner_right_index = bisect.bisect_right(sub_dates, end)
         predict_x_buckets[end] = ne_x[inner_left_index:inner_right_index]
+        predict_risk_buckets[end] = this_risk_exp[inner_left_index:inner_right_index]
 
         this_raw_y = y_values[left_index:right_index]
         if len(this_raw_y) > 0:
@@ -174,7 +165,7 @@ def batch_processing(x_values,
                                      post_process=post_process)
             predict_y_buckets[end] = ne_y[inner_left_index:inner_right_index]
 
-    return train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets
+    return train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets
 
 
 def fetch_data_package(engine: SqlEngine,
@@ -216,7 +207,7 @@ def fetch_data_package(engine: SqlEngine,
 
     alpha_logger.info("Loading data is finished")
 
-    train_x_buckets, train_y_buckets, predict_x_buckets, predict_y_buckets = batch_processing(
+    train_x_buckets, train_y_buckets, train_risk_buckets, predict_x_buckets, predict_y_buckets, predict_risk_buckets = batch_processing(
         x_values,
         y_values,
         dates,
@@ -231,8 +222,8 @@ def fetch_data_package(engine: SqlEngine,
     ret = dict()
     ret['x_names'] = transformer.names
     ret['settlement'] = return_df
-    ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets}
-    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets}
+    ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets, 'risk': train_risk_buckets}
+    ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets, 'risk': predict_risk_buckets}
     return ret
 
 
@@ -260,7 +251,7 @@ def fetch_train_phase(engine,
                          dateRule=BizDayConventions.Following,
                          dateGenerationRule=DateGeneration.Backward)
 
-    horizon = _map_horizon(frequency)
+    horizon = map_freq(frequency)
 
     factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates)
     return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
@@ -339,10 +330,10 @@ def fetch_predict_phase(engine,
         risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
         train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
         risk_exp = train_x[neutralized_risk].values.astype(float)
-        x_values = train_x[names].values.astype(float)
     else:
         train_x = factor_df.copy()
         risk_exp = None
+    x_values = train_x[names].values.astype(float)
 
     date_label = pd.DatetimeIndex(factor_df.trade_date).to_pydatetime()
     dates = np.unique(date_label)
