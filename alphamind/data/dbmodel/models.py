@@ -1989,6 +1989,25 @@ class Outright(Base):
     volume = Column(Integer, nullable=False)
 
 
+class OutrightTmp(Base):
+    __tablename__ = 'outright_tmp'
+    __table_args__ = (
+        Index('outright_trade_id_trade_date_code_portfolio_name_uindex', 'trade_id', 'trade_date', 'code',
+              'portfolio_name', unique=True),
+    )
+
+    trade_id = Column(Integer, primary_key=True, nullable=False)
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(Integer, primary_key=True, nullable=False)
+    portfolio_name = Column(String(50), primary_key=True, nullable=False)
+    volume = Column(Integer, nullable=False)
+    operation = Column(String(10), nullable=False)
+    interest_rate = Column(Float, nullable=False)
+    price_rule = Column(String(50), nullable=False)
+    due_date = Column(DateTime)
+    remark = Column(Text, nullable=True)
+
+
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
