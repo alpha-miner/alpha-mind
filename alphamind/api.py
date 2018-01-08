@@ -30,6 +30,7 @@ from alphamind.model import LassoRegression
 from alphamind.model import ConstLinearModel
 from alphamind.model import LogisticRegression
 from alphamind.model import RandomForestRegressor
+from alphamind.model import RandomForestClassifier
 from alphamind.model import XGBRegressor
 from alphamind.model import XGBClassifier
 from alphamind.model import load_model
@@ -70,6 +71,7 @@ __all__ = [
     'ConstLinearModel',
     'LogisticRegression',
     'RandomForestRegressor',
+    'RandomForestClassifier',
     'XGBRegressor',
     'XGBClassifier',
     'load_model',

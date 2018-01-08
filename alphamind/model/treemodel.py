@@ -9,6 +9,7 @@ from typing import List
 from distutils.version import LooseVersion
 from sklearn import __version__ as sklearn_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
+from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
 from xgboost import __version__ as xgbboot_version
 from xgboost import XGBRegressor as XGBRegressorImpl
 from xgboost import XGBClassifier as XGBClassifierImpl
@@ -18,9 +19,49 @@ from alphamind.utilities import alpha_logger
 
 class RandomForestRegressor(ModelBase):
 
-    def __init__(self, n_estimators: int=100, features: List=None, **kwargs):
+    def __init__(self,
+                 n_estimators: int=100,
+                 max_features: str='auto',
+                 features: List=None,
+                 **kwargs):
         super().__init__(features)
-        self.impl = RandomForestRegressorImpl(n_estimators, **kwargs)
+        self.impl = RandomForestRegressorImpl(n_estimators=n_estimators,
+                                              max_features=max_features,
+                                              **kwargs)
+        self.trained_time = None
+
+    def save(self) -> dict:
+        model_desc = super().save()
+        model_desc['sklearn_version'] = sklearn_version
+        model_desc['importances'] = self.importances
+        return model_desc
+
+    @classmethod
+    def load(cls, model_desc: dict):
+        obj_layout = super().load(model_desc)
+
+        if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
+            alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
+                                 'Loaded model may work incorrectly.'.format(sklearn_version,
+                                                                             model_desc['sklearn_version']))
+        return obj_layout
+
+    @property
+    def importances(self):
+        return self.impl.feature_importances_.tolist()
+
+
+class RandomForestClassifier(ModelBase):
+
+    def __init__(self,
+                 n_estimators: int=100,
+                 max_features: str='auto',
+                 features: List = None,
+                 **kwargs):
+        super().__init__(features)
+        self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
+                                               max_features=max_features,
+                                               **kwargs)
         self.trained_time = None
 
     def save(self) -> dict:
