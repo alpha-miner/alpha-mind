@@ -33,6 +33,7 @@ from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
 from alphamind.data.dbmodel.models import Positions
+from alphamind.data.dbmodel.models import OutrightTmp
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -792,6 +793,44 @@ class SqlEngine(object):
                   index=False,
                   dtype={'weight': sa.types.JSON})
 
+    def fetch_outright_status(self, ref_date: str):
+        table = OutrightTmp
+        t = select([table.trade_id]).\
+            where(and_(table.trade_date <= ref_date,
+                       table.operation == 'withdraw')).alias('t')
+        query = select([table]).\
+            where(and_(table.trade_id.notin_(t),
+                       table.trade_date <= ref_date))
+        df = pd.read_sql(query, engine.engine).set_index('trade_id')
+        # calc total volume
+        df['total_volume'] = df.groupby('trade_id')['volume'].transform(sum)
+
+        # parse price
+        def parse_price_rule(x: pd.Series):
+            code = x['code']
+            rule = x['price_rule'].split('@')
+
+            if rule[0] in ['closePrice', 'openPrice']:
+                query = select([getattr(Market, rule[0])]).\
+                    where(and_(Market.code == code, Market.trade_date == rule[1]))
+                data = pd.read_sql(query, engine.engine)
+                price = data.values[0][0]
+            elif rule[0] == 'fixedPrice':
+                price = float(rule[1])
+            else:
+                raise KeyError('do not have rule for %s' % x['price_rule'])
+            return price
+        df['price'] = df.apply(lambda x: parse_price_rule(x), axis=1)
+
+        df.drop(['remark', 'price_rule'], axis=1, inplace=True)
+        # pivot portfolio volume
+        total_cols = df.columns
+        pivot_cols = ['portfolio_name', 'volume']
+        tmp = df[pivot_cols].pivot(columns='portfolio_name')
+        tmp.columns = tmp.columns.droplevel(0)
+        res = df[[c for c in total_cols if c not in pivot_cols]].drop_duplicates().join(tmp).reset_index()
+        return res.sort_values(['trade_id'])
+
 
 if __name__ == '__main__':
 
@@ -799,9 +838,7 @@ if __name__ == '__main__':
 
     engine = SqlEngine()
 
-    df = engine.fetch_factor_range(universe,
-                                      ['closePrice'],
-                                   start_date='2015-12-21',
-                                   end_date='2017-12-25')
+    df = engine.fetch_outright_status('2017-12-28')
 
     print(df)
+
