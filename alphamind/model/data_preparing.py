@@ -280,7 +280,7 @@ def fetch_train_phase(engine,
     return_df, factor_df = df[['trade_date', 'code', 'dx']], df[
         ['trade_date', 'code', 'isOpen'] + transformer.names]
 
-    return_df, dates, date_label, risk_exp, x_values, y_values, _, _ = \
+    return_df, dates, date_label, risk_exp, x_values, y_values, _, _, codes = \
         _merge_df(engine, transformer.names, factor_df, return_df, universe, dates, risk_model, neutralized_risk)
 
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
@@ -293,6 +293,7 @@ def fetch_train_phase(engine,
     index = (date_label >= start) & (date_label <= end)
     this_raw_x = x_values[index]
     this_raw_y = y_values[index]
+    this_code = codes[index]
     if risk_exp is not None:
         this_risk_exp = risk_exp[index]
     else:
@@ -310,7 +311,7 @@ def fetch_train_phase(engine,
 
     ret = dict()
     ret['x_names'] = transformer.names
-    ret['train'] = {'x': ne_x, 'y': ne_y}
+    ret['train'] = {'x': ne_x, 'y': ne_y, 'code': this_code}
 
     return ret
 
@@ -361,7 +362,6 @@ def fetch_predict_phase(engine,
         end = dates[-1]
         start = dates[-batch]
 
-        # index = (date_label >= start) & (date_label <= end)
         left_index = bisect.bisect_left(date_label, start)
         right_index = bisect.bisect_right(date_label, end)
         this_raw_x = x_values[left_index:right_index]
@@ -399,27 +399,12 @@ def fetch_predict_phase(engine,
 
 if __name__ == '__main__':
     engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
-    universe = Universe('zz500', ['ashare_ex'])
+    universe = Universe('zz500', ['hs300', 'zz500'])
     neutralized_risk = ['SIZE']
-    res = fetch_data_package(engine,
-                             ['EPS', 'CFinc1'],
-                             '2017-09-01',
-                             '2017-09-04',
-                             '1w',
-                             universe,
-                             benchmark=905,
-                             warm_start=1,
-                             neutralized_risk=neutralized_risk)
-
-    print(res)
-
-    res = fetch_predict_phase(engine,
-                              ['EPS', 'CFinc1'],
-                              '2017-09-04',
-                              '2w',
-                              universe,
-                              4,
-                              warm_start=1,
-                              neutralized_risk=neutralized_risk)
-
+    res = fetch_predict_phase(engine, ['ep_q'],
+                            '2018-01-08',
+                            '5b',
+                            universe,
+                            16,
+                            neutralized_risk=neutralized_risk)
     print(res)

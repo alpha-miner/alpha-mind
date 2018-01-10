@@ -21,7 +21,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         self.impl = None
         self.trained_time = None
 
-    def fit(self, x, y):
+    def fit(self, x: np.ndarray, y: np.ndarray):
         self.impl.fit(x, y.flatten())
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
