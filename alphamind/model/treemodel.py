@@ -173,6 +173,7 @@ class XGBTrainer(ModelBase):
                  subsample=1.,
                  colsample_bytree=1.,
                  features: List = None,
+                 random_state=0,
                  **kwargs):
         super().__init__(features)
         self.params = {
@@ -183,13 +184,15 @@ class XGBTrainer(ModelBase):
             'booster': booster,
             'tree_method': tree_method,
             'subsample': subsample,
-            'colsample_bytree': colsample_bytree
+            'colsample_bytree': colsample_bytree,
+            'seed': random_state
         }
 
         self.eval_sample = eval_sample
         self.num_boost_round = n_estimators
         self.early_stopping_rounds = early_stopping_rounds
         self.impl = None
+        self.kwargs = kwargs
 
     def fit(self, x, y):
         if self.eval_sample:
@@ -203,12 +206,14 @@ class XGBTrainer(ModelBase):
                                   dtrain=d_train,
                                   num_boost_round=self.num_boost_round,
                                   evals=[(d_eval, 'eval')],
-                                  verbose_eval=False)
+                                  verbose_eval=False,
+                                  **self.kwargs)
         else:
             d_train = xgb.DMatrix(x, y)
             self.impl = xgb.train(params=self.params,
                                   dtrain=d_train,
-                                  num_boost_round=self.num_boost_round)
+                                  num_boost_round=self.num_boost_round,
+                                  **self.kwargs)
 
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 

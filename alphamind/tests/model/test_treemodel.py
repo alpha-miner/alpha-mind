@@ -31,6 +31,7 @@ class TestTreeModel(unittest.TestCase):
 
         sample_x = np.random.randn(100, 10)
         np.testing.assert_array_almost_equal(model.predict(sample_x), new_model.predict(sample_x))
+        np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_random_forest_classify_persistence(self):
         model = RandomForestClassifier(features=list(range(10)))
@@ -43,6 +44,7 @@ class TestTreeModel(unittest.TestCase):
 
         sample_x = np.random.randn(100, 10)
         np.testing.assert_array_almost_equal(model.predict(sample_x), new_model.predict(sample_x))
+        np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_xgb_regress_persistence(self):
         model = XGBRegressor(features=list(range(10)))
@@ -54,6 +56,7 @@ class TestTreeModel(unittest.TestCase):
 
         sample_x = np.random.randn(100, 10)
         np.testing.assert_array_almost_equal(model.predict(sample_x), new_model.predict(sample_x))
+        np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_xgb_classify_persistence(self):
         model = XGBClassifier(features=list(range(10)))
@@ -66,8 +69,36 @@ class TestTreeModel(unittest.TestCase):
 
         sample_x = np.random.randn(100, 10)
         np.testing.assert_array_almost_equal(model.predict(sample_x), new_model.predict(sample_x))
+        np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
-    def test_xgb_trainer_persisence(self):
+    def test_xgb_trainer_equal_classifier(self):
+        sample_x = np.random.randn(100, 10)
+
+        model1 = XGBClassifier(n_estimators=100,
+                               learning_rate=0.1,
+                               max_depth=3,
+                               features=list(range(10)),
+                               random_state=42)
+
+        model2 = XGBTrainer(features=list(range(10)),
+                            objective='reg:logistic',
+                            booster='gbtree',
+                            tree_method='exact',
+                            n_estimators=100,
+                            learning_rate=0.1,
+                            max_depth=3,
+                            random_state=42)
+
+        y = np.where(self.y > 0, 1, 0)
+        model1.fit(self.x, y)
+        model2.fit(self.x, y)
+
+        predict1 = model1.predict(sample_x)
+        predict2 = model2.predict(sample_x)
+        predict2 = np.where(predict2 > 0.5, 1., 0.)
+        np.testing.assert_array_almost_equal(predict1, predict2)
+
+    def test_xgb_trainer_persistence(self):
         model = XGBTrainer(features=list(range(10)),
                            objective='binary:logistic',
                            booster='gbtree',
@@ -82,3 +113,4 @@ class TestTreeModel(unittest.TestCase):
 
         sample_x = np.random.randn(100, 10)
         np.testing.assert_array_almost_equal(model.predict(sample_x), new_model.predict(sample_x))
+        np.testing.assert_array_almost_equal(model.importances, new_model.importances)
