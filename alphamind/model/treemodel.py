@@ -162,7 +162,7 @@ class XGBClassifier(ModelBase):
 class XGBTrainer(ModelBase):
 
     def __init__(self,
-                 objective,
+                 objective='binary:logistic',
                  booster='gbtree',
                  tree_method='hist',
                  n_estimators: int=100,

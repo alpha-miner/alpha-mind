@@ -14,6 +14,7 @@ from alphamind.model.treemodel import RandomForestRegressor
 from alphamind.model.treemodel import RandomForestClassifier
 from alphamind.model.treemodel import XGBRegressor
 from alphamind.model.treemodel import XGBClassifier
+from alphamind.model.treemodel import XGBTrainer
 
 
 def load_model(model_desc: dict) -> ModelBase:
@@ -37,5 +38,7 @@ def load_model(model_desc: dict) -> ModelBase:
         return XGBRegressor.load(model_desc)
     elif 'XGBClassifier' in model_name_parts:
         return XGBClassifier.load(model_desc)
+    elif 'XGBTrainer' in model_name_parts:
+        return XGBTrainer.load(model_desc)
     else:
         raise ValueError('{0} is not currently supported in model loader.'.format(model_name))

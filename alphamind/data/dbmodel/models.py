@@ -1954,5 +1954,5 @@ class OutrightTmp(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgres+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+    engine = create_engine('postgres+psycopg2://postgres:we083826@101.132.104.118/alpha')
     Base.metadata.create_all(engine)
