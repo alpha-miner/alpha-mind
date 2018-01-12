@@ -14,6 +14,7 @@ from alphamind.model.treemodel import RandomForestRegressor
 from alphamind.model.treemodel import RandomForestClassifier
 from alphamind.model.treemodel import XGBRegressor
 from alphamind.model.treemodel import XGBClassifier
+from alphamind.model.treemodel import XGBTrainer
 
 from alphamind.model.loader import load_model
 
@@ -26,4 +27,5 @@ __all__ = ['LinearRegression',
            'RandomForestClassifier',
            'XGBRegressor',
            'XGBClassifier',
+           'XGBTrainer',
            'load_model']

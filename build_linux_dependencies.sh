@@ -4,7 +4,12 @@ cd xgboost
 git submodule init
 git submodule update
 
+mkdir build
+cd build
+cmake ..
 make -j4
+cd ..
+
 cd python-package
 python setup.py install
 

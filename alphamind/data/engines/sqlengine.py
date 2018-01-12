@@ -388,10 +388,12 @@ class SqlEngine(object):
         df = pd.read_sql(query, self.engine)
         if universe.is_filtered:
             codes = universe.query(self, start_date, end_date, dates)
-            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
+            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code'])
 
         if external_data is not None:
             df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
+
+        df.sort_values(['trade_date', 'code'], inplace=True)
 
         df.set_index('trade_date', inplace=True)
         res = transformer.transform('code', df)
