@@ -17,25 +17,24 @@ import datetime as dt
 
 start = dt.datetime.now()
 
-universe_name = 'zz500'
+universe = Universe('custom', ['zz800'])
 
-factor_name = 'PE'
-expression = 1. / LAST(factor_name)
+simple_expression = CSRes(LAST('OperCashInToAsset'), 'roe_q')
 
-alpha_factor_name = '1/PE'
-alpha_factor = {alpha_factor_name: expression}
+alpha_factor_name = 'alpha_factor'
+alpha_factor = {alpha_factor_name: simple_expression}
 
 # end of formula definition
 
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
-universe = Universe('custom', [universe_name])
-neutralize_risk = ['SIZE'] + industry_styles
-freq = '5b'
+
+neutralize_risk = ['SIZE', 'LEVERAGE'] + industry_styles
+freq = '10b'
 n_bins = 5
 horizon = map_freq(freq)
 
 start_date = '2012-01-01'
-end_date = '2017-11-21'
+end_date = '2018-01-05'
 
 dates = makeSchedule(start_date,
                      end_date,
@@ -93,10 +92,9 @@ df = df.cumsum().plot(ax=axes[0], title='Quantile Analysis for {0}'.format(alpha
 # =================================================================== #
 
 factor_name = 'PE'
-expression = DIFF(1./LAST(factor_name))
 
-alpha_factor_name = '1/PE_1w_diff'
-alpha_factor = {alpha_factor_name: expression}
+alpha_factor_name = alpha_factor_name + '_1w_diff'
+alpha_factor = {alpha_factor_name: DIFF(simple_expression)}
 
 dates = makeSchedule(start_date,
                      end_date,
