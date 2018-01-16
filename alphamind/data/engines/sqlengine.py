@@ -33,7 +33,7 @@ from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
 from alphamind.data.dbmodel.models import Positions
-from alphamind.data.dbmodel.models import OutrightTmp
+from alphamind.data.dbmodel.models import Outright
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -796,7 +796,7 @@ class SqlEngine(object):
                   dtype={'weight': sa.types.JSON})
 
     def fetch_outright_status(self, ref_date: str, is_open=True):
-        table = OutrightTmp
+        table = Outright
         if is_open:
             id_filter = 'notin_'
         else:
