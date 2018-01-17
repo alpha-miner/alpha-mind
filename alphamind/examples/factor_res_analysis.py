@@ -70,23 +70,23 @@ def factor_residue_analysis(start_date,
     start_date = advanceDateByCalendar('china.sse', dates[0], '-1d')
     df.loc[start_date] = 0.
     df.sort_index(inplace=True)
-    df['$top1 - top5$'] = df[0] - df[4]
+    df['$top1 - bottom1$'] = df[4] - df[0]
     return df
 
 
 engine = SqlEngine()
-df = engine.fetch_factor_coverage().groupby('factor').mean()
-df = df[df.coverage >= 0.98]
+# df = engine.fetch_factor_coverage().groupby('factor').mean()
+# df = df[df.coverage >= 0.98]
 universe = Universe('custom', ['zz800'])
 
 factor_df = pd.DataFrame()
 
-for i, factor in enumerate(df.index):
+for i, factor in enumerate(['EGRO']):
     res = factor_residue_analysis('2012-01-01',
                                   '2018-01-05',
                                   factor,
                                   '5b',
                                   universe,
                                   engine)
-    factor_df[factor] = res['$top1 - top5$']
+    factor_df[factor] = res['$top1 - bottom1$']
     alpha_logger.info('{0}: {1} is done'.format(i + 1, factor))

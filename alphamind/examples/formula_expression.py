@@ -19,9 +19,12 @@ start = dt.datetime.now()
 
 universe = Universe('custom', ['zz800'])
 
-simple_expression = CSRes(LAST('OperCashInToAsset'), 'roe_q')
+factor_name = 'Beta20'
+base1 = LAST('roe_q')
+base2 = CSRes(LAST('ep_q'), 'roe_q')
+simple_expression = CSRes(CSRes(LAST(factor_name), base1), base2)
 
-alpha_factor_name = 'alpha_factor'
+alpha_factor_name = factor_name + '_res'
 alpha_factor = {alpha_factor_name: simple_expression}
 
 # end of formula definition
@@ -29,7 +32,7 @@ alpha_factor = {alpha_factor_name: simple_expression}
 engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
 
 neutralize_risk = ['SIZE', 'LEVERAGE'] + industry_styles
-freq = '10b'
+freq = '5b'
 n_bins = 5
 horizon = map_freq(freq)
 
@@ -90,8 +93,6 @@ fig, axes = plt.subplots(1, 2, figsize=(18, 6))
 df = df.cumsum().plot(ax=axes[0], title='Quantile Analysis for {0}'.format(alpha_factor_name))
 
 # =================================================================== #
-
-factor_name = 'PE'
 
 alpha_factor_name = alpha_factor_name + '_1w_diff'
 alpha_factor = {alpha_factor_name: DIFF(simple_expression)}
