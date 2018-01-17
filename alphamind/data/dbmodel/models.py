@@ -1920,8 +1920,8 @@ class Gogoal(Base):
     tcap = Column(Float(53))
 
 
-class Outright(Base):
-    __tablename__ = 'outright'
+class OutrightTmp(Base):
+    __tablename__ = 'outright_tmp'
     __table_args__ = (
         Index('outright_trade_date_code_portfolio_name_uindex', 'trade_date', 'code', 'portfolio_name', unique=True),
     )
@@ -1932,8 +1932,8 @@ class Outright(Base):
     volume = Column(Integer, nullable=False)
 
 
-class OutrightTmp(Base):
-    __tablename__ = 'outright_tmp'
+class Outright(Base):
+    __tablename__ = 'outright'
     __table_args__ = (
         Index('outright_trade_id_trade_date_code_portfolio_name_uindex', 'trade_id', 'trade_date', 'code',
               'portfolio_name', unique=True),

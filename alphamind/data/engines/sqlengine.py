@@ -33,7 +33,7 @@ from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
 from alphamind.data.dbmodel.models import Positions
-from alphamind.data.dbmodel.models import OutrightTmp
+from alphamind.data.dbmodel.models import Outright
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -795,15 +795,25 @@ class SqlEngine(object):
                   index=False,
                   dtype={'weight': sa.types.JSON})
 
-    def fetch_outright_status(self, ref_date: str):
-        table = OutrightTmp
+    def fetch_outright_status(self, ref_date: str, is_open=True):
+        table = Outright
+        if is_open:
+            id_filter = 'notin_'
+        else:
+            id_filter = 'in_'
+
         t = select([table.trade_id]).\
             where(and_(table.trade_date <= ref_date,
                        table.operation == 'withdraw')).alias('t')
         query = select([table]).\
-            where(and_(table.trade_id.notin_(t),
-                       table.trade_date <= ref_date))
-        df = pd.read_sql(query, engine.engine).set_index('trade_id')
+            where(and_(getattr(table.trade_id, id_filter)(t),
+                       table.trade_date <= ref_date,
+                       table.operation == 'lend'))
+        df = pd.read_sql(query, self.engine).set_index('trade_id')
+
+        if df.empty:
+            return
+
         # calc total volume
         df['total_volume'] = df.groupby('trade_id')['volume'].transform(sum)
 
@@ -815,8 +825,11 @@ class SqlEngine(object):
             if rule[0] in ['closePrice', 'openPrice']:
                 query = select([getattr(Market, rule[0])]).\
                     where(and_(Market.code == code, Market.trade_date == rule[1]))
-                data = pd.read_sql(query, engine.engine)
-                price = data.values[0][0]
+                data = pd.read_sql(query, self.engine)
+                if not data.empty:
+                    price = data.values[0][0]
+                else:
+                    price = None
             elif rule[0] == 'fixedPrice':
                 price = float(rule[1])
             else:
@@ -824,7 +837,7 @@ class SqlEngine(object):
             return price
         df['price'] = df.apply(lambda x: parse_price_rule(x), axis=1)
 
-        df.drop(['remark', 'price_rule'], axis=1, inplace=True)
+        df.drop(['remark', 'price_rule', 'operation'], axis=1, inplace=True)
         # pivot portfolio volume
         total_cols = df.columns
         pivot_cols = ['portfolio_name', 'volume']
