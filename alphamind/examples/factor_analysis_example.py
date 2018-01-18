@@ -48,10 +48,9 @@ Model phase: we need 1 constant linear model and one linear regression model
 """
 
 alpha_name = ['alpha_factor']
-#const_features = {alpha_name[0]: LAST('optimism_confidence_25d') + LAST('pessimism_confidence_25d')}
-# const_features = {alpha_name[0]: CSRes(DIFF(1. / LAST('PE')), LAST('roe_q'))}
-
-simple_expression = LAST('cfinc1_q') # CSRes(CSRes(LAST('DividendPS'), LAST('roe_q')), LAST('ep_q'))
+base1 = LAST('roe_q')
+base2 = CSRes(LAST('ep_q'), 'roe_q')
+simple_expression = CSRes(CSRes(LAST('DividendPS'), base1), base2)
 
 const_features = {alpha_name[0]: simple_expression}
 const_weights = np.array([1.])

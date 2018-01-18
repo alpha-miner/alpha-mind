@@ -75,14 +75,14 @@ def factor_residue_analysis(start_date,
 
 
 engine = SqlEngine()
-# df = engine.fetch_factor_coverage().groupby('factor').mean()
-# df = df[df.coverage >= 0.98]
+df = engine.fetch_factor_coverage().groupby('factor').mean()
+df = df[df.coverage >= 0.98]
 universe = Universe('custom', ['zz800'])
 
 factor_df = pd.DataFrame()
 
-for i, factor in enumerate(['EGRO']):
-    res = factor_residue_analysis('2012-01-01',
+for i, factor in enumerate(df.index):
+    res = factor_residue_analysis('2011-01-01',
                                   '2018-01-05',
                                   factor,
                                   '5b',
