@@ -20,37 +20,37 @@ plt.style.use('ggplot')
 Back test parameter settings
 """
 
-start_date = '2015-01-01'
-end_date = '2017-11-28'
+start_date = '2011-01-01'
+end_date = '2018-01-11'
 benchmark_code = 300
-universe_name = ['hs300']
-universe = Universe(universe_name, universe_name)
+universe_name = ['zz800']
+universe = Universe('custom', universe_name)
 frequency = '5b'
 method = 'risk_neutral'
-use_rank = 100
 industry_lower = 1.
 industry_upper = 1.
-neutralize_risk = ['SIZE'] + industry_styles
-constraint_risk = ['SIZE'] + industry_styles
+neutralize_risk = ['SIZE', 'LEVERAGE'] + industry_styles
+constraint_risk = ['SIZE', 'LEVERAGE'] + industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
 turn_over_target_base = 0.25
-benchmark_total_lower = 1.
-benchmark_total_upper = 1.
+benchmark_total_lower = 0.8
+benchmark_total_upper = 1.0
 horizon = map_freq(frequency)
 
 executor = NaiveExecutor()
 
-engine = SqlEngine()
+engine = SqlEngine('postgres+psycopg2://postgres:we083826@192.168.0.102/alpha')
 
 """
 Model phase: we need 1 constant linear model and one linear regression model    
 """
 
 alpha_name = ['alpha_factor']
+factor_name = 'SalesCostRatio'
 base1 = LAST('roe_q')
 base2 = CSRes(LAST('ep_q'), 'roe_q')
-simple_expression = CSRes(CSRes(LAST('DividendPS'), base1), base2)
+simple_expression = DIFF(CSRes(CSRes(LAST(factor_name), base1), base2))
 
 const_features = {alpha_name[0]: simple_expression}
 const_weights = np.array([1.])
@@ -105,16 +105,16 @@ for i, value in enumerate(factor_groups):
 
     constraint = Constraints(risk_exp_expand, risk_names)
 
-    for i, name in enumerate(risk_names):
+    for j, name in enumerate(risk_names):
         if name == 'total':
             constraint.set_constraints(name,
-                                       lower_bound=risk_target[i],
-                                       upper_bound=risk_target[i])
+                                       lower_bound=risk_target[j],
+                                       upper_bound=risk_target[j])
         elif name == 'SIZE':
-            base_target = abs(risk_target[i])
+            base_target = abs(risk_target[j])
             constraint.set_constraints(name,
-                                       lower_bound=risk_target[i] + base_target * size_risk_lower,
-                                       upper_bound=risk_target[i] + base_target * size_risk_upper)
+                                       lower_bound=risk_target[j] + base_target * size_risk_lower,
+                                       upper_bound=risk_target[j] + base_target * size_risk_upper)
         elif name == 'benchmark_total':
             base_target = benchmark_w.sum()
             constraint.set_constraints(name,
@@ -122,8 +122,8 @@ for i, value in enumerate(factor_groups):
                                        upper_bound=benchmark_total_upper * base_target)
         else:
             constraint.set_constraints(name,
-                                       lower_bound=risk_target[i] * industry_lower,
-                                       upper_bound=risk_target[i] * industry_upper)
+                                       lower_bound=risk_target[j] * industry_lower,
+                                       upper_bound=risk_target[j] * industry_upper)
 
     factor_values = factor_processing(total_data[alpha_name].values,
                                       pre_process=[winsorize_normal, standardize],
@@ -154,7 +154,6 @@ for i, value in enumerate(factor_groups):
                                               False,
                                               benchmark_w,
                                               method=method,
-                                              use_rank=use_rank,
                                               turn_over_target=turn_over_target,
                                               current_position=current_position,
                                               lbound=lbound,
@@ -168,7 +167,6 @@ for i, value in enumerate(factor_groups):
                                               False,
                                               benchmark_w,
                                               method=method,
-                                              use_rank=use_rank,
                                               lbound=lbound,
                                               ubound=ubound)
 
@@ -207,7 +205,7 @@ ret_df['tc_cost'] = ret_df.turn_over * 0.002
 ret_df['returns'] = ret_df['returns'] - ret_df['index'] * ret_df['leverage']
 
 ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
-                                             title='Fixed frequency rebalanced: {0}'.format(frequency),
+                                             title='Fixed frequency rebalanced: {0} for {1}'.format(frequency, factor_name),
                                              secondary_y='tc_cost')
 
 plt.show()
