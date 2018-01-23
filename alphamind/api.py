@@ -37,6 +37,7 @@ from alphamind.model import XGBTrainer
 from alphamind.model import load_model
 from alphamind.model.data_preparing import fetch_data_package
 from alphamind.model.data_preparing import fetch_train_phase
+from alphamind.model.data_preparing import fetch_predict_phase
 
 from alphamind.execution.naiveexecutor import NaiveExecutor
 from alphamind.execution.thresholdexecutor import ThresholdExecutor
@@ -67,6 +68,7 @@ __all__ = [
     'factor_tables',
     'fetch_data_package',
     'fetch_train_phase',
+    'fetch_predict_phase',
     'LinearRegression',
     'LassoRegression',
     'ConstLinearModel',

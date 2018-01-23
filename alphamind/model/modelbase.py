@@ -55,7 +55,7 @@ class ModelBase(metaclass=abc.ABCMeta):
     def load(cls, model_desc: dict):
         obj_layout = cls()
         obj_layout.features = model_desc['features']
-        obj_layout.formulas = model_desc['formulas']
+        obj_layout.formulas = decode(model_desc['formulas'])
         obj_layout.trained_time = model_desc['trained_time']
         obj_layout.impl = decode(model_desc['desc'])
         return obj_layout
