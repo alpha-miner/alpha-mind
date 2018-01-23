@@ -28,7 +28,7 @@ class RandomForestRegressor(ModelBase):
                  max_features: str='auto',
                  features: List=None,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features, **kwargs)
         self.impl = RandomForestRegressorImpl(n_estimators=n_estimators,
                                               max_features=max_features,
                                               **kwargs)
@@ -62,7 +62,7 @@ class RandomForestClassifier(ModelBase):
                  max_features: str='auto',
                  features: List = None,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features, **kwargs)
         self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
                                                max_features=max_features,
                                                **kwargs)
@@ -97,7 +97,7 @@ class XGBRegressor(ModelBase):
                  max_depth: int=3,
                  features: List=None,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features, **kwargs)
         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,
@@ -132,7 +132,7 @@ class XGBClassifier(ModelBase):
                  max_depth: int=3,
                  features: List = None,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features, **kwargs)
         self.impl = XGBClassifierImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,

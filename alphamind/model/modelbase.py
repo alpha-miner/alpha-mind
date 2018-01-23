@@ -15,10 +15,13 @@ from alphamind.utilities import decode
 
 class ModelBase(metaclass=abc.ABCMeta):
 
-    def __init__(self, features: list=None):
+    def __init__(self, features: list=None, formulas: dict=None, **kwargs):
         if features is not None:
             self.features = list(features)
+        else:
+            self.features = formulas
         self.impl = None
+        self.formulas = formulas
         self.trained_time = None
 
     def fit(self, x: np.ndarray, y: np.ndarray):
@@ -43,6 +46,7 @@ class ModelBase(metaclass=abc.ABCMeta):
                           features=list(self.features),
                           trained_time=self.trained_time,
                           desc=encode(self.impl),
+                          formulas=encode(self.formulas),
                           internal_model=self.impl.__class__.__module__ + "." + self.impl.__class__.__name__)
         return model_desc
 
@@ -50,6 +54,7 @@ class ModelBase(metaclass=abc.ABCMeta):
     def load(cls, model_desc: dict):
         obj_layout = cls()
         obj_layout.features = model_desc['features']
+        obj_layout.formulas = model_desc['formulas']
         obj_layout.trained_time = model_desc['trained_time']
         obj_layout.impl = decode(model_desc['desc'])
         return obj_layout
