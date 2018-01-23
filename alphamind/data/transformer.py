@@ -5,6 +5,7 @@ Created on 2017-8-23
 @author: cheng.li
 """
 
+import copy
 import pandas as pd
 from PyFin.api import pyFinAssert
 from PyFin.Analysis.SecurityValueHolders import SecurityValueHolder
@@ -58,7 +59,7 @@ class Transformer(object):
     def __init__(self,
                  expressions):
         expression_dict, expression_dependency = \
-            factor_translator(expressions)
+            factor_translator(copy.deepcopy(expressions))
 
         if expression_dict:
             self.names = sorted(expression_dict.keys())

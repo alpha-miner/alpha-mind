@@ -6,6 +6,7 @@ Created on 2017-9-4
 """
 
 import abc
+import copy
 import arrow
 import numpy as np
 from alphamind.utilities import alpha_logger
@@ -15,13 +16,13 @@ from alphamind.utilities import decode
 
 class ModelBase(metaclass=abc.ABCMeta):
 
-    def __init__(self, features: list=None, formulas: dict=None, **kwargs):
+    def __init__(self, features: list=None, formulas: dict=None):
         if features is not None:
             self.features = list(features)
         else:
-            self.features = formulas
+            self.features = None
         self.impl = None
-        self.formulas = formulas
+        self.formulas = copy.deepcopy(formulas)
         self.trained_time = None
 
     def fit(self, x: np.ndarray, y: np.ndarray):

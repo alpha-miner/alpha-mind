@@ -61,8 +61,9 @@ class RandomForestClassifier(ModelBase):
                  n_estimators: int=100,
                  max_features: str='auto',
                  features: List = None,
+                 formulas: dict = None,
                  **kwargs):
-        super().__init__(features, **kwargs)
+        super().__init__(features, formulas=formulas)
         self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
                                                max_features=max_features,
                                                **kwargs)
@@ -96,8 +97,9 @@ class XGBRegressor(ModelBase):
                  learning_rate: float=0.1,
                  max_depth: int=3,
                  features: List=None,
+                 formulas: dict = None,
                  **kwargs):
-        super().__init__(features, **kwargs)
+        super().__init__(features, formulas=formulas)
         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,
@@ -131,8 +133,9 @@ class XGBClassifier(ModelBase):
                  learning_rate: float=0.1,
                  max_depth: int=3,
                  features: List = None,
+                 formulas: dict = None,
                  **kwargs):
-        super().__init__(features, **kwargs)
+        super().__init__(features, formulas=formulas)
         self.impl = XGBClassifierImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,
@@ -173,9 +176,10 @@ class XGBTrainer(ModelBase):
                  subsample=1.,
                  colsample_bytree=1.,
                  features: List = None,
+                 formulas: dict = None,
                  random_state=0,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features, formulas=formulas)
         self.params = {
             'silent': 1,
             'objective': objective,
