@@ -554,9 +554,7 @@ class SqlEngine(object):
                 out_s.append(i)
 
         res = df[['code', 'industry_code'] + in_s]
-
-        for i in out_s:
-            res[i] = 0
+        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
         return res
 
     def fetch_industry_range(self,
@@ -611,10 +609,9 @@ class SqlEngine(object):
             else:
                 out_s.append(i)
 
-        res = df[['code', 'industry_code'] + in_s]
+        res = df[['trade_date', 'code', 'industry_code'] + in_s]
 
-        for i in out_s:
-            res[i] = 0
+        res = res.assign(**dict(zip(out_s, [0]*len(out_s))))
         return res
 
     def fetch_data(self, ref_date: str,
