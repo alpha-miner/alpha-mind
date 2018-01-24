@@ -542,6 +542,7 @@ class SqlEngine(object):
                               category: str = 'sw',
                               level: int = 1):
         df = self.fetch_industry(ref_date, codes, category, level)
+        df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
         industries = industry_list(category, level)
 
@@ -553,7 +554,7 @@ class SqlEngine(object):
             else:
                 out_s.append(i)
 
-        res = df[['code', 'industry_code'] + in_s]
+        res = df[['code', 'industry_code', 'industry_name'] + in_s]
         res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
         return res
 
@@ -598,6 +599,7 @@ class SqlEngine(object):
                                     level: int = 1):
 
         df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
+        df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
         industries = industry_list(category, level)
 
@@ -609,7 +611,7 @@ class SqlEngine(object):
             else:
                 out_s.append(i)
 
-        res = df[['trade_date', 'code', 'industry_code'] + in_s]
+        res = df[['trade_date', 'code', 'industry_code', 'industry_name'] + in_s]
 
         res = res.assign(**dict(zip(out_s, [0]*len(out_s))))
         return res
