@@ -13,6 +13,7 @@ from alphamind.data.dbmodel.models import RiskCovLong
 from alphamind.data.dbmodel.models import FullFactor
 from alphamind.data.dbmodel.models import Gogoal
 from alphamind.data.dbmodel.models import Experimental
+from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
 factor_tables = [FullFactor, Gogoal, Experimental]
@@ -46,12 +47,12 @@ def _map_industry_category(category: str) -> str:
     elif category == 'zz':
         return '中证行业分类'
     elif category == 'dx':
-        return '中证行业分类'
+        return '东兴行业分类'
     elif category == 'zjh':
         return '证监会行业V2012'
     else:
         raise ValueError("No other industry is supported at the current time")
 
 
-def industry_list(catrgory, level=1):
-    pass
+def industry_list(category: str, level: int=1) -> list:
+    return INDUSTRY_MAPPING[category][level]

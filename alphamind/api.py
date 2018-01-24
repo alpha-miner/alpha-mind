@@ -24,6 +24,7 @@ from alphamind.data.standardize import standardize
 from alphamind.data.standardize import projection
 from alphamind.data.neutralize import neutralize
 from alphamind.data.engines.sqlengine import factor_tables
+from alphamind.data.engines.utilities import industry_list
 
 from alphamind.model import LinearRegression
 from alphamind.model import LassoRegression
@@ -66,6 +67,7 @@ __all__ = [
     'projection',
     'neutralize',
     'factor_tables',
+    'industry_list',
     'fetch_data_package',
     'fetch_train_phase',
     'fetch_predict_phase',

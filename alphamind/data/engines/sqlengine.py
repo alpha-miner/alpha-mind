@@ -42,6 +42,7 @@ from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
 from alphamind.data.engines.utilities import _map_risk_model_table
 from alphamind.data.engines.utilities import factor_tables
+from alphamind.data.engines.utilities import industry_list
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -516,13 +517,16 @@ class SqlEngine(object):
     def fetch_industry(self,
                        ref_date: str,
                        codes: Iterable[int],
-                       category: str = 'sw'):
+                       category: str = 'sw',
+                       level: int = 1):
 
         industry_category_name = _map_industry_category(category)
+        code_name = 'industryID' + str(level)
+        category_name = 'industryName' + str(level)
 
         query = select([Industry.code,
-                        Industry.industryID1.label('industry_code'),
-                        Industry.industryName1.label('industry')]).where(
+                        getattr(Industry, code_name).label('industry_code'),
+                        getattr(Industry, category_name).label('industry')]).where(
             and_(
                 Industry.trade_date == ref_date,
                 Industry.code.in_(codes),
@@ -531,6 +535,16 @@ class SqlEngine(object):
         ).distinct()
 
         return pd.read_sql(query, self.engine)
+
+    def fetch_industry_matrix(self,
+                              ref_date: str,
+                              codes: Iterable[int],
+                              category: str = 'sw',
+                              level: int = 1):
+        df = self.fetch_industry(ref_date, codes, category, level)
+        df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
+        industries = industry_list(category, level)
+        return df[['code', 'industry_code'] + industries]
 
     def fetch_industry_range(self,
                              universe: Universe,
@@ -565,6 +579,19 @@ class SqlEngine(object):
             codes = universe.query(self, start_date, end_date, dates)
             df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
         return df
+
+    def fetch_industry_matrix_range(self,
+                                    universe: Universe,
+                                    start_date: str = None,
+                                    end_date: str = None,
+                                    dates: Iterable[str] = None,
+                                    category: str = 'sw',
+                                    level: int = 1):
+
+        df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
+        df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
+        industries = industry_list(category, level)
+        return df[['trade_date', 'code', 'industry_code'] + industries]
 
     def fetch_data(self, ref_date: str,
                    factors: Iterable[str],
@@ -857,7 +884,10 @@ if __name__ == '__main__':
     universe = Universe('ss', ['hs300'])
 
     engine = SqlEngine()
+    ref_date = '2017-12-28'
+    codes = universe.query(engine, dates=[ref_date])
+    df = engine.fetch_industry_matrix(ref_date, codes.code.tolist(), 'dx', 1)
+    print(df)
 
-    df = engine.fetch_industry_range(universe, '2017-12-28', '2017-12-31', category='dx', level=3)
-
+    df = engine.fetch_industry_matrix_range(universe, '2011-12-28', '2017-12-31', category='sw', level=1)
     print(df)
