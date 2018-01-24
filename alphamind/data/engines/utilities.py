@@ -43,5 +43,15 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
 def _map_industry_category(category: str) -> str:
     if category == 'sw':
         return '申万行业分类'
+    elif category == 'zz':
+        return '中证行业分类'
+    elif category == 'dx':
+        return '中证行业分类'
+    elif category == 'zjh':
+        return '证监会行业V2012'
     else:
         raise ValueError("No other industry is supported at the current time")
+
+
+def industry_list(catrgory, level=1):
+    pass
