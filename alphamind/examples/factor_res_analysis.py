@@ -13,6 +13,7 @@ from alphamind.api import *
 
 def factor_residue_analysis(start_date,
                             end_date,
+                            factor_name,
                             factor,
                             freq,
                             universe,
@@ -26,10 +27,8 @@ def factor_residue_analysis(start_date,
                          tenor=freq,
                          calendar='china.sse')
 
-    alpha_factor_name = factor + '_res'
-    base1 = LAST('roe_q')
-    base2 = CSRes(LAST('ep_q'), 'roe_q')
-    alpha_factor = {alpha_factor_name: CSRes(CSRes(LAST(factor), base1), base2)}
+    alpha_factor_name = factor_name + '_res'
+    alpha_factor = {alpha_factor_name: factor}
     factor_all_data = engine.fetch_data_range(universe,
                                               alpha_factor,
                                               dates=dates)['factor']
@@ -74,19 +73,54 @@ def factor_residue_analysis(start_date,
     return df
 
 
-engine = SqlEngine()
-df = engine.fetch_factor_coverage().groupby('factor').mean()
-df = df[df.coverage >= 0.98]
-universe = Universe('custom', ['zz800'])
-
-factor_df = pd.DataFrame()
-
-for i, factor in enumerate(df.index):
-    res = factor_residue_analysis('2011-01-01',
-                                  '2018-01-05',
+def factor_analysis(f_name):
+    from alphamind.api import SqlEngine, Universe, alpha_logger
+    engine = SqlEngine()
+    universe = Universe('custom', ['zz800'])
+    base1 = LAST('Alpha60')
+    base2 = CSRes('roe_q', base1)
+    base3 = CSRes(CSRes('ep_q', base1), base2)
+    factor = CSRes(CSRes(CSRes(LAST(f_name), base1), base2), base3)
+    res = factor_residue_analysis('2010-01-01',
+                                  '2018-01-26',
+                                  f_name,
                                   factor,
-                                  '5b',
+                                  '10b',
                                   universe,
                                   engine)
-    factor_df[factor] = res['$top1 - bottom1$']
-    alpha_logger.info('{0}: {1} is done'.format(i + 1, factor))
+    alpha_logger.info('{0} is done'.format(f_name))
+    return f_name, res
+
+
+if __name__ == '__main__':
+    from dask.distributed import Client
+    client = Client('10.63.6.176:8786')
+
+    engine = SqlEngine()
+    df = engine.fetch_factor_coverage()
+    df = df[df.universe == 'zz800'].groupby('factor').mean()
+    df = df[df.coverage >= 0.98]
+    universe = Universe('custom', ['zz800'])
+
+    factor_df = pd.DataFrame()
+
+    tasks = client.map(factor_analysis, df.index.tolist())
+    res = client.gather(tasks)
+
+    for f_name, df in res:
+        factor_df[f_name] = df['$top1 - bottom1$']
+
+    # for i, f_name in enumerate(df.index):
+    #     base1 = LAST('Alpha60')
+    #     base2 = CSRes('roe_q', base1)
+    #     base3 = CSRes(CSRes('ep_q', base1), base2)
+    #     factor = CSRes(CSRes(CSRes(LAST(f_name), base1), base2), base3)
+    #     res = factor_residue_analysis('2010-01-01',
+    #                                   '2018-01-22',
+    #                                   f_name,
+    #                                   factor,
+    #                                   '10b',
+    #                                   universe,
+    #                                   engine)
+    #     factor_df[f_name] = res['$top1 - bottom1$']
+    #     alpha_logger.info('{0}: {1} is done'.format(i + 1, f_name))

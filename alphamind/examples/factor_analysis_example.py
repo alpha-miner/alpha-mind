@@ -20,12 +20,10 @@ plt.style.use('ggplot')
 Back test parameter settings
 """
 
-start_date = '2011-01-01'
-end_date = '2018-01-11'
-benchmark_code = 300
-universe_name = ['zz800']
-universe = Universe('custom', universe_name)
-frequency = '5b'
+start_date = '2010-01-01'
+end_date = '2018-01-26'
+
+frequency = '10b'
 method = 'risk_neutral'
 industry_lower = 1.
 industry_upper = 1.
@@ -33,179 +31,222 @@ neutralize_risk = ['SIZE', 'LEVERAGE'] + industry_styles
 constraint_risk = ['SIZE', 'LEVERAGE'] + industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
-turn_over_target_base = 0.25
+turn_over_target_base = 0.30
 benchmark_total_lower = 0.8
 benchmark_total_upper = 1.0
 horizon = map_freq(frequency)
 
 executor = NaiveExecutor()
 
-engine = SqlEngine('postgres+psycopg2://postgres:we083826@192.168.0.102/alpha')
 
-"""
-Model phase: we need 1 constant linear model and one linear regression model    
-"""
+def factor_analysis(engine, factor_name, universe, benchmark_code, positive=True):
 
-alpha_name = ['alpha_factor']
-factor_name = 'SalesCostRatio'
-base1 = LAST('roe_q')
-base2 = CSRes(LAST('ep_q'), 'roe_q')
-simple_expression = DIFF(CSRes(CSRes(LAST(factor_name), base1), base2))
+    """
+    Model phase: we need 1 constant linear model and one linear regression model
+    """
+    alpha_name = [factor_name + '_' + ('pos' if positive else 'neg')]
+    base1 = LAST('Alpha60')
+    base2 = CSRes('roe_q', base1)
+    base3 = CSRes(CSRes('ep_q', base1), base2)
+    simple_expression = CSRes(CSRes(CSRes(LAST(factor_name), base1), base2), base3)
 
-const_features = {alpha_name[0]: simple_expression}
-const_weights = np.array([1.])
+    if not positive:
+        simple_expression = -simple_expression
 
-const_model = ConstLinearModel(features=alpha_name,
-                               weights=const_weights)
+    const_features = {alpha_name[0]: simple_expression}
+    const_weights = np.array([1.])
 
-ref_dates = makeSchedule(start_date, end_date, frequency, 'china.sse')
+    const_model = ConstLinearModel(features=alpha_name,
+                                   weights=const_weights)
 
-const_model_factor_data = engine.fetch_data_range(universe,
-                                                  const_features,
-                                                  dates=ref_dates,
-                                                  benchmark=benchmark_code)['factor'].dropna()
+    ref_dates = makeSchedule(start_date, end_date, frequency, 'china.sse')
 
-horizon = map_freq(frequency)
+    const_model_factor_data = engine.fetch_data_range(universe,
+                                                      const_features,
+                                                      dates=ref_dates,
+                                                      benchmark=benchmark_code)['factor'].dropna()
 
-rets = []
-turn_overs = []
-leverags = []
-previous_pos = pd.DataFrame()
+    horizon = map_freq(frequency)
 
-index_dates = []
+    rets = []
+    turn_overs = []
+    leverags = []
+    previous_pos = pd.DataFrame()
+    index_dates = []
+    factor_groups = const_model_factor_data.groupby('trade_date')
 
+    for i, value in enumerate(factor_groups):
+        date = value[0]
+        data = value[1]
+        index_dates.append(date)
 
-factor_groups = const_model_factor_data.groupby('trade_date')
+        total_data = data.fillna(data[alpha_name].median())
+        alpha_logger.info('{0}: {1}'.format(date, len(total_data)))
+        risk_exp = total_data[neutralize_risk].values.astype(float)
+        industry = total_data.industry_code.values
+        benchmark_w = total_data.weight.values
 
-for i, value in enumerate(factor_groups):
-    date = value[0]
-    data = value[1]
-    ref_date = date.strftime('%Y-%m-%d')
-    index_dates.append(date)
+        constraint_exp = total_data[constraint_risk].values
+        risk_exp_expand = np.concatenate((constraint_exp, np.ones((len(risk_exp), 1))), axis=1).astype(float)
 
-    total_data = data.fillna(data[alpha_name].median())
-    alpha_logger.info('{0}: {1}'.format(date, len(total_data)))
-    risk_exp = total_data[neutralize_risk].values.astype(float)
-    industry = total_data.industry_code.values
-    benchmark_w = total_data.weight.values
+        risk_names = constraint_risk + ['total']
+        risk_target = risk_exp_expand.T @ benchmark_w
 
-    constraint_exp = total_data[constraint_risk].values
-    risk_exp_expand = np.concatenate((constraint_exp, np.ones((len(risk_exp), 1))), axis=1).astype(float)
+        lbound = np.maximum(0., benchmark_w - 0.02)  # np.zeros(len(total_data))
+        ubound = 0.02 + benchmark_w
 
-    risk_names = constraint_risk + ['total']
-    risk_target = risk_exp_expand.T @ benchmark_w
+        is_in_benchmark = (benchmark_w > 0.).astype(float)
 
-    lbound = np.maximum(0., benchmark_w - 0.02)  # np.zeros(len(total_data))
-    ubound = 0.02 + benchmark_w
+        risk_exp_expand = np.concatenate((risk_exp_expand, is_in_benchmark.reshape((-1, 1))), axis=1).astype(float)
+        risk_names.append('benchmark_total')
 
-    is_in_benchmark = (benchmark_w > 0.).astype(float)
+        constraint = Constraints(risk_exp_expand, risk_names)
 
-    risk_exp_expand = np.concatenate((risk_exp_expand, is_in_benchmark.reshape((-1, 1))), axis=1).astype(float)
-    risk_names.append('benchmark_total')
+        for j, name in enumerate(risk_names):
+            if name == 'total':
+                constraint.set_constraints(name,
+                                           lower_bound=risk_target[j],
+                                           upper_bound=risk_target[j])
+            elif name == 'SIZE':
+                base_target = abs(risk_target[j])
+                constraint.set_constraints(name,
+                                           lower_bound=risk_target[j] + base_target * size_risk_lower,
+                                           upper_bound=risk_target[j] + base_target * size_risk_upper)
+            elif name == 'benchmark_total':
+                base_target = benchmark_w.sum()
+                constraint.set_constraints(name,
+                                           lower_bound=benchmark_total_lower * base_target,
+                                           upper_bound=benchmark_total_upper * base_target)
+            else:
+                constraint.set_constraints(name,
+                                           lower_bound=risk_target[j] * industry_lower,
+                                           upper_bound=risk_target[j] * industry_upper)
 
-    constraint = Constraints(risk_exp_expand, risk_names)
+        factor_values = factor_processing(total_data[alpha_name].values,
+                                          pre_process=[winsorize_normal, standardize],
+                                          risk_factors=risk_exp,
+                                          post_process=[winsorize_normal, standardize])
 
-    for j, name in enumerate(risk_names):
-        if name == 'total':
-            constraint.set_constraints(name,
-                                       lower_bound=risk_target[j],
-                                       upper_bound=risk_target[j])
-        elif name == 'SIZE':
-            base_target = abs(risk_target[j])
-            constraint.set_constraints(name,
-                                       lower_bound=risk_target[j] + base_target * size_risk_lower,
-                                       upper_bound=risk_target[j] + base_target * size_risk_upper)
-        elif name == 'benchmark_total':
-            base_target = benchmark_w.sum()
-            constraint.set_constraints(name,
-                                       lower_bound=benchmark_total_lower * base_target,
-                                       upper_bound=benchmark_total_upper * base_target)
+        # const linear model
+        er = const_model.predict(factor_values)
+
+        codes = total_data['code'].values
+
+        if previous_pos.empty:
+            current_position = None
+            turn_over_target = None
         else:
-            constraint.set_constraints(name,
-                                       lower_bound=risk_target[j] * industry_lower,
-                                       upper_bound=risk_target[j] * industry_upper)
+            previous_pos.set_index('code', inplace=True)
+            remained_pos = previous_pos.loc[codes]
 
-    factor_values = factor_processing(total_data[alpha_name].values,
-                                      pre_process=[winsorize_normal, standardize],
-                                      risk_factors=risk_exp,
-                                      post_process=[winsorize_normal, standardize])
+            remained_pos.fillna(0., inplace=True)
+            turn_over_target = turn_over_target_base
+            current_position = remained_pos.weight.values
 
-    # const linear model
-    er = const_model.predict(factor_values)
+        try:
+            target_pos, _ = er_portfolio_analysis(er,
+                                                  industry,
+                                                  None,
+                                                  constraint,
+                                                  False,
+                                                  benchmark_w,
+                                                  method=method,
+                                                  turn_over_target=turn_over_target,
+                                                  current_position=current_position,
+                                                  lbound=lbound,
+                                                  ubound=ubound)
+        except ValueError:
+            alpha_logger.info('{0} full re-balance'.format(date))
+            target_pos, _ = er_portfolio_analysis(er,
+                                                  industry,
+                                                  None,
+                                                  constraint,
+                                                  False,
+                                                  benchmark_w,
+                                                  method=method,
+                                                  lbound=lbound,
+                                                  ubound=ubound)
 
-    codes = total_data['code'].values
+        target_pos['code'] = total_data['code'].values
 
-    if previous_pos.empty:
-        current_position = None
-        turn_over_target = None
-    else:
-        previous_pos.set_index('code', inplace=True)
-        remained_pos = previous_pos.loc[codes]
+        turn_over, executed_pos = executor.execute(target_pos=target_pos)
 
-        remained_pos.fillna(0., inplace=True)
-        turn_over_target = turn_over_target_base
-        current_position = remained_pos.weight.values
+        executed_codes = executed_pos.code.tolist()
+        dx_returns = engine.fetch_dx_return(date, executed_codes, horizon=horizon, offset=1)
 
-    try:
-        target_pos, _ = er_portfolio_analysis(er,
-                                              industry,
-                                              None,
-                                              constraint,
-                                              False,
-                                              benchmark_w,
-                                              method=method,
-                                              turn_over_target=turn_over_target,
-                                              current_position=current_position,
-                                              lbound=lbound,
-                                              ubound=ubound)
-    except ValueError:
-        alpha_logger.info('{0} full re-balance'.format(date))
-        target_pos, _ = er_portfolio_analysis(er,
-                                              industry,
-                                              None,
-                                              constraint,
-                                              False,
-                                              benchmark_w,
-                                              method=method,
-                                              lbound=lbound,
-                                              ubound=ubound)
+        result = pd.merge(executed_pos, total_data[['code', 'weight']], on=['code'], how='inner')
+        result = pd.merge(result, dx_returns, on=['code'])
 
-    target_pos['code'] = total_data['code'].values
+        leverage = result.weight_x.abs().sum()
 
-    turn_over, executed_pos = executor.execute(target_pos=target_pos)
+        ret = result.weight_x.values @ (np.exp(result.dx.values) - 1.)
+        rets.append(np.log(1. + ret))
+        executor.set_current(executed_pos)
+        turn_overs.append(turn_over)
+        leverags.append(leverage)
 
-    executed_codes = executed_pos.code.tolist()
-    dx_returns = engine.fetch_dx_return(date, executed_codes, horizon=horizon, offset=1)
+        previous_pos = executed_pos
+        alpha_logger.info('{0} is finished'.format(date))
 
-    result = pd.merge(executed_pos, total_data[['code', 'weight']], on=['code'], how='inner')
-    result = pd.merge(result, dx_returns, on=['code'])
+    ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverags}, index=index_dates)
 
-    leverage = result.weight_x.abs().sum()
+    # index return
+    index_return = engine.fetch_dx_return_index_range(benchmark_code, start_date, end_date, horizon=horizon,
+                                                      offset=1).set_index('trade_date')
+    ret_df['index'] = index_return['dx']
 
-    ret = result.weight_x.values @ (np.exp(result.dx.values) - 1.)
-    rets.append(np.log(1. + ret))
-    executor.set_current(executed_pos)
-    turn_overs.append(turn_over)
-    leverags.append(leverage)
+    ret_df.loc[advanceDateByCalendar('china.sse', ref_dates[-1], frequency)] = 0.
+    ret_df = ret_df.shift(1)
+    ret_df.iloc[0] = 0.
+    ret_df['tc_cost'] = ret_df.turn_over * 0.002
+    ret_df['returns'] = ret_df['returns'] - ret_df['index'] * ret_df['leverage']
 
-    previous_pos = executed_pos
-    alpha_logger.info('{0} is finished'.format(date))
+    return alpha_name[0], ret_df
 
-ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverage}, index=index_dates)
 
-# index return
-index_return = engine.fetch_dx_return_index_range(benchmark_code, start_date, end_date, horizon=horizon,
-                                                  offset=1).set_index('trade_date')
-ret_df['index'] = index_return['dx']
+def worker_func_positive(factor_name):
+    from alphamind.api import SqlEngine, Universe
+    engine = SqlEngine()
+    benchmark_code = 300
+    universe_name = ['zz800']
+    universe = Universe('custom', universe_name)
+    return factor_analysis(engine, factor_name, universe, benchmark_code, positive=True)
 
-ret_df.loc[advanceDateByCalendar('china.sse', ref_dates[-1], frequency)] = 0.
-ret_df = ret_df.shift(1)
-ret_df.iloc[0] = 0.
-ret_df['tc_cost'] = ret_df.turn_over * 0.002
-ret_df['returns'] = ret_df['returns'] - ret_df['index'] * ret_df['leverage']
 
-ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
-                                             title='Fixed frequency rebalanced: {0} for {1}'.format(frequency, factor_name),
-                                             secondary_y='tc_cost')
+def worker_func_negative(factor_name):
+    from alphamind.api import SqlEngine, Universe
+    engine = SqlEngine()
+    benchmark_code = 300
+    universe_name = ['zz800']
+    universe = Universe('custom', universe_name)
+    return factor_analysis(engine, factor_name, universe, benchmark_code, positive=False)
 
-plt.show()
+
+if __name__ == '__main__':
+    from dask.distributed import Client
+
+    client = Client('10.63.6.176:8786')
+
+    engine = SqlEngine()
+    df = engine.fetch_factor_coverage()
+    df = df[df.universe == 'zz800'].groupby('factor').mean()
+    df = df[df.coverage >= 0.98]
+
+    tasks = client.map(worker_func_positive, df.index.tolist())
+    res1 = client.gather(tasks)
+
+    tasks = client.map(worker_func_negative, df.index.tolist())
+    res2 = client.gather(tasks)
+
+    factor_df = pd.DataFrame()
+
+    for f_name, df in res1:
+        factor_df[f_name] = df['returns']
+
+    for f_name, df in res2:
+        factor_df[f_name] = df['returns']
+
+    # ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
+    #                                              title='Fixed frequency rebalanced: {0} for {1} with benchmark {2}'.format(
+    #                                                  frequency, factor_name, benchmark_code),
+    #                                              secondary_y='tc_cost')
