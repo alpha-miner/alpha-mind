@@ -45,10 +45,9 @@ def factor_analysis(engine, factor_name, universe, benchmark_code, positive=True
     Model phase: we need 1 constant linear model and one linear regression model
     """
     alpha_name = [factor_name + '_' + ('pos' if positive else 'neg')]
-    base1 = LAST('Alpha60')
-    base2 = CSRes('roe_q', base1)
-    base3 = CSRes(CSRes('ep_q', base1), base2)
-    simple_expression = CSRes(CSRes(CSRes(LAST(factor_name), base1), base2), base3)
+    base1 = LAST('roe_q')
+    base2 = CSRes('ep_q', base1)
+    simple_expression = CSRes(CSRes(LAST(factor_name), base1), base2)
 
     if not positive:
         simple_expression = -simple_expression
@@ -207,7 +206,7 @@ def factor_analysis(engine, factor_name, universe, benchmark_code, positive=True
 def worker_func_positive(factor_name):
     from alphamind.api import SqlEngine, Universe
     engine = SqlEngine()
-    benchmark_code = 300
+    benchmark_code = 905
     universe_name = ['zz800']
     universe = Universe('custom', universe_name)
     return factor_analysis(engine, factor_name, universe, benchmark_code, positive=True)
@@ -216,7 +215,7 @@ def worker_func_positive(factor_name):
 def worker_func_negative(factor_name):
     from alphamind.api import SqlEngine, Universe
     engine = SqlEngine()
-    benchmark_code = 300
+    benchmark_code = 905
     universe_name = ['zz800']
     universe = Universe('custom', universe_name)
     return factor_analysis(engine, factor_name, universe, benchmark_code, positive=False)
@@ -246,7 +245,10 @@ if __name__ == '__main__':
     for f_name, df in res2:
         factor_df[f_name] = df['returns']
 
+    # factor_name = 'NPFromOperatingTTM'
+    # f_name, ret_df = worker_func_negative(factor_name)
+    #
     # ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
     #                                              title='Fixed frequency rebalanced: {0} for {1} with benchmark {2}'.format(
-    #                                                  frequency, factor_name, benchmark_code),
+    #                                                  frequency, factor_name, 905),
     #                                              secondary_y='tc_cost')
