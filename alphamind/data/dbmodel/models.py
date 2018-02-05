@@ -670,6 +670,7 @@ class Experimental(Base):
     val_q = Column(Float(53))
     ep_q = Column(Float(53))
     ep_q_d_1w = Column(Float(53))
+    ev = Column(Float(53))
 
 
 class FactorMaster(Base):
