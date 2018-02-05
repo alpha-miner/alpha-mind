@@ -27,8 +27,8 @@ frequency = '10b'
 method = 'risk_neutral'
 industry_lower = 1.
 industry_upper = 1.
-neutralize_risk = ['SIZE', 'LEVERAGE'] + industry_styles
-constraint_risk = ['SIZE', 'LEVERAGE'] + industry_styles
+neutralize_risk = ['SIZE'] + industry_styles
+constraint_risk = ['SIZE'] + industry_styles
 size_risk_lower = 0
 size_risk_upper = 0
 turn_over_target_base = 0.30
@@ -39,15 +39,26 @@ horizon = map_freq(frequency)
 executor = NaiveExecutor()
 
 
-def factor_analysis(engine, factor_name, universe, benchmark_code, positive=True):
+def factor_analysis(engine, factor_name, universe, benchmark_code, positive=True, neutralize_factors=None):
 
     """
     Model phase: we need 1 constant linear model and one linear regression model
     """
-    alpha_name = [factor_name + '_' + ('pos' if positive else 'neg')]
-    base1 = LAST('roe_q')
-    base2 = CSRes('ep_q', base1)
-    simple_expression = CSRes(CSRes(LAST(factor_name), base1), base2)
+    alpha_name = [str(factor_name) + '_' + ('pos' if positive else 'neg')]
+
+    if neutralize_factors:
+        prev_factors = []
+        for i, f in enumerate(neutralize_factors):
+            pure_factor = LAST(f)
+            for j in range(i):
+                pure_factor = CSRes(pure_factor, prev_factors[j])
+            prev_factors.append(pure_factor)
+
+        simple_expression = LAST(factor_name)
+        for f in prev_factors:
+            simple_expression = CSRes(simple_expression, f)
+    else:
+        simple_expression = LAST(factor_name)
 
     if not positive:
         simple_expression = -simple_expression
@@ -205,50 +216,53 @@ def factor_analysis(engine, factor_name, universe, benchmark_code, positive=True
 
 def worker_func_positive(factor_name):
     from alphamind.api import SqlEngine, Universe
+    neutralize_factors = None #['roe_q', 'ep_q']
     engine = SqlEngine()
     benchmark_code = 905
-    universe_name = ['zz800']
+    universe_name = ['zz500']
     universe = Universe('custom', universe_name)
-    return factor_analysis(engine, factor_name, universe, benchmark_code, positive=True)
+    return factor_analysis(engine, factor_name, universe, benchmark_code, positive=True, neutralize_factors=neutralize_factors)
 
 
 def worker_func_negative(factor_name):
     from alphamind.api import SqlEngine, Universe
+    neutralize_factors = None #['roe_q', 'ep_q']
     engine = SqlEngine()
     benchmark_code = 905
-    universe_name = ['zz800']
+    universe_name = ['zz500']
     universe = Universe('custom', universe_name)
-    return factor_analysis(engine, factor_name, universe, benchmark_code, positive=False)
+    return factor_analysis(engine, factor_name, universe, benchmark_code, positive=False, neutralize_factors=neutralize_factors)
 
 
 if __name__ == '__main__':
-    from dask.distributed import Client
-
-    client = Client('10.63.6.176:8786')
-
-    engine = SqlEngine()
-    df = engine.fetch_factor_coverage()
-    df = df[df.universe == 'zz800'].groupby('factor').mean()
-    df = df[df.coverage >= 0.98]
-
-    tasks = client.map(worker_func_positive, df.index.tolist())
-    res1 = client.gather(tasks)
-
-    tasks = client.map(worker_func_negative, df.index.tolist())
-    res2 = client.gather(tasks)
-
-    factor_df = pd.DataFrame()
-
-    for f_name, df in res1:
-        factor_df[f_name] = df['returns']
-
-    for f_name, df in res2:
-        factor_df[f_name] = df['returns']
-
-    # factor_name = 'NPFromOperatingTTM'
-    # f_name, ret_df = worker_func_negative(factor_name)
+    # from dask.distributed import Client
     #
-    # ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
-    #                                              title='Fixed frequency rebalanced: {0} for {1} with benchmark {2}'.format(
-    #                                                  frequency, factor_name, 905),
-    #                                              secondary_y='tc_cost')
+    # client = Client('10.63.6.176:8786')
+    #
+    # engine = SqlEngine()
+    # df = engine.fetch_factor_coverage()
+    # df = df[df.universe == 'zz800'].groupby('factor').mean()
+    # df = df[df.coverage >= 0.98]
+    #
+    # tasks = client.map(worker_func_positive, df.index.tolist())
+    # res1 = client.gather(tasks)
+    #
+    # tasks = client.map(worker_func_negative, df.index.tolist())
+    # res2 = client.gather(tasks)
+    #
+    # factor_df = pd.DataFrame()
+    #
+    # for f_name, df in res1:
+    #     factor_df[f_name] = df['returns']
+    #
+    # for f_name, df in res2:
+    #     factor_df[f_name] = df['returns']
+
+    factor_name = LAST('ep_q') # LAST('EBITDA') / LAST('ev')
+    f_name, ret_df = worker_func_positive(factor_name)
+
+    ret_df[['returns', 'tc_cost']].cumsum().plot(figsize=(12, 6),
+                                                 title='Fixed frequency rebalanced: {0} for {1} with benchmark {2}'.format(
+                                                     frequency, factor_name, 905),
+                                                 secondary_y='tc_cost')
+    plt.show()
