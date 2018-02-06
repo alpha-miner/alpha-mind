@@ -46,7 +46,9 @@ class Portfolio(object):
         try:
             return self.allocations[code]
         except KeyError:
-            return Allocation(code, 0, 0, 0)
+            allocation = Allocation(code, 0, 0, 0)
+            self.allocations[code] = allocation
+            return allocation
 
     def __repr__(self):
         return "Portfolio(name={0}, allocations={1})".format(self.name,
