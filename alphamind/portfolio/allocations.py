@@ -24,6 +24,15 @@ class Allocation(object):
         self.maximum = maximum
         self.current = current
 
+        pyFinAssert(self.minimum <= self.current, ValueError, "minimum qty should be lower than current")
+        pyFinAssert(self.maximum >= self.current, ValueError, "minimum qty should be greater than current")
+
+    def __repr__(self):
+        return "Allocation(code={0}, minimum={1}, maximum={2}, current={3})".format(self.code,
+                                                                                    self.minimum,
+                                                                                    self.maximum,
+                                                                                    self.current)
+
 
 class Portfolio(object):
 
@@ -39,6 +48,14 @@ class Portfolio(object):
         except KeyError:
             return Allocation(code, 0, 0, 0)
 
+    def __repr__(self):
+        return "Portfolio(name={0}, allocations={1})".format(self.name,
+                                                             list(self.allocations.values()))
+
+    @property
+    def codes(self) -> List[int]:
+        return sorted(self.allocations.keys())
+
 
 class Execution(object):
 
@@ -50,6 +67,11 @@ class Execution(object):
         self.qty = qty
         self.comment = comment
 
+    def __repr__(self):
+        return "Execution(code={0}, qty={1}, comment={2})".format(self.code,
+                                                                  self.qty,
+                                                                  self.comment)
+
 
 class Executions(object):
 
@@ -57,7 +79,11 @@ class Executions(object):
                  name,
                  executions: List[Execution]=None):
         self.name = name
-        self.executions = {e.code: e.qty for e in executions}
+        self.executions = executions
+
+    def __repr__(self):
+        return "Executions(name={0}, executions={1})".format(self.name,
+                                                             self.executions)
 
 
 class Asset(object):
@@ -71,20 +97,36 @@ class Asset(object):
         self.name = name
         if priority:
             self.priority = set(priority)
+        else:
+            self.priority = set()
 
         if forbidden:
             self.forbidden = set(forbidden)
+        else:
+            self.forbidden = set()
         self._validation()
 
     def _validation(self):
         for p in self.priority:
             pyFinAssert(p not in self.forbidden, ValueError, "{0} in priority is in forbidden".format(p))
 
+    def __repr__(self):
+        return "Asset(code={0}, name={1}, priority={2}, forbidden={3})".format(self.code,
+                                                                               self.name,
+                                                                               self.priority,
+                                                                               self.forbidden)
+
 
 class TargetPositions(object):
 
-    def __init__(self):
-        self.targets = {}
+    def __init__(self,
+                 assets: List[Asset]=None,
+                 qtys: List[int]=None):
+
+        if assets:
+            self.targets = {asset.code: (asset, qty) for asset, qty in zip(assets, qtys)}
+        else:
+            self.targets = {}
 
     def add_asset(self,
                   asset: Asset,
@@ -99,6 +141,9 @@ class TargetPositions(object):
     @property
     def codes(self) -> List[int]:
         return sorted(self.targets.keys())
+
+    def __repr__(self):
+        return "TargetPositions(assets={0}, qtys={1})".format(*zip(*self.targets.values()))
 
 
 def handle_one_asset(pre_allocation: Allocation,
@@ -157,6 +202,22 @@ def pass_through(target_pos: TargetPositions,
         executions.append(ex)
 
     return Executions(p_name, executions), Portfolio(p_name, allocations), new_target_pos
+
+
+if __name__ == '__main__':
+
+    asset1 = Asset(1, 'a')
+    asset2 = Asset(2, 'b')
+    asset3 = Asset(3, 'b')
+    target_pos = TargetPositions([asset1, asset2, asset3], [200, 300, 100])
+
+    allc1 = Allocation(1, 0, 100, 0)
+    allc2 = Allocation(2, 0, 400, 100)
+    allc2 = Allocation(3, 0, 400, 200)
+    portfolio = Portfolio('test1', [allc1, allc2])
+
+    executions, portfolio, target_pos = pass_through(target_pos, portfolio)
+
 
 
 
