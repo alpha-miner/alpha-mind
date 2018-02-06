@@ -53,7 +53,7 @@ class BoundaryImpl(object):
         if self.b_type == BoundaryType.ABSOLUTE:
             return self.val + center
         else:
-            pyFinAssert(center > 0., ValueError, "relative bounds only support positive back bone value")
+            pyFinAssert(center >= 0., ValueError, "relative bounds only support positive back bone value")
             return self.val * center
 
 
@@ -72,13 +72,16 @@ class BoxBoundary(object):
 
 
 def create_box_bounds(names: List[str],
-                      b_type: BoundaryType,
+                      b_type: Union[Iterable[BoundaryType], BoundaryType],
                       l_val: Union[Iterable[float], float],
                       u_val: Union[Iterable[float], float]) -> Dict[str, BoxBoundary]:
     """
     helper function to quickly create a series of bounds
     """
     bounds = dict()
+
+    if not hasattr(b_type, '__iter__'):
+        b_type = np.array([b_type] * len(names))
 
     if not hasattr(l_val, '__iter__'):
         l_val = np.array([l_val] * len(names))
@@ -88,10 +91,10 @@ def create_box_bounds(names: List[str],
 
     for i, name in enumerate(names):
         lower = BoundaryImpl(BoundaryDirection.LOWER,
-                             b_type,
+                             b_type[i],
                              l_val[i])
         upper = BoundaryImpl(BoundaryDirection.UPPER,
-                             b_type,
+                             b_type[i],
                              u_val[i])
         bounds[name] = BoxBoundary(lower, upper)
     return bounds
@@ -122,6 +125,7 @@ class LinearConstraints(object):
             upper_bounds.append(u)
         return np.array(lower_bounds), np.array(upper_bounds)
 
+    @property
     def risk_exp(self) -> np.ndarray:
         return self.cons_mat[self.names].values
 

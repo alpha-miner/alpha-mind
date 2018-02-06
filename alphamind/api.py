@@ -14,6 +14,10 @@ from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 
 from alphamind.portfolio.constraints import Constraints
+from alphamind.portfolio.constraints import LinearConstraints
+from alphamind.portfolio.constraints import BoundaryType
+from alphamind.portfolio.constraints import BoundaryDirection
+from alphamind.portfolio.constraints import create_box_bounds
 from alphamind.portfolio.evolver import evolve_positions
 
 from alphamind.data.engines.sqlengine import risk_styles
@@ -58,6 +62,10 @@ __all__ = [
     'Universe',
     'factor_processing',
     'Constraints',
+    'LinearConstraints',
+    'BoundaryType',
+    'BoundaryDirection',
+    'create_box_bounds',
     'evolve_positions',
     'risk_styles',
     'industry_styles',
