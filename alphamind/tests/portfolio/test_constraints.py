@@ -137,7 +137,7 @@ class TestConstraints(unittest.TestCase):
                                         backbone=backbone)
 
         l_bounds, u_bounds = constraints.risk_targets()
-        risk_exp = constraints.risk_exp()
+        risk_exp = constraints.risk_exp
 
         for i, name in enumerate(names):
             center = risk_exp[:, i] @ backbone
