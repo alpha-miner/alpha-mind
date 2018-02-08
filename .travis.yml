@@ -37,6 +37,7 @@ install:
   - pip install simpleutils
   - pip install coveralls
   - pip install finance-python
+  - pip install deprecated
   - export CWD=$PWD
   - cd /usr/src/gtest
   - sudo cmake CMakeLists.txt

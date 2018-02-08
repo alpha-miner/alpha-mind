@@ -42,6 +42,7 @@ from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
 from alphamind.data.engines.utilities import _map_risk_model_table
 from alphamind.data.engines.utilities import factor_tables
+from alphamind.data.engines.utilities import industry_list
 from PyFin.api import advanceDateByCalendar
 
 risk_styles = ['BETA',
@@ -207,12 +208,12 @@ class SqlEngine(object):
         cond = universe._query_statements(start_date, end_date, None)
 
         big_table = join(Market, UniverseTable,
-            and_(
-                Market.trade_date == UniverseTable.trade_date,
-                Market.code == UniverseTable.code,
-                cond
-            )
-        )
+                         and_(
+                             Market.trade_date == UniverseTable.trade_date,
+                             Market.code == UniverseTable.code,
+                             cond
+                         )
+                         )
 
         query = select([Market.trade_date, Market.code, stats]) \
             .select_from(big_table)
@@ -379,7 +380,7 @@ class SqlEngine(object):
                              FullFactor.code == UniverseTable.code,
                              cond
                          )
-                    )
+                         )
 
         query = select(
             [FullFactor.trade_date, FullFactor.code, FullFactor.isOpen] + list(factor_cols.keys())) \
@@ -498,7 +499,7 @@ class SqlEngine(object):
                              FullFactor.code == UniverseTable.code,
                              cond
                          )
-                    )
+                         )
 
         query = select(
             [FullFactor.trade_date, FullFactor.code, special_risk_col] + risk_exposure_cols).select_from(big_table) \
@@ -508,20 +509,24 @@ class SqlEngine(object):
 
         if universe.is_filtered:
             codes = universe.query(self, start_date, end_date, dates)
-            risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
+            risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(
+                ['trade_date', 'code'])
 
         return risk_cov, risk_exp
 
     def fetch_industry(self,
                        ref_date: str,
                        codes: Iterable[int],
-                       category: str = 'sw'):
+                       category: str = 'sw',
+                       level: int = 1):
 
         industry_category_name = _map_industry_category(category)
+        code_name = 'industryID' + str(level)
+        category_name = 'industryName' + str(level)
 
         query = select([Industry.code,
-                        Industry.industryID1.label('industry_code'),
-                        Industry.industryName1.label('industry')]).where(
+                        getattr(Industry, code_name).label('industry_code'),
+                        getattr(Industry, category_name).label('industry')]).where(
             and_(
                 Industry.trade_date == ref_date,
                 Industry.code.in_(codes),
@@ -531,14 +536,36 @@ class SqlEngine(object):
 
         return pd.read_sql(query, self.engine)
 
+    def fetch_industry_matrix(self,
+                              ref_date: str,
+                              codes: Iterable[int],
+                              category: str = 'sw',
+                              level: int = 1):
+        df = self.fetch_industry(ref_date, codes, category, level)
+        df['industry_name'] = df['industry']
+        df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
+        industries = industry_list(category, level)
+
+        in_s = []
+        out_s = []
+        for i in industries:
+            if i in df:
+                in_s.append(i)
+            else:
+                out_s.append(i)
+
+        res = df[['code', 'industry_code', 'industry_name'] + in_s]
+        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
+        return res
+
     def fetch_industry_range(self,
                              universe: Universe,
                              start_date: str = None,
                              end_date: str = None,
                              dates: Iterable[str] = None,
-                             category: str = 'sw'):
+                             category: str = 'sw',
+                             level: int = 1):
         industry_category_name = _map_industry_category(category)
-
         cond = universe._query_statements(start_date, end_date, dates)
 
         big_table = join(Industry, UniverseTable,
@@ -547,13 +574,15 @@ class SqlEngine(object):
                              Industry.code == UniverseTable.code,
                              Industry.industry == industry_category_name,
                              cond
-                         )
-                    )
+                         ))
+
+        code_name = 'industryID' + str(level)
+        category_name = 'industryName' + str(level)
 
         query = select([Industry.trade_date,
                         Industry.code,
-                        Industry.industryID1.label('industry_code'),
-                        Industry.industryName1.label('industry')]).select_from(big_table).distinct()
+                        getattr(Industry, code_name).label('industry_code'),
+                        getattr(Industry, category_name).label('industry')]).select_from(big_table).distinct()
 
         df = pd.read_sql(query, self.engine)
         if universe.is_filtered:
@@ -561,7 +590,46 @@ class SqlEngine(object):
             df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
         return df
 
-    def fetch_data(self, ref_date: str,
+    def fetch_industry_matrix_range(self,
+                                    universe: Universe,
+                                    start_date: str = None,
+                                    end_date: str = None,
+                                    dates: Iterable[str] = None,
+                                    category: str = 'sw',
+                                    level: int = 1):
+
+        df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
+        df['industry_name'] = df['industry']
+        df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
+        industries = industry_list(category, level)
+
+        in_s = []
+        out_s = []
+        for i in industries:
+            if i in df:
+                in_s.append(i)
+            else:
+                out_s.append(i)
+
+        res = df[['trade_date', 'code', 'industry_code', 'industry_name'] + in_s]
+
+        res = res.assign(**dict(zip(out_s, [0]*len(out_s))))
+        return res
+
+    def fetch_trade_status(self,
+                           ref_date: str,
+                           codes: Iterable[int]):
+
+        query = select([Market.code, Market.isOpen]).where(
+            and_(
+                Market.trade_date == ref_date,
+                Market.code.in_(codes)
+            )
+        )
+        return pd.read_sql(query, self.engine).sort_values(['code'])
+
+    def fetch_data(self,
+                   ref_date: str,
                    factors: Iterable[str],
                    codes: Iterable[int],
                    benchmark: int = None,
@@ -802,10 +870,10 @@ class SqlEngine(object):
         else:
             id_filter = 'in_'
 
-        t = select([table.trade_id]).\
+        t = select([table.trade_id]). \
             where(and_(table.trade_date <= ref_date,
                        table.operation == 'withdraw')).alias('t')
-        query = select([table]).\
+        query = select([table]). \
             where(and_(getattr(table.trade_id, id_filter)(t),
                        table.trade_date <= ref_date,
                        table.operation == 'lend'))
@@ -823,7 +891,7 @@ class SqlEngine(object):
             rule = x['price_rule'].split('@')
 
             if rule[0] in ['closePrice', 'openPrice']:
-                query = select([getattr(Market, rule[0])]).\
+                query = select([getattr(Market, rule[0])]). \
                     where(and_(Market.code == code, Market.trade_date == rule[1]))
                 data = pd.read_sql(query, self.engine)
                 if not data.empty:
@@ -835,6 +903,7 @@ class SqlEngine(object):
             else:
                 raise KeyError('do not have rule for %s' % x['price_rule'])
             return price
+
         df['price'] = df.apply(lambda x: parse_price_rule(x), axis=1)
 
         df.drop(['remark', 'price_rule', 'operation'], axis=1, inplace=True)
@@ -848,12 +917,10 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
-
     universe = Universe('ss', ['hs300'])
 
     engine = SqlEngine()
-
-    df = engine.fetch_outright_status('2017-12-28')
-
+    ref_date = '2017-12-28'
+    codes = universe.query(engine, dates=[ref_date])
+    df = engine.fetch_trade_status(ref_date, codes.code.tolist())
     print(df)
-

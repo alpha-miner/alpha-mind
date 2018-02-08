@@ -402,9 +402,9 @@ if __name__ == '__main__':
     universe = Universe('zz500', ['hs300', 'zz500'])
     neutralized_risk = ['SIZE']
     res = fetch_predict_phase(engine, ['ep_q'],
-                            '2018-01-08',
-                            '5b',
-                            universe,
-                            16,
-                            neutralized_risk=neutralized_risk)
+                              '2012-01-05',
+                              '5b',
+                              universe,
+                              16,
+                              neutralized_risk=neutralized_risk)
     print(res)

@@ -7,11 +7,13 @@ Created on 2017-5-25
 
 from typing import Optional
 from typing import Tuple
+from typing import Union
 import numpy as np
 import pandas as pd
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.portfolio.constraints import Constraints
+from alphamind.portfolio.constraints import LinearConstraints
 from alphamind.portfolio.longshortbulder import long_short_build
 from alphamind.portfolio.rankbuilder import rank_build
 from alphamind.portfolio.linearbuilder import linear_build
@@ -60,7 +62,7 @@ def factor_analysis(factors: pd.DataFrame,
 def er_portfolio_analysis(er: np.ndarray,
                           industry: np.ndarray,
                           dx_return: np.ndarray,
-                          constraints: Optional[Constraints]=None,
+                          constraints: Optional[Union[LinearConstraints, Constraints]]=None,
                           detail_analysis=True,
                           benchmark: Optional[np.ndarray] = None,
                           is_tradable: Optional[np.ndarray] = None,

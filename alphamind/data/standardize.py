@@ -22,9 +22,9 @@ def standardize(x: np.ndarray, groups: np.ndarray=None, ddof=1) -> np.ndarray:
         mean_values = transform(groups, x, 'mean')
         std_values = transform(groups, x, 'std', ddof)
 
-        return (x - mean_values) / std_values
+        return (x - mean_values) / np.maximum(std_values, 1e-8)
     else:
-        return (x - simple_mean(x, axis=0)) / simple_std(x, axis=0, ddof=ddof)
+        return (x - simple_mean(x, axis=0)) / np.maximum(simple_std(x, axis=0, ddof=ddof), 1e-8)
 
 
 def projection(x: np.ndarray, groups: np.ndarray=None, axis=1) -> np.ndarray:
@@ -48,7 +48,7 @@ class Standardizer(object):
         self.std_ = simple_std(x, axis=0, ddof=self.ddof_)
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.mean_) / self.std_
+        return (x - self.mean_) / np.maximum(self.std_, 1e-8)
 
 
 class GroupedStandardizer(object):
@@ -69,4 +69,4 @@ class GroupedStandardizer(object):
     def transform(self, x: np.ndarray) -> np.ndarray:
         groups = x[:, 0].astype(int)
         index = array_index(self.labels_, groups)
-        return (x[:, 1:] - self.mean_[index]) / self.std_[index]
+        return (x[:, 1:] - self.mean_[index]) / np.maximum(self.std_[index], 1e-8)
