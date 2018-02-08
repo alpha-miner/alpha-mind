@@ -7,20 +7,18 @@ Created on 2017-9-27
 
 import copy
 import bisect
-from typing import Union
 from typing import Iterable
 import pandas as pd
 from alphamind.model.modelbase import ModelBase
 from alphamind.model.data_preparing import fetch_train_phase
 from alphamind.model.data_preparing import fetch_predict_phase
-from alphamind.data.transformer import Transformer
 from alphamind.data.engines.universe import Universe
+from alphamind.data.engines.sqlengine import SqlEngine
 
 
 class DataMeta(object):
 
     def __init__(self,
-                 engine,
                  freq: str,
                  universe: Universe,
                  batch: int,
@@ -28,8 +26,9 @@ class DataMeta(object):
                  risk_model: str = 'short',
                  pre_process: Iterable[object] = None,
                  post_process: Iterable[object] = None,
-                 warm_start: int = 0):
-        self.engine = engine
+                 warm_start: int = 0,
+                 data_source: str = None):
+        self.engine = SqlEngine(data_source)
         self.alpha_model = alpha_model
         self.freq = freq
         self.universe = universe
@@ -124,10 +123,9 @@ if __name__ == '__main__':
     from alphamind.data.standardize import standardize
     from alphamind.data.winsorize import winsorize_normal
     from alphamind.data.engines.sqlengine import industry_styles
-    from alphamind.data.engines.sqlengine import SqlEngine
     from alphamind.model.linearmodel import ConstLinearModel
 
-    engine = SqlEngine("postgres+psycopg2://postgres:we083826@localhost/alpha")
+    data_source = "postgres+psycopg2://postgres:we083826@localhost/alpha"
     alpha_model = ConstLinearModel(['EPS'], np.array([1.]))
     alpha_factors = ['EPS']
     freq = '1w'
@@ -138,14 +136,14 @@ if __name__ == '__main__':
     pre_process = [winsorize_normal, standardize]
     pos_process = [winsorize_normal, standardize]
 
-    data_meta = DataMeta(engine,
-                         freq,
+    data_meta = DataMeta(freq,
                          universe,
                          batch,
                          neutralized_risk,
                          risk_model,
                          pre_process,
-                         pos_process)
+                         pos_process,
+                         data_source=data_source)
 
     composer = ModelComposer(alpha_model, data_meta)
 
