@@ -616,7 +616,20 @@ class SqlEngine(object):
         res = res.assign(**dict(zip(out_s, [0]*len(out_s))))
         return res
 
-    def fetch_data(self, ref_date: str,
+    def fetch_trade_status(self,
+                           ref_date: str,
+                           codes: Iterable[int]):
+
+        query = select([Market.code, Market.isOpen]).where(
+            and_(
+                Market.trade_date == ref_date,
+                Market.code.in_(codes)
+            )
+        )
+        return pd.read_sql(query, self.engine).sort_values(['code'])
+
+    def fetch_data(self,
+                   ref_date: str,
                    factors: Iterable[str],
                    codes: Iterable[int],
                    benchmark: int = None,
@@ -909,8 +922,5 @@ if __name__ == '__main__':
     engine = SqlEngine()
     ref_date = '2017-12-28'
     codes = universe.query(engine, dates=[ref_date])
-    df = engine.fetch_industry_matrix(ref_date, codes.code.tolist(), 'dx', 1)
-    print(df)
-
-    df = engine.fetch_industry_matrix_range(universe, '2017-12-28', '2017-12-31', category='zz', level=2)
+    df = engine.fetch_trade_status(ref_date, codes.code.tolist())
     print(df)
