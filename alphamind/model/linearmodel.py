@@ -32,9 +32,8 @@ class ConstLinearModel(ModelBase):
 
     def __init__(self,
                  features: list = None,
-                 formulas: dict = None,
                  weights: np.ndarray = None):
-        super().__init__(features, formulas=formulas)
+        super().__init__(features)
         if features is not None and weights is not None:
             pyFinAssert(len(features) == len(weights),
                         ValueError,
@@ -57,8 +56,8 @@ class ConstLinearModel(ModelBase):
 
 class LinearRegression(ModelBase):
 
-    def __init__(self, features: list = None, formulas: dict = None, fit_intercept: bool = False, **kwargs):
-        super().__init__(features, formulas=formulas)
+    def __init__(self, features: list = None, fit_intercept: bool = False, **kwargs):
+        super().__init__(features)
         self.impl = LinearRegressionImpl(fit_intercept=fit_intercept, **kwargs)
         self.trained_time = None
 
@@ -85,8 +84,8 @@ class LinearRegression(ModelBase):
 
 class LassoRegression(ModelBase):
 
-    def __init__(self, alpha=0.01, features: list = None, formulas: dict = None, fit_intercept: bool = False, **kwargs):
-        super().__init__(features, formulas=formulas)
+    def __init__(self, alpha=0.01, features: list = None, fit_intercept: bool = False, **kwargs):
+        super().__init__(features)
         self.impl = Lasso(alpha=alpha, fit_intercept=fit_intercept, **kwargs)
         self.trained_time = None
 
@@ -113,8 +112,8 @@ class LassoRegression(ModelBase):
 
 class LogisticRegression(ModelBase):
 
-    def __init__(self, features: list = None, formulas: dict = None, fit_intercept: bool = False, **kwargs):
-        super().__init__(features, formulas=formulas)
+    def __init__(self, features: list = None, fit_intercept: bool = False, **kwargs):
+        super().__init__(features)
         self.impl = LogisticRegressionImpl(fit_intercept=fit_intercept, **kwargs)
 
     def save(self) -> dict:
