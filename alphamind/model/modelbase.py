@@ -12,13 +12,14 @@ import numpy as np
 from alphamind.utilities import alpha_logger
 from alphamind.utilities import encode
 from alphamind.utilities import decode
+from alphamind.data.transformer import Transformer
 
 
 class ModelBase(metaclass=abc.ABCMeta):
 
     def __init__(self, features: list=None, formulas: dict=None):
         if features is not None:
-            self.features = list(features)
+            self.features = Transformer(features).names
         else:
             self.features = None
         self.impl = None

@@ -43,6 +43,48 @@ class DataMeta(object):
         self.warm_start = warm_start
 
 
+def train_model(ref_date: str,
+                alpha_model: ModelBase,
+                data_meta: DataMeta):
+    train_data = fetch_train_phase(data_meta.engine,
+                                   data_meta.alpha_factors,
+                                   ref_date,
+                                   data_meta.freq,
+                                   data_meta.universe,
+                                   data_meta.batch,
+                                   data_meta.neutralized_risk,
+                                   data_meta.risk_model,
+                                   data_meta.pre_process,
+                                   data_meta.post_process,
+                                   data_meta.warm_start)
+
+    x_values = train_data['train']['x']
+    y_values = train_data['train']['y']
+    alpha_model.fit(x_values, y_values)
+    return copy.deepcopy(alpha_model)
+
+
+def predict_by_model(ref_date: str,
+                     alpha_model: ModelBase,
+                     data_meta):
+    predict_data = fetch_predict_phase(data_meta.engine,
+                                       data_meta.alpha_factors,
+                                       ref_date,
+                                       data_meta.freq,
+                                       data_meta.universe,
+                                       data_meta.batch,
+                                       data_meta.neutralized_risk,
+                                       data_meta.risk_model,
+                                       data_meta.pre_process,
+                                       data_meta.post_process,
+                                       data_meta.warm_start)
+
+    x_values = predict_data['predict']['x']
+    codes = predict_data['predict']['code']
+
+    return pd.DataFrame(alpha_model.predict(x_values).flatten(), index=codes)
+
+
 class ModelComposer(object):
     def __init__(self,
                  alpha_model: ModelBase,
@@ -55,47 +97,17 @@ class ModelComposer(object):
         self.sorted_keys = None
 
     def train(self, ref_date: str):
-        train_data = fetch_train_phase(self.data_meta.engine,
-                                       self.data_meta.alpha_factors,
-                                       ref_date,
-                                       self.data_meta.freq,
-                                       self.data_meta.universe,
-                                       self.data_meta.batch,
-                                       self.data_meta.neutralized_risk,
-                                       self.data_meta.risk_model,
-                                       self.data_meta.pre_process,
-                                       self.data_meta.post_process,
-                                       self.data_meta.warm_start)
-
-        x_values = train_data['train']['x']
-        y_values = train_data['train']['y']
-        self.alpha_model.fit(x_values, y_values)
-
-        self.models[ref_date] = copy.deepcopy(self.alpha_model)
+        self.models[ref_date] = train_model(ref_date, self.alpha_model, self.data_meta)
         self.is_updated = False
 
     def predict(self, ref_date: str, x: pd.DataFrame = None) -> pd.DataFrame:
+        model = self._fetch_latest_model(ref_date)
         if x is None:
-            predict_data = fetch_predict_phase(self.data_meta.engine,
-                                               self.data_meta.alpha_factors,
-                                               ref_date,
-                                               self.data_meta.freq,
-                                               self.data_meta.universe,
-                                               self.data_meta.batch,
-                                               self.data_meta.neutralized_risk,
-                                               self.data_meta.risk_model,
-                                               self.data_meta.pre_process,
-                                               self.data_meta.post_process,
-                                               self.data_meta.warm_start)
-
-            x_values = predict_data['predict']['x']
-            codes = predict_data['predict']['code']
+            return predict_by_model(ref_date, model, self.data_meta)
         else:
             x_values = x.values
             codes = x.index
-
-        model = self._fetch_latest_model(ref_date)
-        return pd.DataFrame(model.predict(x_values).flatten(), index=codes)
+            return pd.DataFrame(model.predict(x_values).flatten(), index=codes)
 
     def _fetch_latest_model(self, ref_date) -> ModelBase:
         if self.is_updated:
