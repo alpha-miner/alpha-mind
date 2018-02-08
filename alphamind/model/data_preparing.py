@@ -247,7 +247,7 @@ def fetch_data_package(engine: SqlEngine,
 
 
 def fetch_train_phase(engine,
-                      alpha_factors: Iterable[object],
+                      alpha_factors: Union[Transformer, Iterable[object]],
                       ref_date,
                       frequency,
                       universe,
@@ -257,7 +257,10 @@ def fetch_train_phase(engine,
                       pre_process: Iterable[object] = None,
                       post_process: Iterable[object] = None,
                       warm_start: int = 0) -> dict:
-    transformer = Transformer(alpha_factors)
+    if isinstance(alpha_factors, Transformer):
+        transformer = alpha_factors
+    else:
+        transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
     p = Period(length=-(warm_start + batch + 1) * p.length(), units=p.units())
@@ -317,7 +320,7 @@ def fetch_train_phase(engine,
 
 
 def fetch_predict_phase(engine,
-                        alpha_factors: Iterable[object],
+                        alpha_factors: Union[Transformer, Iterable[object]],
                         ref_date,
                         frequency,
                         universe,
@@ -327,7 +330,10 @@ def fetch_predict_phase(engine,
                         pre_process: Iterable[object] = None,
                         post_process: Iterable[object] = None,
                         warm_start: int = 0):
-    transformer = Transformer(alpha_factors)
+    if isinstance(alpha_factors, Transformer):
+        transformer = alpha_factors
+    else:
+        transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
     p = Period(length=-(warm_start + batch) * p.length(), units=p.units())
