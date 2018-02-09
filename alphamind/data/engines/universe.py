@@ -114,7 +114,7 @@ class Universe(object):
         )
 
     @classmethod
-    def load(cls, universe_desc):
+    def load(cls, universe_desc: dict):
         name = universe_desc['name']
         base_universe = universe_desc['base_universe']
         exclude_universe = universe_desc['exclude_universe']
