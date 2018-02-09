@@ -32,6 +32,7 @@ from alphamind.tests.model.test_modelbase import TestModelBase
 from alphamind.tests.model.test_linearmodel import TestLinearModel
 from alphamind.tests.model.test_treemodel import TestTreeModel
 from alphamind.tests.model.test_loader import TestLoader
+from alphamind.tests.model.test_composer import TestComposer
 from alphamind.tests.execution.test_naiveexecutor import TestNaiveExecutor
 from alphamind.tests.execution.test_thresholdexecutor import TestThresholdExecutor
 from alphamind.tests.execution.test_targetvolexecutor import TestTargetVolExecutor
@@ -61,6 +62,7 @@ if __name__ == '__main__':
                          TestLinearModel,
                          TestTreeModel,
                          TestLoader,
+                         TestComposer,
                          TestNaiveExecutor,
                          TestThresholdExecutor,
                          TestTargetVolExecutor,

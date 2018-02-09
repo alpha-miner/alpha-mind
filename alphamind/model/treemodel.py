@@ -32,12 +32,10 @@ class RandomForestRegressor(ModelBase):
         self.impl = RandomForestRegressorImpl(n_estimators=n_estimators,
                                               max_features=max_features,
                                               **kwargs)
-        self.trained_time = None
 
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['sklearn_version'] = sklearn_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -66,12 +64,10 @@ class RandomForestClassifier(ModelBase):
         self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
                                                max_features=max_features,
                                                **kwargs)
-        self.trained_time = None
 
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['sklearn_version'] = sklearn_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -108,7 +104,6 @@ class XGBRegressor(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -132,7 +127,7 @@ class XGBClassifier(ModelBase):
                  n_estimators: int=100,
                  learning_rate: float=0.1,
                  max_depth: int=3,
-                 features: List = None,
+                 features=None,
                  n_jobs: int=1,
                  **kwargs):
         super().__init__(features)
@@ -145,7 +140,6 @@ class XGBClassifier(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -230,7 +224,6 @@ class XGBTrainer(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod

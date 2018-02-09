@@ -8,6 +8,7 @@ Created on 2017-9-4
 import abc
 import arrow
 import numpy as np
+from simpleutils.miscellaneous import list_eq
 from alphamind.utilities import alpha_logger
 from alphamind.utilities import encode
 from alphamind.utilities import decode
@@ -16,7 +17,7 @@ from alphamind.data.transformer import Transformer
 
 class ModelBase(metaclass=abc.ABCMeta):
 
-    def __init__(self, features: list=None):
+    def __init__(self, features=None):
         if features is not None:
             self.formulas = Transformer(features)
             self.features = self.formulas.names
@@ -24,6 +25,12 @@ class ModelBase(metaclass=abc.ABCMeta):
             self.features = None
         self.impl = None
         self.trained_time = None
+
+    def __eq__(self, rhs):
+        return encode(self.impl) == encode(rhs.impl) \
+               and self.trained_time == rhs.trained_time \
+               and list_eq(self.features, rhs.features) \
+               and encode(self.formulas) == encode(rhs.formulas)
 
     def fit(self, x: np.ndarray, y: np.ndarray):
         self.impl.fit(x, y.flatten())

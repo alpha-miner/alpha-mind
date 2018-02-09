@@ -9,9 +9,14 @@ import unittest
 from alphamind.data.engines.universe import Universe
 from alphamind.model.composer import DataMeta
 from alphamind.model.composer import Composer
+from alphamind.model.treemodel import XGBClassifier
 
 
 class TestComposer(unittest.TestCase):
+
+    def _assert_composer_equal(self, lhs: Composer, rhs: Composer):
+        self.assertEqual(lhs.alpha_model, rhs.alpha_model)
+        self.assertEqual(lhs.data_meta, rhs.data_meta)
 
     def test_data_meta_persistence(self):
 
@@ -49,7 +54,36 @@ class TestComposer(unittest.TestCase):
         self.assertEqual(data_meta.data_source, loaded_data.data_source)
 
     def test_composer_persistence(self):
-        pass
+        freq = '5b'
+        universe = Universe('custom', ['zz800'])
+        batch = 4
+        neutralized_risk = ['SIZE']
+        risk_model = 'long'
+        pre_process = ['standardize', 'winsorize_normal']
+        post_process = ['standardize', 'winsorize_normal']
+        warm_start = 2
+        data_source = 'postgresql://user:pwd@server/dummy'
+
+        data_meta = DataMeta(freq=freq,
+                             universe=universe,
+                             batch=batch,
+                             neutralized_risk=neutralized_risk,
+                             risk_model=risk_model,
+                             pre_process=pre_process,
+                             post_process=post_process,
+                             warm_start=warm_start,
+                             data_source=data_source)
+
+        features = {'f1': 'closePrice', 'f2': 'openPrice'}
+        alpha_model = XGBClassifier(features=features)
+
+        composer = Composer(alpha_model=alpha_model,
+                            data_meta=data_meta)
+
+        comp_desc = composer.save()
+        loaded_comp = Composer.load(comp_desc)
+        self._assert_composer_equal(composer, loaded_comp)
+
 
 
 
