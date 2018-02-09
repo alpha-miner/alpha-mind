@@ -8,6 +8,7 @@ Created on 2017-9-4
 import abc
 import arrow
 import numpy as np
+import pandas as pd
 from simpleutils.miscellaneous import list_eq
 from alphamind.utilities import alpha_logger
 from alphamind.utilities import encode
@@ -32,15 +33,15 @@ class ModelBase(metaclass=abc.ABCMeta):
                and list_eq(self.features, rhs.features) \
                and encode(self.formulas) == encode(rhs.formulas)
 
-    def fit(self, x: np.ndarray, y: np.ndarray):
-        self.impl.fit(x, y.flatten())
+    def fit(self, x: pd.DataFrame, y: np.ndarray):
+        self.impl.fit(x[self.features].values, y.flatten())
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        return self.impl.predict(x)
+    def predict(self, x: pd.DataFrame) -> np.ndarray:
+        return self.impl.predict(x[self.features].values)
 
-    def score(self, x: np.ndarray, y: np.ndarray) -> float:
-        return self.impl.score(x, y)
+    def score(self, x: pd.DataFrame, y: np.ndarray) -> float:
+        return self.impl.score(x[self.features].values, y)
 
     @abc.abstractmethod
     def save(self) -> dict:

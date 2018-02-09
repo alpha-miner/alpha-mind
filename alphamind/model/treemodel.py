@@ -9,6 +9,7 @@ from typing import List
 from distutils.version import LooseVersion
 import arrow
 import numpy as np
+import pandas as pd
 from sklearn import __version__ as sklearn_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
 from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
@@ -194,9 +195,9 @@ class XGBTrainer(ModelBase):
         self.impl = None
         self.kwargs = kwargs
 
-    def fit(self, x, y):
+    def fit(self, x: pd.DataFrame, y: np.ndarray):
         if self.eval_sample:
-            x_train, x_eval, y_train, y_eval = train_test_split(x,
+            x_train, x_eval, y_train, y_eval = train_test_split(x[self.features].values,
                                                                 y,
                                                                 test_size=self.eval_sample,
                                                                 random_state=42)
@@ -209,7 +210,7 @@ class XGBTrainer(ModelBase):
                                   verbose_eval=False,
                                   **self.kwargs)
         else:
-            d_train = xgb.DMatrix(x, y)
+            d_train = xgb.DMatrix(x[self.features].values, y)
             self.impl = xgb.train(params=self.params,
                                   dtrain=d_train,
                                   num_boost_round=self.num_boost_round,
@@ -217,8 +218,8 @@ class XGBTrainer(ModelBase):
 
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        d_predict = xgb.DMatrix(x)
+    def predict(self, x: pd.DataFrame) -> np.ndarray:
+        d_predict = xgb.DMatrix(x[self.features].values)
         return self.impl.predict(d_predict)
 
     def save(self) -> dict:

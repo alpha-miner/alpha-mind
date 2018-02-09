@@ -7,6 +7,7 @@ Created on 2017-9-4
 
 import unittest
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression as LinearRegression2
 from alphamind.model.loader import load_model
 from alphamind.model.linearmodel import ConstLinearModel
@@ -19,10 +20,10 @@ class TestLinearModel(unittest.TestCase):
 
     def setUp(self):
         self.n = 3
-        self.train_x = np.random.randn(1000, self.n)
+        self.train_x = pd.DataFrame(np.random.randn(1000, self.n), columns=['a', 'b', 'c'])
         self.train_y = np.random.randn(1000)
         self.train_y_label = np.where(self.train_y > 0., 1, 0)
-        self.predict_x = np.random.randn(10, self.n)
+        self.predict_x = pd.DataFrame(np.random.randn(10, self.n), columns=['a', 'b', 'c'])
 
     def test_const_linear_model(self):
 
