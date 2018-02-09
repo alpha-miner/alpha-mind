@@ -613,7 +613,7 @@ class SqlEngine(object):
 
         res = df[['trade_date', 'code', 'industry_code', 'industry_name'] + in_s]
 
-        res = res.assign(**dict(zip(out_s, [0]*len(out_s))))
+        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
         return res
 
     def fetch_trade_status(self,

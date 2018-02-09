@@ -80,3 +80,8 @@ class Transformer(object):
             return transformed_data
         else:
             return pd.DataFrame()
+
+
+if __name__ == '__main__':
+
+    transformer = Transformer(['c', 'a'])
