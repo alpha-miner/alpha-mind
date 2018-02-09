@@ -43,7 +43,7 @@ from alphamind.model import load_model
 from alphamind.model.data_preparing import fetch_data_package
 from alphamind.model.data_preparing import fetch_train_phase
 from alphamind.model.data_preparing import fetch_predict_phase
-from alphamind.model.composer import ModelComposer
+from alphamind.model.composer import Composer
 from alphamind.model.composer import DataMeta
 from alphamind.model.composer import train_model
 from alphamind.model.composer import predict_by_model
@@ -83,7 +83,7 @@ __all__ = [
     'fetch_data_package',
     'fetch_train_phase',
     'fetch_predict_phase',
-    'ModelComposer',
+    'Composer',
     'DataMeta',
     'train_model',
     'predict_by_model',

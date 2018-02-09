@@ -7,6 +7,7 @@ Created on 2017-7-7
 
 from typing import Iterable
 import pandas as pd
+from simpleutils.miscellaneous import list_eq
 from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy import select
@@ -30,10 +31,16 @@ class Universe(object):
                  special_codes: Iterable = None,
                  filter_cond=None):
         self.name = name
-        self.base_universe = base_universe
-        self.exclude_universe = exclude_universe
-        self.special_codes = special_codes
+        self.base_universe = sorted(base_universe) if base_universe else None
+        self.exclude_universe = sorted(exclude_universe) if exclude_universe else None
+        self.special_codes = sorted(special_codes) if special_codes else None
         self.filter_cond = filter_cond
+
+    def __eq__(self, rhs):
+        return self.name == rhs.name \
+               and list_eq(self.base_universe, rhs.base_universe) \
+               and list_eq(self.exclude_universe, rhs.exclude_universe) \
+               and list_eq(self.special_codes, rhs.special_codes)
 
     @property
     def is_filtered(self):
