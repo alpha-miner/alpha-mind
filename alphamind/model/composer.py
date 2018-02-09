@@ -14,6 +14,20 @@ from alphamind.model.data_preparing import fetch_train_phase
 from alphamind.model.data_preparing import fetch_predict_phase
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.sqlengine import SqlEngine
+from alphamind.data.winsorize import winsorize_normal
+from alphamind.data.standardize import standardize
+
+PROCESS_MAPPING = {
+    'winsorize_normal': winsorize_normal,
+    'standardize': standardize
+}
+
+
+def _map_process(processes):
+    if processes:
+        return [p if hasattr(p, '__call__') else PROCESS_MAPPING[p] for p in processes]
+    else:
+        return None
 
 
 class DataMeta(object):
@@ -28,16 +42,51 @@ class DataMeta(object):
                  post_process: Iterable[object] = None,
                  warm_start: int = 0,
                  data_source: str = None):
-        self.engine = SqlEngine(data_source)
-        self.alpha_model = alpha_model
+        self.data_source = data_source
+        self.engine = SqlEngine(self.data_source)
         self.freq = freq
         self.universe = universe
         self.batch = batch
         self.neutralized_risk = neutralized_risk
         self.risk_model = risk_model
-        self.pre_process = pre_process
-        self.post_process = post_process
+        self.pre_process = _map_process(pre_process)
+        self.post_process = _map_process(post_process)
         self.warm_start = warm_start
+
+    def save(self) -> dict:
+        return dict(
+            freq=self.freq,
+            universe=self.universe.save(),
+            batch=self.batch,
+            neutralized_risk=neutralized_risk,
+            risk_model=self.risk_model,
+            pre_process=[p.__name__ for p in self.pre_process] if pre_process else None,
+            post_process=[p.__name__ for p in self.post_process] if pre_process else None,
+            warm_start=self.warm_start,
+            data_source=self.data_source
+        )
+
+    @classmethod
+    def load(cls, data_desc: dict):
+        freq = data_desc['freq']
+        universe = Universe.load(data_desc['universe'])
+        batch = data_desc['batch']
+        neutralized_risk = data_desc['neutralized_risk']
+        risk_model = data_desc['risk_model']
+        pre_process = data_desc['pre_process']
+        post_process = data_desc['post_process']
+        warm_start = data_desc['warm_start']
+        data_source = data_desc['data_source']
+
+        return cls(freq=freq,
+                   universe=universe,
+                   batch=batch,
+                   neutralized_risk=neutralized_risk,
+                   risk_model=risk_model,
+                   pre_process=pre_process,
+                   post_process=post_process,
+                   warm_start=warm_start,
+                   data_source=data_source)
 
 
 def train_model(ref_date: str,
