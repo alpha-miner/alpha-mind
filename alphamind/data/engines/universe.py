@@ -40,7 +40,8 @@ class Universe(object):
         return self.name == rhs.name \
                and list_eq(self.base_universe, rhs.base_universe) \
                and list_eq(self.exclude_universe, rhs.exclude_universe) \
-               and list_eq(self.special_codes, rhs.special_codes)
+               and list_eq(self.special_codes, rhs.special_codes) \
+               and str(self.filter_cond) == str(rhs.filter_cond)
 
     @property
     def is_filtered(self):
