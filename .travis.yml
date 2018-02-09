@@ -33,6 +33,7 @@ install:
   - conda install pandas
   - conda install scikit-learn
   - conda install cython
+  - conda install sqlalchemy
   - conda install -c conda-forge arrow
   - pip install simpleutils
   - pip install coveralls
