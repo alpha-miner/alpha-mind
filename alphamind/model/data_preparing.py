@@ -292,10 +292,10 @@ def fetch_train_phase(engine,
 
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
         end = dates[-2]
-        start = dates[-batch - 1]
+        start = dates[-batch - 1] if batch <= len(dates) - 1 else dates[0]
     else:
         end = dates[-1]
-        start = dates[-batch]
+        start = dates[-batch] if batch <= len(dates) else dates[0]
 
     index = (date_label >= start) & (date_label <= end)
     this_raw_x = x_values[index]
@@ -370,7 +370,7 @@ def fetch_predict_phase(engine,
 
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
         end = dates[-1]
-        start = dates[-batch]
+        start = dates[-batch] if batch <= len(dates) else dates[0]
 
         left_index = bisect.bisect_left(date_label, start)
         right_index = bisect.bisect_right(date_label, end)
