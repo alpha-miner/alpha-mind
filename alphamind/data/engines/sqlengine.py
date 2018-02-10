@@ -408,7 +408,8 @@ class SqlEngine(object):
 
     def fetch_benchmark(self,
                         ref_date: str,
-                        benchmark: int) -> pd.DataFrame:
+                        benchmark: int,
+                        codes: Iterable[int]=None) -> pd.DataFrame:
         query = select([IndexComponent.code, (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
                 IndexComponent.trade_date == ref_date,
@@ -416,7 +417,13 @@ class SqlEngine(object):
             )
         )
 
-        return pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine)
+
+        if codes:
+            df.set_index(['code'], inplace=True)
+            df = df.reindex(codes).fillna(0.)
+            df.reset_index(inplace=True)
+        return df
 
     def fetch_benchmark_range(self,
                               benchmark: int,

@@ -19,7 +19,7 @@ from alphamind.utilities import alpha_logger
 class ConstLinearModelImpl(object):
 
     def __init__(self, weights: np.ndarray = None):
-        self.weights = np.array(weights).flatten()
+        self.weights = weights.flatten()
 
     def fit(self, x: np.ndarray, y: np.ndarray):
         pass
@@ -32,13 +32,14 @@ class ConstLinearModel(ModelBase):
 
     def __init__(self,
                  features=None,
-                 weights: np.ndarray = None):
+                 weights: dict = None):
         super().__init__(features)
         if features is not None and weights is not None:
             pyFinAssert(len(features) == len(weights),
                         ValueError,
                         "length of features is not equal to length of weights")
-        self.impl = ConstLinearModelImpl(weights)
+        if weights:
+            self.impl = ConstLinearModelImpl(np.array([weights[name] for name in self.features]))
 
     def save(self):
         model_desc = super().save()
