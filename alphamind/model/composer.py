@@ -105,30 +105,12 @@ class DataMeta(object):
 
 def train_model(ref_date: str,
                 alpha_model: ModelBase,
-                data_meta: DataMeta):
+                data_meta: DataMeta=None,
+                x_values: pd.DataFrame=None,
+                y_values: pd.DataFrame=None):
     base_model = copy.deepcopy(alpha_model)
-    train_data = fetch_train_phase(data_meta.engine,
-                                   alpha_model.formulas,
-                                   ref_date,
-                                   data_meta.freq,
-                                   data_meta.universe,
-                                   data_meta.batch,
-                                   data_meta.neutralized_risk,
-                                   data_meta.risk_model,
-                                   data_meta.pre_process,
-                                   data_meta.post_process,
-                                   data_meta.warm_start)
-
-    x_values = train_data['train']['x']
-    y_values = train_data['train']['y']
-    base_model.fit(x_values, y_values)
-    return base_model
-
-
-def predict_by_model(ref_date: str,
-                     alpha_model: ModelBase,
-                     data_meta: DataMeta):
-    predict_data = fetch_predict_phase(data_meta.engine,
+    if x_values is None:
+        train_data = fetch_train_phase(data_meta.engine,
                                        alpha_model.formulas,
                                        ref_date,
                                        data_meta.freq,
@@ -140,8 +122,32 @@ def predict_by_model(ref_date: str,
                                        data_meta.post_process,
                                        data_meta.warm_start)
 
-    x_values = predict_data['predict']['x']
-    codes = predict_data['predict']['code']
+        x_values = train_data['train']['x']
+        y_values = train_data['train']['y']
+    base_model.fit(x_values, y_values)
+    return base_model
+
+
+def predict_by_model(ref_date: str,
+                     alpha_model: ModelBase,
+                     data_meta: DataMeta=None,
+                     x_values: pd.DataFrame=None,
+                     codes: Iterable[int]=None):
+    if x_values is None:
+        predict_data = fetch_predict_phase(data_meta.engine,
+                                           alpha_model.formulas,
+                                           ref_date,
+                                           data_meta.freq,
+                                           data_meta.universe,
+                                           data_meta.batch,
+                                           data_meta.neutralized_risk,
+                                           data_meta.risk_model,
+                                           data_meta.pre_process,
+                                           data_meta.post_process,
+                                           data_meta.warm_start)
+
+        x_values = predict_data['predict']['x']
+        codes = predict_data['predict']['code']
 
     return pd.DataFrame(alpha_model.predict(x_values).flatten(), index=codes)
 
