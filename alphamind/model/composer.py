@@ -106,6 +106,7 @@ class DataMeta(object):
 def train_model(ref_date: str,
                 alpha_model: ModelBase,
                 data_meta: DataMeta):
+    base_model = copy.deepcopy(alpha_model)
     train_data = fetch_train_phase(data_meta.engine,
                                    alpha_model.formulas,
                                    ref_date,
@@ -120,13 +121,13 @@ def train_model(ref_date: str,
 
     x_values = train_data['train']['x']
     y_values = train_data['train']['y']
-    alpha_model.fit(x_values, y_values)
-    return copy.deepcopy(alpha_model)
+    base_model.fit(x_values, y_values)
+    return base_model
 
 
 def predict_by_model(ref_date: str,
                      alpha_model: ModelBase,
-                     data_meta):
+                     data_meta: DataMeta):
     predict_data = fetch_predict_phase(data_meta.engine,
                                        alpha_model.formulas,
                                        ref_date,
@@ -157,7 +158,7 @@ class Composer(object):
         self.sorted_keys = None
 
     def train(self, ref_date: str):
-        self.models[ref_date] = train_model(ref_date, copy.deepcopy(self.alpha_model), self.data_meta)
+        self.models[ref_date] = train_model(ref_date, self.alpha_model, self.data_meta)
         self.is_updated = False
 
     def predict(self, ref_date: str, x: pd.DataFrame = None) -> pd.DataFrame:
