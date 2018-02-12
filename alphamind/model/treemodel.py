@@ -170,7 +170,7 @@ class XGBTrainer(ModelBase):
                  early_stopping_rounds=None,
                  subsample=1.,
                  colsample_bytree=1.,
-                 feature=None,
+                 features=None,
                  random_state: int=0,
                  n_jobs: int=1,
                  **kwargs):
