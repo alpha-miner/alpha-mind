@@ -128,26 +128,32 @@ def train_model(ref_date: str,
     return base_model
 
 
+def fetch_predict_data(ref_date: str,
+                       alpha_model: ModelBase,
+                       data_meta):
+
+    predict_data = fetch_predict_phase(data_meta.engine,
+                                       alpha_model.formulas,
+                                       ref_date,
+                                       data_meta.freq,
+                                       data_meta.universe,
+                                       data_meta.batch,
+                                       data_meta.neutralized_risk,
+                                       data_meta.risk_model,
+                                       data_meta.pre_process,
+                                       data_meta.post_process,
+                                       data_meta.warm_start,
+                                       fillna=True)
+    return predict_data['predict']['code'], predict_data['predict']['x']
+
+
 def predict_by_model(ref_date: str,
                      alpha_model: ModelBase,
                      data_meta: DataMeta=None,
                      x_values: pd.DataFrame=None,
                      codes: Iterable[int]=None):
     if x_values is None:
-        predict_data = fetch_predict_phase(data_meta.engine,
-                                           alpha_model.formulas,
-                                           ref_date,
-                                           data_meta.freq,
-                                           data_meta.universe,
-                                           data_meta.batch,
-                                           data_meta.neutralized_risk,
-                                           data_meta.risk_model,
-                                           data_meta.pre_process,
-                                           data_meta.post_process,
-                                           data_meta.warm_start)
-
-        x_values = predict_data['predict']['x']
-        codes = predict_data['predict']['code']
+        codes, x_values = fetch_predict_data(ref_date, alpha_model, data_meta)
 
     return pd.DataFrame(alpha_model.predict(x_values).flatten(), index=codes)
 

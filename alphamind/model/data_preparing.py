@@ -335,7 +335,8 @@ def fetch_predict_phase(engine,
                         risk_model: str = 'short',
                         pre_process: Iterable[object] = None,
                         post_process: Iterable[object] = None,
-                        warm_start: int = 0):
+                        warm_start: int = 0,
+                        fillna: str=None):
     if isinstance(alpha_factors, Transformer):
         transformer = alpha_factors
     else:
@@ -352,7 +353,12 @@ def fetch_predict_phase(engine,
                          dateRule=BizDayConventions.Following,
                          dateGenerationRule=DateGeneration.Backward)
 
-    factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates).dropna()
+    factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates)
+
+    if fillna:
+        factor_df = factor_df.groupby('trade_date').apply(lambda x: x.fillna(x.median())).reset_index(drop=True).dropna()
+    else:
+        factor_df = factor_df.dropna()
 
     names = transformer.names
 
