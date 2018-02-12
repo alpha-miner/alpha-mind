@@ -48,8 +48,8 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
 * Linux
 
-    在linux上，需要c++编译器（例如g++）以及fortran编译器（例如gfortran)：
-
+  在linux上，需要c++编译器（例如g++）以及fortran编译器（例如gfortran):
+    
     ```bash
     build_linux_dependencies.sh
     ```
