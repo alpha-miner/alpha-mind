@@ -5,7 +5,6 @@ Created on 2017-12-4
 @author: cheng.li
 """
 
-from typing import List
 from distutils.version import LooseVersion
 import arrow
 import numpy as np
@@ -27,7 +26,7 @@ class RandomForestRegressor(ModelBase):
     def __init__(self,
                  n_estimators: int=100,
                  max_features: str='auto',
-                 features: List=None,
+                 features=None,
                  **kwargs):
         super().__init__(features)
         self.impl = RandomForestRegressorImpl(n_estimators=n_estimators,
@@ -59,7 +58,7 @@ class RandomForestClassifier(ModelBase):
     def __init__(self,
                  n_estimators: int=100,
                  max_features: str='auto',
-                 features: List = None,
+                 features=None,
                  **kwargs):
         super().__init__(features)
         self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
@@ -92,7 +91,7 @@ class XGBRegressor(ModelBase):
                  n_estimators: int=100,
                  learning_rate: float=0.1,
                  max_depth: int=3,
-                 features: List=None,
+                 features=None,
                  n_jobs: int=1,
                  **kwargs):
         super().__init__(features)
@@ -171,7 +170,7 @@ class XGBTrainer(ModelBase):
                  early_stopping_rounds=None,
                  subsample=1.,
                  colsample_bytree=1.,
-                 features: List = None,
+                 feature=None,
                  random_state: int=0,
                  n_jobs: int=1,
                  **kwargs):

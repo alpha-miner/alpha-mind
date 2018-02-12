@@ -57,7 +57,7 @@ class ConstLinearModel(ModelBase):
 
 class LinearRegression(ModelBase):
 
-    def __init__(self, features: list = None, fit_intercept: bool = False, **kwargs):
+    def __init__(self, features=None, fit_intercept: bool = False, **kwargs):
         super().__init__(features)
         self.impl = LinearRegressionImpl(fit_intercept=fit_intercept, **kwargs)
 
@@ -84,7 +84,7 @@ class LinearRegression(ModelBase):
 
 class LassoRegression(ModelBase):
 
-    def __init__(self, alpha=0.01, features: list = None, fit_intercept: bool = False, **kwargs):
+    def __init__(self, alpha=0.01, features=None, fit_intercept: bool = False, **kwargs):
         super().__init__(features)
         self.impl = Lasso(alpha=alpha, fit_intercept=fit_intercept, **kwargs)
 
@@ -111,7 +111,7 @@ class LassoRegression(ModelBase):
 
 class LogisticRegression(ModelBase):
 
-    def __init__(self, features: list = None, fit_intercept: bool = False, **kwargs):
+    def __init__(self, features=None, fit_intercept: bool = False, **kwargs):
         super().__init__(features)
         self.impl = LogisticRegressionImpl(fit_intercept=fit_intercept, **kwargs)
 

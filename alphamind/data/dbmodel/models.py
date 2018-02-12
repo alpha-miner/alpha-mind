@@ -858,6 +858,7 @@ class Models(Base):
     model_version = Column(BigInteger, nullable=False)
     update_time = Column(DateTime, nullable=False)
     model_desc = Column(JSONB, nullable=False)
+    data_meta = Column(JSONB, nullable=True)
     is_primary = Column(Boolean)
     model_id = Column(Integer, primary_key=True, autoincrement=True)
 
