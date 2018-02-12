@@ -754,6 +754,7 @@ class SqlEngine(object):
                     model_version=None,
                     is_primary=True,
                     model_id=None) -> pd.DataFrame:
+        from alphamind.model.composer import DataMeta
 
         conditions = []
 
@@ -775,8 +776,10 @@ class SqlEngine(object):
 
         model_df = pd.read_sql(query, self.engine)
 
-        for i, model_desc in enumerate(model_df.model_desc):
+        for i, data in enumerate(zip(model_df.model_desc, model_df.data_meta)):
+            model_desc, data_desc = data
             model_df.loc[i, 'model'] = load_model(model_desc)
+            model_df.loc[i, 'data_meta'] = DataMeta.load(data_desc)
 
         del model_df['model_desc']
         return model_df
@@ -924,10 +927,10 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
-    universe = Universe('ss', ['hs300'])
 
     engine = SqlEngine()
-    ref_date = '2017-12-28'
-    codes = universe.query(engine, dates=[ref_date])
-    df = engine.fetch_trade_status(ref_date, codes.code.tolist())
+    ref_date = '2018-02-08'
+    df = engine.fetch_model(ref_date,
+                            model_type='LassoRegression',
+                            model_version=2)
     print(df)
