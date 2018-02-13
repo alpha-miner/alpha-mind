@@ -207,17 +207,18 @@ class SqlEngine(object):
 
         cond = universe._query_statements(start_date, end_date, None)
 
-        big_table = join(Market, UniverseTable,
+        t = select([Market.trade_date, Market.code, stats]).where(
+            Market.trade_date.between(start_date, end_date)
+        ).alias('t')
+        big_table = join(t, UniverseTable,
                          and_(
-                             Market.trade_date == UniverseTable.trade_date,
-                             Market.code == UniverseTable.code,
+                             t.columns['trade_date'] == UniverseTable.trade_date,
+                             t.columns['code'] == UniverseTable.code,
                              cond
                          )
                          )
 
-        query = select([Market.trade_date, Market.code, stats]) \
-            .select_from(big_table)
-
+        query = select([t]).select_from(big_table)
         df = pd.read_sql(query, self.session.bind).dropna()
 
         if universe.is_filtered:
@@ -929,8 +930,6 @@ class SqlEngine(object):
 if __name__ == '__main__':
 
     engine = SqlEngine()
-    ref_date = '2018-02-08'
-    df = engine.fetch_model(ref_date,
-                            model_type='LassoRegression',
-                            model_version=2)
-    print(df)
+    ref_date = '2017-06-29'
+    universe = Universe('', ['zz800'])
+    p_returns = engine.fetch_dx_return_range(universe, ref_date, ref_date, horizon=0)
