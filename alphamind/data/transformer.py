@@ -12,9 +12,6 @@ from PyFin.Analysis.SecurityValueHolders import SecurityValueHolder
 from PyFin.api import transform as transform_impl
 
 
-DEFAULT_FACTOR_NAME = 'user_factor'
-
-
 def factor_translator(factor_pool):
 
     if not factor_pool:
@@ -23,7 +20,7 @@ def factor_translator(factor_pool):
     if isinstance(factor_pool, str):
         return {factor_pool: factor_pool}, [factor_pool]
     elif isinstance(factor_pool, SecurityValueHolder):
-        return {DEFAULT_FACTOR_NAME: factor_pool}, sorted(factor_pool.fields)
+        return {str(factor_pool): factor_pool}, sorted(factor_pool.fields)
     elif isinstance(factor_pool, dict):
         dependency = set()
         for k, v in factor_pool.items():
@@ -46,7 +43,7 @@ def factor_translator(factor_pool):
                 factor_dict[f] = f
                 dependency = dependency.union([f])
             elif isinstance(f, SecurityValueHolder):
-                factor_dict[DEFAULT_FACTOR_NAME + '_' + str(k).zfill(3)] = f
+                factor_dict[str(f)] = f
                 dependency = dependency.union(f.fields)
                 k += 1
         return factor_dict, sorted(dependency)
