@@ -19,7 +19,6 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
 from alphamind.model.loader import load_model
 
-
 PROCESS_MAPPING = {
     'winsorize_normal': winsorize_normal,
     'standardize': standardize
@@ -102,58 +101,60 @@ class DataMeta(object):
                    warm_start=warm_start,
                    data_source=data_source)
 
+    def fetch_train_data(self,
+                         ref_date,
+                         alpha_model: ModelBase):
+        return fetch_train_phase(self.engine,
+                                 alpha_model.formulas,
+                                 ref_date,
+                                 self.freq,
+                                 self.universe,
+                                 self.batch,
+                                 self.neutralized_risk,
+                                 self.risk_model,
+                                 self.pre_process,
+                                 self.post_process,
+                                 self.warm_start)
+
+    def fetch_predict_data(self,
+                           ref_date: str,
+                           alpha_model: ModelBase):
+        return fetch_predict_phase(self.engine,
+                                   alpha_model.formulas,
+                                   ref_date,
+                                   self.freq,
+                                   self.universe,
+                                   self.batch,
+                                   self.neutralized_risk,
+                                   self.risk_model,
+                                   self.pre_process,
+                                   self.post_process,
+                                   self.warm_start,
+                                   fillna=True)
+
 
 def train_model(ref_date: str,
                 alpha_model: ModelBase,
-                data_meta: DataMeta=None,
-                x_values: pd.DataFrame=None,
-                y_values: pd.DataFrame=None):
+                data_meta: DataMeta = None,
+                x_values: pd.DataFrame = None,
+                y_values: pd.DataFrame = None):
     base_model = copy.deepcopy(alpha_model)
     if x_values is None:
-        train_data = fetch_train_phase(data_meta.engine,
-                                       alpha_model.formulas,
-                                       ref_date,
-                                       data_meta.freq,
-                                       data_meta.universe,
-                                       data_meta.batch,
-                                       data_meta.neutralized_risk,
-                                       data_meta.risk_model,
-                                       data_meta.pre_process,
-                                       data_meta.post_process,
-                                       data_meta.warm_start)
-
+        train_data = data_meta.fetch_train_data(ref_date, alpha_model)
         x_values = train_data['train']['x']
         y_values = train_data['train']['y']
     base_model.fit(x_values, y_values)
     return base_model
 
 
-def fetch_predict_data(ref_date: str,
-                       alpha_model: ModelBase,
-                       data_meta):
-
-    predict_data = fetch_predict_phase(data_meta.engine,
-                                       alpha_model.formulas,
-                                       ref_date,
-                                       data_meta.freq,
-                                       data_meta.universe,
-                                       data_meta.batch,
-                                       data_meta.neutralized_risk,
-                                       data_meta.risk_model,
-                                       data_meta.pre_process,
-                                       data_meta.post_process,
-                                       data_meta.warm_start,
-                                       fillna=True)
-    return predict_data['predict']['code'], predict_data['predict']['x']
-
-
 def predict_by_model(ref_date: str,
                      alpha_model: ModelBase,
-                     data_meta: DataMeta=None,
-                     x_values: pd.DataFrame=None,
-                     codes: Iterable[int]=None):
+                     data_meta: DataMeta = None,
+                     x_values: pd.DataFrame = None,
+                     codes: Iterable[int] = None):
     if x_values is None:
-        codes, x_values = fetch_predict_data(ref_date, alpha_model, data_meta)
+        predict_data = data_meta.fetch_predict_data(ref_date, alpha_model)
+        codes, x_values = predict_data['predict']['code'], predict_data['predict']['x']
 
     return pd.DataFrame(alpha_model.predict(x_values).flatten(), index=codes)
 
