@@ -155,9 +155,9 @@ class SqlEngine(object):
                           dates: Iterable[str] = None) -> pd.DataFrame:
         return universe.query(self, start_date, end_date, dates)
 
-    def _create_stats(self, table, horizon, offset):
+    def _create_stats(self, table, horizon, offset, code_attr='code'):
         stats = func.sum(self.ln_func(1. + table.chgPct)).over(
-            partition_by=table.code,
+            partition_by=getattr(table, code_attr),
             order_by=table.trade_date,
             rows=(1 + DAILY_RETURN_OFFSET + offset, 1 + horizon + DAILY_RETURN_OFFSET + offset)).label('dx')
         return stats
@@ -244,7 +244,7 @@ class SqlEngine(object):
         else:
             end_date = expiry_date
 
-            stats = self._create_stats(IndexMarket, horizon, offset)
+            stats = self._create_stats(IndexMarket, horizon, offset, code_attr='indexCode')
 
         query = select([IndexMarket.trade_date, IndexMarket.indexCode.label('code'), stats]).where(
             and_(
@@ -272,7 +272,7 @@ class SqlEngine(object):
         end_date = advanceDateByCalendar('china.sse', end_date,
                                          str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
 
-        stats = self._create_stats(IndexMarket, horizon, offset)
+        stats = self._create_stats(IndexMarket, horizon, offset, code_attr='indexCode')
 
         query = select([IndexMarket.trade_date, IndexMarket.indexCode.label('code'), stats]) \
             .where(
