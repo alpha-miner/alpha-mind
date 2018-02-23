@@ -5,8 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, Boolean, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, Boolean, text, JSON
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -635,7 +634,7 @@ class DailyPortfolios(Base):
     industry = Column(String(50), nullable=False)
     benchmark_weight = Column(Float(53), nullable=False)
     is_tradable = Column(Boolean, nullable=False)
-    factor = Column(JSONB)
+    factor = Column(JSON)
 
 
 class DailyPortfoliosSchedule(Base):
@@ -857,7 +856,8 @@ class Models(Base):
     model_type = Column(String(30), nullable=False)
     model_version = Column(BigInteger, nullable=False)
     update_time = Column(DateTime, nullable=False)
-    model_desc = Column(JSONB, nullable=False)
+    model_desc = Column(JSON, nullable=False)
+    data_meta = Column(JSON, nullable=True)
     is_primary = Column(Boolean)
     model_id = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -915,7 +915,7 @@ class Positions(Base):
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     portfolio = Column(String(50), primary_key=True, nullable=False)
     type = Column(String(50), primary_key=True, nullable=False)
-    weight = Column(JSONB)
+    weight = Column(JSON)
 
 
 class QuantileAnalysis(Base):
@@ -1865,7 +1865,7 @@ class Formulas(Base):
     __tablename__ = 'formulas'
 
     formula = Column(String(50), primary_key=True)
-    formula_desc = Column(JSONB, nullable=False)
+    formula_desc = Column(JSON, nullable=False)
     comment = Column(Text)
 
 
