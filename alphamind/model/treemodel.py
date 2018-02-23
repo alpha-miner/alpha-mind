@@ -5,10 +5,10 @@ Created on 2017-12-4
 @author: cheng.li
 """
 
-from typing import List
 from distutils.version import LooseVersion
 import arrow
 import numpy as np
+import pandas as pd
 from sklearn import __version__ as sklearn_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
 from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
@@ -26,18 +26,16 @@ class RandomForestRegressor(ModelBase):
     def __init__(self,
                  n_estimators: int=100,
                  max_features: str='auto',
-                 features: List=None,
+                 features=None,
                  **kwargs):
-        super().__init__(features, **kwargs)
+        super().__init__(features)
         self.impl = RandomForestRegressorImpl(n_estimators=n_estimators,
                                               max_features=max_features,
                                               **kwargs)
-        self.trained_time = None
 
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['sklearn_version'] = sklearn_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -60,19 +58,16 @@ class RandomForestClassifier(ModelBase):
     def __init__(self,
                  n_estimators: int=100,
                  max_features: str='auto',
-                 features: List = None,
-                 formulas: dict = None,
+                 features=None,
                  **kwargs):
-        super().__init__(features, formulas=formulas)
+        super().__init__(features)
         self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
                                                max_features=max_features,
                                                **kwargs)
-        self.trained_time = None
 
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['sklearn_version'] = sklearn_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -96,11 +91,10 @@ class XGBRegressor(ModelBase):
                  n_estimators: int=100,
                  learning_rate: float=0.1,
                  max_depth: int=3,
-                 features: List=None,
-                 formulas: dict = None,
+                 features=None,
                  n_jobs: int=1,
                  **kwargs):
-        super().__init__(features, formulas=formulas)
+        super().__init__(features)
         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,
@@ -110,7 +104,6 @@ class XGBRegressor(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -134,11 +127,10 @@ class XGBClassifier(ModelBase):
                  n_estimators: int=100,
                  learning_rate: float=0.1,
                  max_depth: int=3,
-                 features: List = None,
-                 formulas: dict = None,
+                 features=None,
                  n_jobs: int=1,
                  **kwargs):
-        super().__init__(features, formulas=formulas)
+        super().__init__(features)
         self.impl = XGBClassifierImpl(n_estimators=n_estimators,
                                       learning_rate=learning_rate,
                                       max_depth=max_depth,
@@ -148,7 +140,6 @@ class XGBClassifier(ModelBase):
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod
@@ -179,12 +170,11 @@ class XGBTrainer(ModelBase):
                  early_stopping_rounds=None,
                  subsample=1.,
                  colsample_bytree=1.,
-                 features: List = None,
-                 formulas: dict = None,
+                 features=None,
                  random_state: int=0,
                  n_jobs: int=1,
                  **kwargs):
-        super().__init__(features, formulas=formulas)
+        super().__init__(features)
         self.params = {
             'silent': 1,
             'objective': objective,
@@ -204,9 +194,9 @@ class XGBTrainer(ModelBase):
         self.impl = None
         self.kwargs = kwargs
 
-    def fit(self, x, y):
+    def fit(self, x: pd.DataFrame, y: np.ndarray):
         if self.eval_sample:
-            x_train, x_eval, y_train, y_eval = train_test_split(x,
+            x_train, x_eval, y_train, y_eval = train_test_split(x[self.features].values,
                                                                 y,
                                                                 test_size=self.eval_sample,
                                                                 random_state=42)
@@ -219,7 +209,7 @@ class XGBTrainer(ModelBase):
                                   verbose_eval=False,
                                   **self.kwargs)
         else:
-            d_train = xgb.DMatrix(x, y)
+            d_train = xgb.DMatrix(x[self.features].values, y)
             self.impl = xgb.train(params=self.params,
                                   dtrain=d_train,
                                   num_boost_round=self.num_boost_round,
@@ -227,14 +217,13 @@ class XGBTrainer(ModelBase):
 
         self.trained_time = arrow.now().format("YYYY-MM-DD HH:mm:ss")
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        d_predict = xgb.DMatrix(x)
+    def predict(self, x: pd.DataFrame) -> np.ndarray:
+        d_predict = xgb.DMatrix(x[self.features].values)
         return self.impl.predict(d_predict)
 
     def save(self) -> dict:
         model_desc = super().save()
         model_desc['xgbboot_version'] = xgbboot_version
-        model_desc['importances'] = self.importances
         return model_desc
 
     @classmethod

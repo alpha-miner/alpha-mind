@@ -7,6 +7,7 @@ Created on 2017-9-4
 
 import unittest
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression as LinearRegression2
 from alphamind.model.loader import load_model
 from alphamind.model.linearmodel import ConstLinearModel
@@ -19,23 +20,25 @@ class TestLinearModel(unittest.TestCase):
 
     def setUp(self):
         self.n = 3
-        self.train_x = np.random.randn(1000, self.n)
+        self.features = ['a', 'b', 'c']
+        self.train_x = pd.DataFrame(np.random.randn(1000, self.n), columns=['a', 'b', 'c'])
         self.train_y = np.random.randn(1000)
         self.train_y_label = np.where(self.train_y > 0., 1, 0)
-        self.predict_x = np.random.randn(10, self.n)
+        self.predict_x = pd.DataFrame(np.random.randn(10, self.n), columns=['a', 'b', 'c'])
 
     def test_const_linear_model(self):
 
-        weights = np.array([1., 2., 3.])
-        model = ConstLinearModel(features=['a', 'b', 'c'],
+        features = ['c', 'b', 'a']
+        weights = dict(c=3., b=2., a=1.)
+        model = ConstLinearModel(features=features,
                                  weights=weights)
 
         calculated_y = model.predict(self.predict_x)
-        expected_y = self.predict_x @ weights
+        expected_y = self.predict_x[features] @ np.array([weights[f] for f in features])
         np.testing.assert_array_almost_equal(calculated_y, expected_y)
 
     def test_const_linear_model_persistence(self):
-        weights = np.array([1., 2., 3.])
+        weights = dict(c=3., b=2., a=1.)
         model = ConstLinearModel(features=['a', 'b', 'c'],
                                  weights=weights)
 

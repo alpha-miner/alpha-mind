@@ -19,7 +19,7 @@ from alphamind.utilities import alpha_logger
 class ConstLinearModelImpl(object):
 
     def __init__(self, weights: np.ndarray = None):
-        self.weights = np.array(weights).flatten()
+        self.weights = weights.flatten()
 
     def fit(self, x: np.ndarray, y: np.ndarray):
         pass
@@ -31,15 +31,15 @@ class ConstLinearModelImpl(object):
 class ConstLinearModel(ModelBase):
 
     def __init__(self,
-                 features: list = None,
-                 formulas: dict = None,
-                 weights: np.ndarray = None):
-        super().__init__(features, formulas=formulas)
+                 features=None,
+                 weights: dict = None):
+        super().__init__(features)
         if features is not None and weights is not None:
             pyFinAssert(len(features) == len(weights),
                         ValueError,
                         "length of features is not equal to length of weights")
-        self.impl = ConstLinearModelImpl(weights)
+        if weights:
+            self.impl = ConstLinearModelImpl(np.array([weights[name] for name in self.features]))
 
     def save(self):
         model_desc = super().save()
@@ -57,10 +57,9 @@ class ConstLinearModel(ModelBase):
 
 class LinearRegression(ModelBase):
 
-    def __init__(self, features: list = None, formulas: dict = None, fit_intercept: bool = False, **kwargs):
-        super().__init__(features, formulas=formulas)
+    def __init__(self, features=None, fit_intercept: bool = False, **kwargs):
+        super().__init__(features)
         self.impl = LinearRegressionImpl(fit_intercept=fit_intercept, **kwargs)
-        self.trained_time = None
 
     def save(self) -> dict:
         model_desc = super().save()
@@ -85,10 +84,9 @@ class LinearRegression(ModelBase):
 
 class LassoRegression(ModelBase):
 
-    def __init__(self, alpha=0.01, features: list = None, formulas: dict = None, fit_intercept: bool = False, **kwargs):
-        super().__init__(features, formulas=formulas)
+    def __init__(self, alpha=0.01, features=None, fit_intercept: bool = False, **kwargs):
+        super().__init__(features)
         self.impl = Lasso(alpha=alpha, fit_intercept=fit_intercept, **kwargs)
-        self.trained_time = None
 
     def save(self) -> dict:
         model_desc = super().save()
@@ -113,8 +111,8 @@ class LassoRegression(ModelBase):
 
 class LogisticRegression(ModelBase):
 
-    def __init__(self, features: list = None, formulas: dict = None, fit_intercept: bool = False, **kwargs):
-        super().__init__(features, formulas=formulas)
+    def __init__(self, features=None, fit_intercept: bool = False, **kwargs):
+        super().__init__(features)
         self.impl = LogisticRegressionImpl(fit_intercept=fit_intercept, **kwargs)
 
     def save(self) -> dict:
