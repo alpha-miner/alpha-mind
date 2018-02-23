@@ -1950,6 +1950,7 @@ class Outright(Base):
     price_rule = Column(String(50), nullable=False)
     due_date = Column(DateTime)
     remark = Column(Text, nullable=True)
+    internal_borrow = Column(Boolean, server_default=text("false"))
 
 
 if __name__ == '__main__':
