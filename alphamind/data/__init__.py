@@ -13,4 +13,5 @@ from alphamind.data.rank import rank
 
 __all__ = ['standardize',
            'winsorize',
-           'neutralize']
+           'neutralize',
+           'rank']
