@@ -24,6 +24,6 @@ def rank(x: np.ndarray, groups: Optional[np.ndarray]=None) -> np.ndarray:
             curr_idx = order[start:diff_loc + 1]
             res[curr_idx] = x[curr_idx].argsort(axis=0)
             start = diff_loc + 1
-
+        return res
     else:
-        return x.argsort(axis=0)
+        return x.argsort(axis=0).argsort(axis=0)

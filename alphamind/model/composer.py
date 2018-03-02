@@ -16,12 +16,14 @@ from alphamind.model.data_preparing import fetch_predict_phase
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.winsorize import winsorize_normal
+from alphamind.data.rank import rank
 from alphamind.data.standardize import standardize
 from alphamind.model.loader import load_model
 
 PROCESS_MAPPING = {
     'winsorize_normal': winsorize_normal,
-    'standardize': standardize
+    'standardize': standardize,
+    'rank': rank,
 }
 
 
