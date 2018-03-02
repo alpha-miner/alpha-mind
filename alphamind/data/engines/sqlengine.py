@@ -120,9 +120,28 @@ class SqlEngine(object):
         query = self.session.query(FactorMaster)
         return pd.read_sql(query.statement, query.session.bind)
 
-    def fetch_factor_coverage(self) -> pd.DataFrame:
-        query = self.session.query(FactorLog)
-        return pd.read_sql(query.statement, query.session.bind)
+    def fetch_factor_coverage(self,
+                              start_date: str,
+                              end_date: str,
+                              universe: str=None,
+                              source: str=None) -> pd.DataFrame:
+
+        conditions = []
+        conditions.append(FactorLog.trade_date.between(start_date, end_date))
+
+        if universe:
+            conditions.append(FactorLog.universe == universe)
+
+        if source:
+            conditions.append(FactorLog.source == source)
+
+        query = select([FactorLog]).where(
+            and_(
+                *conditions
+            )
+        )
+
+        return pd.read_sql(query, self.session.bind)
 
     def fetch_risk_meta(self) -> pd.DataFrame:
         query = self.session.query(RiskMaster)

@@ -27,6 +27,7 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
 from alphamind.data.standardize import projection
 from alphamind.data.neutralize import neutralize
+from alphamind.data.rank import rank
 from alphamind.data.engines.sqlengine import factor_tables
 from alphamind.data.engines.utilities import industry_list
 
@@ -78,6 +79,7 @@ __all__ = [
     'standardize',
     'projection',
     'neutralize',
+    'rank',
     'factor_tables',
     'industry_list',
     'fetch_data_package',
