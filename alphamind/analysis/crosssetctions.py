@@ -35,7 +35,7 @@ def cross_section_analysis(ref_date,
 
     constraints = LinearConstraints(linear_bounds, total_risk_exp)
 
-    er = total_data[factor_name].values
+    er = total_data[factor_name].values.astype(float)
     industry = total_data.industry_name.values
 
     target_pos, _ = er_portfolio_analysis(er,
