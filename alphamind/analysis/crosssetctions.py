@@ -8,9 +8,8 @@ Created on 2018-3-5
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from alphamind.portfolio.constraints import LinearConstraints
-from alphamind.analysis.factoranalysis import er_portfolio_analysis
 from alphamind.utilities import alpha_logger
+from alphamind.data.neutralize import neutralize
 
 
 def cross_section_analysis(ref_date,
@@ -18,9 +17,6 @@ def cross_section_analysis(ref_date,
                            universe,
                            horizon,
                            constraint_risk,
-                           linear_bounds,
-                           lbound,
-                           ubound,
                            engine):
 
     codes = engine.fetch_codes(ref_date, universe)
@@ -33,23 +29,14 @@ def cross_section_analysis(ref_date,
     total_data = pd.merge(total_data, industry_matrix, on='code').dropna()
     total_risk_exp = total_data[constraint_risk]
 
-    constraints = LinearConstraints(linear_bounds, total_risk_exp)
-
     er = total_data[factor_name].values.astype(float)
+    er = neutralize(total_risk_exp.values, er).flatten()
     industry = total_data.industry_name.values
 
-    target_pos, _ = er_portfolio_analysis(er,
-                                          industry,
-                                          None,
-                                          constraints,
-                                          False,
-                                          None,
-                                          method='risk_neutral',
-                                          lbound=lbound*np.ones(len(er)),
-                                          ubound=ubound*np.ones(len(er)))
-
     codes = total_data.code.tolist()
-    target_pos['code'] = codes
+    target_pos = pd.DataFrame({'code': codes,
+                               'weight': er,
+                               'industry': industry})
     target_pos['weight'] = target_pos['weight'] / target_pos['weight'].abs().sum()
 
     dx_returns = engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=1)
@@ -63,4 +50,5 @@ def cross_section_analysis(ref_date,
     t_stats = results.tvalues[1]
 
     alpha_logger.info(f"{ref_date} is finished with {len(target_pos)} stocks for {factor_name}")
+    alpha_logger.info(f"{ref_date} risk_exposure {target_pos.weight.values @ total_risk_exp.values}")
     return port_ret, ic, t_stats
