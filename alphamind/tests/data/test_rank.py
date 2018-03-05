@@ -32,7 +32,7 @@ class TestRank(unittest.TestCase):
         data_rank = rank(self.x, groups=self.groups)
 
         df = pd.DataFrame(self.x, index=self.groups)
-        expected_rank = df.groupby(level=0).apply(lambda x: x.values.argsort().argsort())
+        expected_rank = df.groupby(level=0).apply(lambda x: x.values.argsort(axis=0).argsort(axis=0))
         print(expected_rank)
 
 
