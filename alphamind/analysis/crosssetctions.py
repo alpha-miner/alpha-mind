@@ -60,7 +60,6 @@ if __name__ == '__main__':
     import pandas as pd
     import statsmodels.api as sm
     from alphamind.api import *
-    from PyFin.api import *
 
     factor_name = 'SIZE'
     data_source = 'postgres+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
