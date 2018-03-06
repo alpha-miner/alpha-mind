@@ -43,7 +43,8 @@ def cs_impl(ref_date,
     t_stats = results.tvalues[1]
 
     alpha_logger.info(f"{ref_date} is finished with {len(target_pos)} stocks for {factor_name}")
-    alpha_logger.info(f"{ref_date} risk_exposure \n {target_pos.weight.values @ target_pos[constraint_risk].values}")
+    alpha_logger.info(f"{ref_date} risk_exposure \n "
+                      f"{np.sum(target_pos.weight.values @ target_pos[constraint_risk].values)}")
     return port_ret, ic, t_stats
 
 
