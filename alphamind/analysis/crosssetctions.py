@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from alphamind.utilities import alpha_logger
-from alphamind.data.neutralize import neutralize
+from alphamind.data.processing import factor_processing
 
 
 def cross_section_analysis(ref_date,
@@ -30,7 +30,7 @@ def cross_section_analysis(ref_date,
     total_risk_exp = total_data[constraint_risk]
 
     er = total_data[factor_name].values.astype(float)
-    er = neutralize(total_risk_exp.values, er).flatten()
+    er = factor_processing(er, [], total_risk_exp.values, []).flatten()
     industry = total_data.industry_name.values
 
     codes = total_data.code.tolist()
