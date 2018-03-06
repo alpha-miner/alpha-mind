@@ -12,19 +12,13 @@ from alphamind.utilities import alpha_logger
 from alphamind.data.processing import factor_processing
 
 
-def cross_section_analysis(ref_date,
-                           factor_name,
-                           universe,
-                           horizon,
-                           constraint_risk,
-                           engine):
-
-    codes = engine.fetch_codes(ref_date, universe)
-
-    risk_exposure = engine.fetch_risk_model(ref_date, codes)[1][['code'] + constraint_risk]
-    factor_data = engine.fetch_factor(ref_date, factor_name, codes)
-    industry_matrix = engine.fetch_industry_matrix(ref_date, codes, 'sw_adj', 1)
-
+def cs_impl(ref_date,
+            factor_data,
+            factor_name,
+            risk_exposure,
+            constraint_risk,
+            industry_matrix,
+            dx_returns):
     total_data = pd.merge(factor_data, risk_exposure, on='code')
     total_data = pd.merge(total_data, industry_matrix, on='code').dropna()
     total_risk_exp = total_data[constraint_risk]
@@ -38,8 +32,6 @@ def cross_section_analysis(ref_date,
                                'weight': er,
                                'industry': industry})
     target_pos['weight'] = target_pos['weight'] / target_pos['weight'].abs().sum()
-
-    dx_returns = engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=1)
     target_pos = pd.merge(target_pos, dx_returns, on=['code'])
     target_pos = pd.merge(target_pos, total_data[['code'] + constraint_risk], on=['code'])
     activate_weight = target_pos.weight.values
@@ -53,6 +45,23 @@ def cross_section_analysis(ref_date,
     alpha_logger.info(f"{ref_date} is finished with {len(target_pos)} stocks for {factor_name}")
     alpha_logger.info(f"{ref_date} risk_exposure \n {target_pos.weight.values @ target_pos[constraint_risk].values}")
     return port_ret, ic, t_stats
+
+
+def cross_section_analysis(ref_date,
+                           factor_name,
+                           universe,
+                           horizon,
+                           constraint_risk,
+                           engine):
+
+    codes = engine.fetch_codes(ref_date, universe)
+
+    risk_exposure = engine.fetch_risk_model(ref_date, codes)[1][['code'] + constraint_risk]
+    factor_data = engine.fetch_factor(ref_date, factor_name, codes)
+    industry_matrix = engine.fetch_industry_matrix(ref_date, codes, 'sw_adj', 1)
+    dx_returns = engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=1)
+
+    return cs_impl(ref_date, factor_data, factor_name, risk_exposure, constraint_risk, industry_matrix, dx_returns)
 
 
 if __name__ == '__main__':
@@ -70,9 +79,10 @@ if __name__ == '__main__':
     universe = Universe('custom', ['ashare_ex'])
     horizon = 9
 
-    cross_section_analysis('2018-02-08',
+    x = cross_section_analysis('2018-02-08',
                            factor_name,
                            universe,
                            horizon,
                            constraint_risk,
                            engine=engine)
+    print(x)
