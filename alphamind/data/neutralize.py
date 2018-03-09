@@ -16,15 +16,11 @@ import alphamind.utilities as utils
 def neutralize(x: np.ndarray,
                y: np.ndarray,
                groups: np.ndarray=None,
-               detail: bool=False,
-               weights: np.ndarray=None) \
+               detail: bool=False) \
         -> Union[np.ndarray, Tuple[np.ndarray, Dict]]:
 
     if y.ndim == 1:
         y = y.reshape((-1, 1))
-
-    if weights is None:
-        weights = np.ones(len(y), dtype=float)
 
     output_dict = {}
 
@@ -41,17 +37,17 @@ def neutralize(x: np.ndarray,
         if detail:
             for diff_loc in index_diff:
                 curr_idx = order[start:diff_loc + 1]
-                curr_x, b = _sub_step(x, y, weights, curr_idx, res)
+                curr_x, b = _sub_step(x, y, curr_idx, res)
                 exposure[curr_idx, :, :] = b
                 explained[curr_idx] = ls_explain(curr_x, b)
                 start = diff_loc + 1
         else:
             for diff_loc in index_diff:
                 curr_idx = order[start:diff_loc + 1]
-                _sub_step(x, y, weights, curr_idx, res)
+                _sub_step(x, y, curr_idx, res)
                 start = diff_loc + 1
     else:
-        b = ls_fit(x, y, weights)
+        b = ls_fit(x, y)
         res = ls_res(x, y, b)
 
         if detail:
@@ -65,17 +61,16 @@ def neutralize(x: np.ndarray,
 
 
 @nb.njit(nogil=True, cache=True)
-def _sub_step(x, y, w, curr_idx, res) -> Tuple[np.ndarray, np.ndarray]:
-    curr_x, curr_y, curr_w = x[curr_idx], y[curr_idx], w[curr_idx]
-    b = ls_fit(curr_x, curr_y, curr_w)
+def _sub_step(x, y, curr_idx, res) -> Tuple[np.ndarray, np.ndarray]:
+    curr_x, curr_y= x[curr_idx], y[curr_idx]
+    b = ls_fit(curr_x, curr_y)
     res[curr_idx] = ls_res(curr_x, curr_y, b)
     return curr_x, b
 
 
 @nb.njit(nogil=True, cache=True)
-def ls_fit(x: np.ndarray, y: np.ndarray, w: np.ndarray) -> np.ndarray:
-    x_bar = x.T * w
-    b = np.linalg.solve(x_bar @ x, x_bar @ y)
+def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    b = np.linalg.lstsq(x, y, rcond=-1)[0]
     return b
 
 
