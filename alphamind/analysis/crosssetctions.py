@@ -21,6 +21,12 @@ def cs_impl(ref_date,
             dx_returns):
     total_data = pd.merge(factor_data, risk_exposure, on='code')
     total_data = pd.merge(total_data, industry_matrix, on='code').dropna()
+
+    if len(total_data) < 0.33 * len(factor_data):
+        alpha_logger.warning(f"valid data point({len(total_data)}) "
+                             f"is less than 33% of the total sample ({len(factor_data)}). Omit this run")
+        return np.nan, np.nan, np.nan
+
     total_risk_exp = total_data[constraint_risk]
 
     er = total_data[factor_name].values.astype(float)
@@ -54,7 +60,6 @@ def cross_section_analysis(ref_date,
                            horizon,
                            constraint_risk,
                            engine):
-
     codes = engine.fetch_codes(ref_date, universe)
 
     risk_exposure = engine.fetch_risk_model(ref_date, codes)[1][['code'] + constraint_risk]
@@ -81,9 +86,9 @@ if __name__ == '__main__':
     horizon = 9
 
     x = cross_section_analysis('2018-02-08',
-                           factor_name,
-                           universe,
-                           horizon,
-                           constraint_risk,
-                           engine=engine)
+                               factor_name,
+                               universe,
+                               horizon,
+                               constraint_risk,
+                               engine=engine)
     print(x)
