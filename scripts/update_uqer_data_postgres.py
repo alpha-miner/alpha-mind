@@ -563,22 +563,33 @@ def update_uqer_index_components(ds, **kwargs):
                                    endDate=ref_date)
 
         if df.empty:
-            ref_previous_date = advanceDateByCalendar('china.sse', this_date, '-9m')
+            ref_previous_date = advanceDateByCalendar('china.sse', this_date, '-1b')
 
             query = select([IndexComponent]).where(
                 and_(
-                    IndexComponent.trade_date.between(ref_previous_date, this_date),
+                    IndexComponent.trade_date == ref_previous_date,
                     IndexComponent.indexCode == int(index)
                 )
             )
             df = pd.read_sql(query, engine)
-            df = df[df.trade_date == df.trade_date.iloc[-1]]
             df['trade_date'] = this_date
 
             if df.empty:
                 continue
-            alpha_logger.info('{0} is finished with previous data'.format(index))
+            alpha_logger.info('{0} is finished with previous data {1}'.format(index, len(df)))
         else:
+            ################################
+            # 2017-10-09, patch for uqer bug
+            def filter_out_eqy(code: str):
+                if code[0] in ['0', '3'] and code[-4:] in ['XSHE']:
+                    return True
+                elif code[0] in ['6'] and code[-4:] in ['XSHG']:
+                    return True
+                else:
+                    return False
+
+            df = df[df.consID.apply(lambda x: filter_out_eqy(x))]
+            ################################
             df.rename(columns={'ticker': 'indexCode',
                                'secShortName': 'indexShortName',
                                'consTickerSymbol': 'code',
@@ -589,9 +600,9 @@ def update_uqer_index_components(ds, **kwargs):
             df['trade_date'] = this_date
             del df['secID']
             del df['consID']
-            alpha_logger.info('{0} is finished with new data'.format(index))
+            alpha_logger.info('{0} is finished with new data {1}'.format(index, len(df)))
         total_data = total_data.append(df)
-        
+
     index_codes = total_data.indexCode.unique()
     index_codes = [int(index) for index in index_codes]
 
