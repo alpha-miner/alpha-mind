@@ -105,21 +105,28 @@ class LinearConstraints(object):
     def __init__(self,
                  bounds: Dict[str, BoxBoundary],
                  cons_mat: pd.DataFrame,
-                 backbone: np.ndarray):
+                 backbone: np.ndarray=None):
         pyFinAssert(len(bounds) == cons_mat.shape[1], "Number of bounds should be same as number of col of cons_mat")
-        pyFinAssert(cons_mat.shape[0] == len(backbone),
-                    "length of back bond should be same as number of rows of cons_mat")
+
         self.names = list(bounds.keys())
         self.bounds = bounds
         self.cons_mat = cons_mat
         self.backbone = backbone
 
+        pyFinAssert(cons_mat.shape[0] == len(backbone) if backbone is not None else True,
+                    "length of back bond should be same as number of rows of cons_mat")
+
     def risk_targets(self) -> Tuple[np.ndarray, np.ndarray]:
         lower_bounds = []
         upper_bounds = []
 
+        if self.backbone is None:
+            backbone = np.zeros(len(self.cons_mat))
+        else:
+            backbone = self.backbone
+
         for name in self.names:
-            center = self.backbone @ self.cons_mat[name].values
+            center = backbone @ self.cons_mat[name].values
             l, u = self.bounds[name].bounds(center)
             lower_bounds.append(l)
             upper_bounds.append(u)

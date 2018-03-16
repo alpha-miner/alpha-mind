@@ -90,7 +90,7 @@ def er_portfolio_analysis(er: np.ndarray,
         cons_exp = constraints.risk_exp
         return lbound, ubound, cons_exp, risk_lbound, risk_ubound
 
-    if benchmark is not None and method == 'risk_neutral':
+    if method == 'risk_neutral':
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
 
         turn_over_target = kwargs.get('turn_over_target')

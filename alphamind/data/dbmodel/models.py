@@ -1921,18 +1921,6 @@ class Gogoal(Base):
     tcap = Column(Float(53))
 
 
-class OutrightTmp(Base):
-    __tablename__ = 'outright_tmp'
-    __table_args__ = (
-        Index('outright_trade_date_code_portfolio_name_uindex', 'trade_date', 'code', 'portfolio_name', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    volume = Column(Integer, nullable=False)
-
-
 class Outright(Base):
     __tablename__ = 'outright'
     __table_args__ = (
@@ -1956,5 +1944,5 @@ class Outright(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgres+psycopg2://postgres:we083826@101.132.104.118/alpha')
+    engine = create_engine('postgres+psycopg2://postgres:we083826@192.168.0.102/alpha')
     Base.metadata.create_all(engine)
