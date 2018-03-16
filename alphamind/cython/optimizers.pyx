@@ -54,6 +54,86 @@ cdef class LPOptimizer:
         return np.array(self.cobj.xValue())
 
 
+cdef extern from "tvoptimizer.hpp" namespace "pfopt":
+    cdef cppclass TVOptimizer:
+        TVOptimizer(int,
+                    double*,
+                    double*,
+                    double*,
+                    double*,
+                    int,
+                    double*,
+                    double*,
+                    double*,
+                    double,
+                    double) except +
+        vector[double] xValue()
+        double feval()
+        int status()
+
+
+cdef class CVOptimizer:
+    cdef TVOptimizer* cobj
+    cdef int n
+    cdef int m
+
+    def __cinit__(self,
+                  double[:] expected_return,
+                  cnp.ndarray[double, ndim=2] cov_matrix,
+                  double[:] lbound,
+                  double[:] ubound,
+                  cnp.ndarray[double, ndim=2] cons_matrix=None,
+                  double[:] clbound=None,
+                  double[:] cubound=None,
+                  double target_low=0.0,
+                  double target_high=1.0):
+
+        self.n = lbound.shape[0]
+        self.m = 0
+        cdef double[:] cov = cov_matrix.flatten(order='C')
+        cdef double[:] cons
+
+        if cons_matrix is not None:
+            self.m = cons_matrix.shape[0]
+            cons = cons_matrix.flatten(order='C');
+
+            self.cobj = new TVOptimizer(self.n,
+                                        &expected_return[0],
+                                        &cov[0],
+                                        &lbound[0],
+                                        &ubound[0],
+                                        self.m,
+                                        &cons[0],
+                                        &clbound[0],
+                                        &cubound[0],
+                                        target_low,
+                                        target_high)
+        else:
+            self.cobj = new TVOptimizer(self.n,
+                                        &expected_return[0],
+                                        &cov[0],
+                                        &lbound[0],
+                                        &ubound[0],
+                                        0,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        target_low,
+                                        target_high)
+
+    def __dealloc__(self):
+        del self.cobj
+
+    def feval(self):
+        return self.cobj.feval()
+
+    def x_value(self):
+        return np.array(self.cobj.xValue())
+
+    def status(self):
+        return self.cobj.status()
+
+
 cdef extern from "mvoptimizer.hpp" namespace "pfopt":
     cdef cppclass MVOptimizer:
         MVOptimizer(int,
