@@ -888,21 +888,27 @@ class SqlEngine(object):
                   index=False,
                   dtype={'weight': sa.types.JSON})
 
-    def fetch_outright_status(self, ref_date: str, is_open=True):
+    def fetch_outright_status(self, ref_date: str, is_open=True, ignore_internal_borrow=False):
         table = Outright
         if is_open:
             id_filter = 'notin_'
         else:
             id_filter = 'in_'
 
+        if ignore_internal_borrow:
+            this_filter = [table.internal_borrow == False]
+        else:
+            this_filter = []
+
         t = select([table.trade_id]). \
             where(and_(table.trade_date <= ref_date,
                        table.operation == 'withdraw')).alias('t')
         query = select([table]). \
-            where(and_(getattr(table.trade_id, id_filter)(t),
-                       table.trade_date <= ref_date,
-                       table.operation == 'lend'))
+            where(and_(*([getattr(table.trade_id, id_filter)(t),
+                          table.trade_date <= ref_date,
+                          table.operation == 'lend'] + this_filter)))
         df = pd.read_sql(query, self.engine).set_index('trade_id')
+        del df['internal_borrow']
 
         if df.empty:
             return
