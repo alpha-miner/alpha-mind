@@ -77,10 +77,6 @@ class TestOptimizers(unittest.TestCase):
                         [0.02, 0.03, 0.07]])
         lbound = np.array([-0.3, -0.3, -0.3])
         ubound = np.array([0.5, 0.5, 0.5])
-
-        cons = np.array([[1., 1., 1.]])
-        clbound = np.array([0.])
-        cubound = np.array([0.])
         target_vol = 0.1
 
         optimizer = CVOptimizer(objective,
