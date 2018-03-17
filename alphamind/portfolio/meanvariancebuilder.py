@@ -74,7 +74,7 @@ def target_vol_builder(er: np.ndarray,
                        risk_exposure: Optional[np.ndarray],
                        risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
                        vol_low: float = 0.,
-                       vol_high: float = 1.):
+                       vol_high: float = 1.)-> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     optimizer = CVOptimizer(er,

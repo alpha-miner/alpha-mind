@@ -18,6 +18,7 @@ from alphamind.portfolio.longshortbulder import long_short_build
 from alphamind.portfolio.rankbuilder import rank_build
 from alphamind.portfolio.linearbuilder import linear_build
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
+from alphamind.portfolio.meanvariancebuilder import target_vol_builder
 from alphamind.data.processing import factor_processing
 from alphamind.settlement.simplesettle import simple_settle
 
@@ -33,7 +34,6 @@ def factor_analysis(factors: pd.DataFrame,
                     constraints: Optional[Constraints] = None,
                     method='risk_neutral',
                     **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-
     if 'pre_process' in kwargs:
         pre_process = kwargs['pre_process']
         del kwargs['pre_process']
@@ -62,13 +62,12 @@ def factor_analysis(factors: pd.DataFrame,
 def er_portfolio_analysis(er: np.ndarray,
                           industry: np.ndarray,
                           dx_return: np.ndarray,
-                          constraints: Optional[Union[LinearConstraints, Constraints]]=None,
+                          constraints: Optional[Union[LinearConstraints, Constraints]] = None,
                           detail_analysis=True,
                           benchmark: Optional[np.ndarray] = None,
                           is_tradable: Optional[np.ndarray] = None,
                           method='risk_neutral',
                           **kwargs) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-
     er = er.flatten()
 
     def create_constraints(benchmark, **kwargs):
@@ -107,7 +106,8 @@ def er_portfolio_analysis(er: np.ndarray,
             raise ValueError('linear programming optimizer in status: {0}'.format(status))
 
     elif method == 'rank':
-        weights = rank_build(er, use_rank=kwargs['use_rank'], masks=is_tradable).flatten() * benchmark.sum() / kwargs['use_rank']
+        weights = rank_build(er, use_rank=kwargs['use_rank'], masks=is_tradable).flatten() * benchmark.sum() / kwargs[
+            'use_rank']
     elif method == 'ls' or method == 'long_short':
         weights = long_short_build(er).flatten()
     elif method == 'mv' or method == 'mean_variance':
@@ -129,6 +129,25 @@ def er_portfolio_analysis(er: np.ndarray,
                                                    lam=lam)
         if status != 'optimal':
             raise ValueError('mean variance optimizer in status: {0}'.format(status))
+
+    elif method == 'tv' or method == 'target_vol':
+        lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
+        cov = kwargs['cov']
+
+        if 'target_vol' in kwargs:
+            target_vol = kwargs['target_vol']
+        else:
+            target_vol = 1.
+
+        status, _, weights = target_vol_builder(er,
+                                                cov=cov,
+                                                bm=benchmark,
+                                                lbound=lbound,
+                                                ubound=ubound,
+                                                risk_exposure=cons_exp,
+                                                risk_target=(risk_lbound, risk_ubound),
+                                                vol_low=0,
+                                                vol_high=target_vol)
     else:
         raise ValueError("Unknown building type ({0})".format(method))
 
