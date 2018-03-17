@@ -104,17 +104,29 @@ class SqlEngine(object):
         else:
             self.engine = sa.create_engine(DEFAULT_URL)
 
-        self.session = None
-        self.create_session()
+        self.session = self.create_session()
 
         if self.engine.name == 'mssql':
             self.ln_func = func.log
         else:
             self.ln_func = func.ln
 
+    def __del__(self):
+        if self.session:
+            self.engine.dispose()
+            self.session.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.session:
+            self.engine.dispose()
+            self.session.close()
+
     def create_session(self):
         db_session = orm.sessionmaker(bind=self.engine)
-        self.session = db_session()
+        return db_session()
 
     def fetch_factors_meta(self) -> pd.DataFrame:
         query = self.session.query(FactorMaster)
