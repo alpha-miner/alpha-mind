@@ -10,7 +10,7 @@ import numpy as np
 from scipy.optimize import linprog
 from cvxopt import matrix
 from cvxopt import solvers
-from alphamind.portfolio.linearbuilder import linear_build
+from alphamind.portfolio.linearbuilder import linear_builder
 
 solvers.options['show_progress'] = False
 
@@ -33,11 +33,11 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
 
     start = dt.datetime.now()
     for _ in range(n_loop):
-        status, v, x = linear_build(er,
-                                    lbound,
-                                    ubound,
-                                    risk_exp,
-                                    risk_target=(risk_lbound,
+        status, v, x = linear_builder(er,
+                                      lbound,
+                                      ubound,
+                                      risk_exp,
+                                      risk_target=(risk_lbound,
                                                  risk_ubound))
     impl_model_time = dt.datetime.now() - start
     print('{0:20s}: {1}'.format('Implemented model (ECOS)', impl_model_time))

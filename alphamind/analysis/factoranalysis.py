@@ -16,7 +16,7 @@ from alphamind.portfolio.constraints import Constraints
 from alphamind.portfolio.constraints import LinearConstraints
 from alphamind.portfolio.longshortbulder import long_short_build
 from alphamind.portfolio.rankbuilder import rank_build
-from alphamind.portfolio.linearbuilder import linear_build
+from alphamind.portfolio.linearbuilder import linear_builder
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
 from alphamind.portfolio.meanvariancebuilder import target_vol_builder
 from alphamind.data.processing import factor_processing
@@ -95,13 +95,13 @@ def er_portfolio_analysis(er: np.ndarray,
         turn_over_target = kwargs.get('turn_over_target')
         current_position = kwargs.get('current_position')
 
-        status, _, weights = linear_build(er,
-                                          risk_constraints=cons_exp,
-                                          lbound=lbound,
-                                          ubound=ubound,
-                                          risk_target=(risk_lbound, risk_ubound),
-                                          turn_over_target=turn_over_target,
-                                          current_position=current_position)
+        status, _, weights = linear_builder(er,
+                                            risk_constraints=cons_exp,
+                                            lbound=lbound,
+                                            ubound=ubound,
+                                            risk_target=(risk_lbound, risk_ubound),
+                                            turn_over_target=turn_over_target,
+                                            current_position=current_position)
         if status != 'optimal':
             raise ValueError('linear programming optimizer in status: {0}'.format(status))
 

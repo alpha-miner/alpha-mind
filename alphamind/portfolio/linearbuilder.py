@@ -11,13 +11,13 @@ from typing import Union
 from alphamind.cython.optimizers import LPOptimizer
 
 
-def linear_build(er: np.ndarray,
-                 lbound: Union[np.ndarray, float],
-                 ubound: Union[np.ndarray, float],
-                 risk_constraints: np.ndarray,
-                 risk_target: Tuple[np.ndarray, np.ndarray],
-                 turn_over_target: float = None,
-                 current_position: np.ndarray = None) -> Tuple[str, np.ndarray, np.ndarray]:
+def linear_builder(er: np.ndarray,
+                   lbound: Union[np.ndarray, float],
+                   ubound: Union[np.ndarray, float],
+                   risk_constraints: np.ndarray,
+                   risk_target: Tuple[np.ndarray, np.ndarray],
+                   turn_over_target: float = None,
+                   current_position: np.ndarray = None) -> Tuple[str, np.ndarray, np.ndarray]:
     er = er.flatten()
     n, m = risk_constraints.shape
 
@@ -100,13 +100,13 @@ if __name__ == '__main__':
     risk_lbound = np.ones(1)
     risk_ubound = np.ones(1)
 
-    status, fvalue, x_values = linear_build(er,
-                                            lb,
-                                            ub,
-                                            cons,
-                                            (risk_lbound, risk_ubound),
-                                            turn_over_target,
-                                            current_pos)
+    status, fvalue, x_values = linear_builder(er,
+                                              lb,
+                                              ub,
+                                              cons,
+                                              (risk_lbound, risk_ubound),
+                                              turn_over_target,
+                                              current_pos)
 
     print(status)
     print(fvalue)
