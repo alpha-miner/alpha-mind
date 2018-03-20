@@ -20,7 +20,8 @@ def cs_impl(ref_date,
             industry_matrix,
             dx_returns):
     total_data = pd.merge(factor_data, risk_exposure, on='code')
-    total_data = pd.merge(total_data, industry_matrix, on='code').dropna()
+    total_data = pd.merge(total_data, industry_matrix, on='code')
+    total_data = total_data.replace([np.inf, -np.inf], np.nan).dropna()
 
     if len(total_data) < 0.33 * len(factor_data):
         alpha_logger.warning(f"valid data point({len(total_data)}) "
