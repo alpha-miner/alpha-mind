@@ -62,7 +62,7 @@ def neutralize(x: np.ndarray,
 
 @nb.njit(nogil=True, cache=True)
 def _sub_step(x, y, curr_idx, res) -> Tuple[np.ndarray, np.ndarray]:
-    curr_x, curr_y= x[curr_idx], y[curr_idx]
+    curr_x, curr_y = x[curr_idx], y[curr_idx]
     b = ls_fit(curr_x, curr_y)
     res[curr_idx] = ls_res(curr_x, curr_y, b)
     return curr_x, b
@@ -70,7 +70,8 @@ def _sub_step(x, y, curr_idx, res) -> Tuple[np.ndarray, np.ndarray]:
 
 @nb.njit(nogil=True, cache=True)
 def ls_fit(x: np.ndarray, y: np.ndarray) -> np.ndarray:
-    b = np.linalg.lstsq(x, y, rcond=-1)[0]
+    x_bar = x.T
+    b = np.linalg.pinv(x_bar @ x) @ x_bar @ y
     return b
 
 
