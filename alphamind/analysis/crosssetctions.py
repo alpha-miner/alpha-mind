@@ -10,6 +10,8 @@ import pandas as pd
 import statsmodels.api as sm
 from alphamind.utilities import alpha_logger
 from alphamind.data.processing import factor_processing
+from alphamind.data.winsorize import winsorize_normal
+from alphamind.data.standardize import standardize
 
 
 def cs_impl(ref_date,
