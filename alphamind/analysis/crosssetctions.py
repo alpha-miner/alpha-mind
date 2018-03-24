@@ -32,7 +32,7 @@ def cs_impl(ref_date,
 
     total_risk_exp = total_data[constraint_risk]
 
-    er = total_data[factor_name].values.astype(float)
+    er = total_data[[factor_name]].values.astype(float)
     er = factor_processing(er, [winsorize_normal, standardize], total_risk_exp.values, [winsorize_normal, standardize]).flatten()
     industry = total_data.industry_name.values
 
@@ -43,7 +43,7 @@ def cs_impl(ref_date,
     target_pos['weight'] = target_pos['weight'] / target_pos['weight'].abs().sum()
     target_pos = pd.merge(target_pos, dx_returns, on=['code'])
     target_pos = pd.merge(target_pos, total_data[['code'] + constraint_risk], on=['code'])
-    activate_weight = target_pos.weight.values
+    activate_weight = target_pos[['weight']].values
     excess_return = np.exp(target_pos.dx.values) - 1.
     excess_return = factor_processing(excess_return, [winsorize_normal, standardize], total_risk_exp.values, [winsorize_normal, standardize]).flatten()
     port_ret = np.log(activate_weight @ excess_return + 1.)
