@@ -18,10 +18,11 @@ from alphamind.data.dbmodel.models import Gogoal
 from alphamind.data.dbmodel.models import Experimental
 from alphamind.data.dbmodel.models import LegacyFactor
 from alphamind.data.dbmodel.models import Tiny
+from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
-factor_tables = [Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
+factor_tables = [RiskExposure, Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
