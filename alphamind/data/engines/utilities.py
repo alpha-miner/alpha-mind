@@ -10,22 +10,27 @@ from typing import Dict
 from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
-from alphamind.data.dbmodel.models import FullFactor
+from alphamind.data.dbmodel.models import SpecificRiskDay
+from alphamind.data.dbmodel.models import SpecificRiskShort
+from alphamind.data.dbmodel.models import SpecificRiskLong
+from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.dbmodel.models import Gogoal
 from alphamind.data.dbmodel.models import Experimental
+from alphamind.data.dbmodel.models import LegacyFactor
+from alphamind.data.dbmodel.models import Tiny
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
-factor_tables = [FullFactor, Gogoal, Experimental]
+factor_tables = [Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
     if risk_model == 'day':
-        return RiskCovDay, FullFactor.d_srisk
+        return RiskCovDay, SpecificRiskDay
     elif risk_model == 'short':
-        return RiskCovShort, FullFactor.s_srisk
+        return RiskCovShort, SpecificRiskShort
     elif risk_model == 'long':
-        return RiskCovLong, FullFactor.l_srisk
+        return RiskCovLong, SpecificRiskLong
     else:
         raise ValueError("risk model name {0} is not recognized".format(risk_model))
 
