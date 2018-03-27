@@ -36,6 +36,15 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 * pandas
 * scipy
 
+## 获取代码
+
+```
+git clone https://github.com/alpha-miner/alpha-mind.git
+cd alpha-mind
+git submodule init
+git submodule update
+```
+
 ## 编译依赖
 
 * Windows
