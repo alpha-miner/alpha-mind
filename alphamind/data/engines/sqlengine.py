@@ -24,7 +24,6 @@ from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Industry
 from alphamind.data.dbmodel.models import Experimental
 from alphamind.data.dbmodel.models import RiskMaster
-from alphamind.data.dbmodel.models import FullFactor
 from alphamind.data.dbmodel.models import Models
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
@@ -34,6 +33,7 @@ from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
 from alphamind.data.dbmodel.models import Positions
 from alphamind.data.dbmodel.models import Outright
+from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model
 from alphamind.formula.utilities import encode_formula
@@ -339,17 +339,21 @@ class SqlEngine(object):
         start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
         end_date = ref_date
 
-        big_table = FullFactor
+        big_table = Market
+        joined_tables = set()
+        joined_tables.add(Market.__table__.name)
 
         for t in set(factor_cols.values()):
-            if t.__table__.name != FullFactor.__table__.name:
-                big_table = outerjoin(big_table, t, and_(FullFactor.trade_date == t.trade_date,
-                                                         FullFactor.code == t.code))
+            if t.__table__.name not in joined_tables:
+                big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                         Market.code == t.code))
+
+                joined_tables.add(t.__table__.name)
 
         query = select(
-            [FullFactor.trade_date, FullFactor.code, FullFactor.isOpen] + list(factor_cols.keys())) \
-            .select_from(big_table).where(and_(FullFactor.trade_date.between(start_date, end_date),
-                                               FullFactor.code.in_(codes)))
+            [Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
+            .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
+                                               Market.code.in_(codes)))
 
         df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).set_index('trade_date')
         res = transformer.transform('code', df)
@@ -384,30 +388,30 @@ class SqlEngine(object):
         else:
             factor_cols = _map_factors(dependency, factor_tables)
 
-        big_table = FullFactor
+        big_table = Market
         joined_tables = set()
-        joined_tables.add(FullFactor.__table__.name)
+        joined_tables.add(Market.__table__.name)
 
         for t in set(factor_cols.values()):
             if t.__table__.name not in joined_tables:
                 if dates is not None:
-                    big_table = outerjoin(big_table, t, and_(FullFactor.trade_date == t.trade_date,
-                                                             FullFactor.code == t.code,
-                                                             FullFactor.trade_date.in_(dates)))
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.in_(dates)))
                 else:
-                    big_table = outerjoin(big_table, t, and_(FullFactor.trade_date == t.trade_date,
-                                                             FullFactor.code == t.code,
-                                                             FullFactor.trade_date.between(start_date, end_date)))
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.between(start_date, end_date)))
                 joined_tables.add(t.__table__.name)
 
         universe_df = universe.query(self, start_date, end_date, dates)
 
         query = select(
-            [FullFactor.trade_date, FullFactor.code, FullFactor.isOpen] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
             .select_from(big_table).where(
                 and_(
-                    FullFactor.code.in_(universe_df.code.unique().tolist()),
-                    FullFactor.trade_date.in_(dates) if dates is not None else FullFactor.trade_date.between(start_date, end_date)
+                    Market.code.in_(universe_df.code.unique().tolist()),
+                    Market.trade_date.in_(dates) if dates is not None else Market.trade_date.between(start_date, end_date)
                 )
         ).distinct()
 
@@ -473,7 +477,7 @@ class SqlEngine(object):
                          codes: Iterable[int],
                          risk_model: str = 'short',
                          excluded: Iterable[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        risk_cov_table, special_risk_col = _map_risk_model_table(risk_model)
+        risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
 
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
         query = select([risk_cov_table.FactorID,
@@ -484,12 +488,22 @@ class SqlEngine(object):
         risk_cov = pd.read_sql(query, self.engine).sort_values('FactorID')
 
         if excluded:
-            risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
+            risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
         else:
-            risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors]
+            risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors]
 
-        query = select([FullFactor.code, special_risk_col] + risk_exposure_cols) \
-            .where(and_(FullFactor.trade_date == ref_date, FullFactor.code.in_(codes))).distinct()
+        big_table = join(RiskExposure,
+                         special_risk_table,
+                         and_(
+                             RiskExposure.code == special_risk_table.code,
+                             RiskExposure.trade_date == special_risk_table.trade_date
+                         ))
+
+        query = select([RiskExposure.code, special_risk_table.SRISK.label('srisk')] + risk_exposure_cols) \
+            .select_from(big_table).where(
+            and_(RiskExposure.trade_date == ref_date,
+                 RiskExposure.code.in_(codes)
+                 )).distinct()
 
         risk_exp = pd.read_sql(query, self.engine)
 
@@ -503,7 +517,7 @@ class SqlEngine(object):
                                risk_model: str = 'short',
                                excluded: Iterable[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-        risk_cov_table, special_risk_col = _map_risk_model_table(risk_model)
+        risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
 
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
 
@@ -521,23 +535,32 @@ class SqlEngine(object):
         if not excluded:
             excluded = []
 
-        risk_exposure_cols = [FullFactor.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
+        risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
 
         cond = universe._query_statements(start_date, end_date, dates)
 
-        big_table = join(FullFactor, UniverseTable,
+        big_table = join(RiskExposure, UniverseTable,
                          and_(
-                             FullFactor.trade_date == UniverseTable.trade_date,
-                             FullFactor.code == UniverseTable.code,
+                             RiskExposure.trade_date == UniverseTable.trade_date,
+                             RiskExposure.code == UniverseTable.code,
                              cond
                          )
                          )
 
+        big_table = join(special_risk_table,
+                         big_table,
+                         and_(
+                             RiskExposure.code == special_risk_table.code,
+                             RiskExposure.trade_date == special_risk_table.trade_date,
+                         ))
+
         query = select(
-            [FullFactor.trade_date, FullFactor.code, special_risk_col] + risk_exposure_cols).select_from(big_table) \
+            [RiskExposure.trade_date,
+             RiskExposure.code,
+             special_risk_table.SRISK.label('srisk')] + risk_exposure_cols).select_from(big_table) \
             .distinct()
 
-        risk_exp = pd.read_sql(query, self.engine)
+        risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code'])
 
         if universe.is_filtered:
             codes = universe.query(self, start_date, end_date, dates)
@@ -674,7 +697,7 @@ class SqlEngine(object):
         factor_data = self.fetch_factor(ref_date,
                                         transformer,
                                         codes,
-                                        used_factor_tables=[FullFactor, Experimental])
+                                        used_factor_tables=factor_tables)
 
         if benchmark:
             benchmark_data = self.fetch_benchmark(ref_date, benchmark)
@@ -964,5 +987,10 @@ if __name__ == '__main__':
     ref_date = '2017-06-29'
     universe = Universe('', ['zz800'])
 
+    codes = engine.fetch_codes(ref_date, universe)
     dates = makeSchedule('2010-01-01', '2018-02-01', '10b', 'china.sse')
-    df = engine.fetch_factor_range(universe, DIFF('roe_q'), dates=dates)
+    # df = engine.fetch_factor_range(universe, DIFF('roe_q'), dates=dates)
+
+    risk_cov, risk_exposure = engine.fetch_risk_model(ref_date, codes)
+    factor_data = engine.fetch_factor_range(universe, ['roe_q'], dates=dates)
+    risk_cov, risk_exposure = engine.fetch_risk_model_range(universe, dates=dates)
