@@ -2,11 +2,14 @@
 
 <table>
 <tr>
+  <td>Python version</td>
+  <td><img src="https://img.shields.io/badge/python-3.6-blue.svg"/> </td>
+  </tr>
+<tr>
+<tr>
   <td>Build Status</td>
   <td>
-    <a href="https://travis-ci.org/alpha-miner/alpha-mind">
     <img src="https://travis-ci.org/alpha-miner/alpha-mind.svg?branch=master" alt="travis build status" />
-    </a>
   </td>
 </tr>
 <tr>
@@ -36,21 +39,18 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 * pandas
 * scipy
 
-## 获取代码
-
-```
-git clone https://github.com/alpha-miner/alpha-mind.git
-cd alpha-mind
-git submodule init
-git submodule update
-```
 
 ## 编译依赖
 
 * Windows
 
-  在Windows上完整安装，需要有C++编译器(例如msvc）:
-
+  在Windows上完整安装，需要有C++编译器(例如msvc)
+  
+  具体可按照如下流程配置：
+  
+  1. 安装VS2015 社区版，在微软官网可以免费下载 
+  2. 安装CMake, 可以从[官网](https://cmake.org/download/)下载二进制安装文件"Windows win64-x64 ZIP"，解压缩后环境变量的设置可以参见[此文](https://blog.csdn.net/liyuebit/article/details/77092723)
+  3. 	
     ```bash
     build_windows_dependencies.bat
     ```
@@ -65,7 +65,23 @@ git submodule update
 
 ## 安装
 
-alpha - mind 的安装极其简单，在编译完成依赖之后，运行：
+暂时本项目还未发布到PyPI上，故安装需要直接clone或者下载源代码安装，具体流程为：
+
+1. 克隆项目到本地
+```
+git clone https://github.com/alpha-miner/alpha-mind.git
+```
+
+2. 由于alpha - mind 依赖于一些子模块，如pfopt和xgboost。在克隆项目时，默认会包含该子模块目录，但其中还没有任何文件，还需要执行以下命令
+```
+cd alpha-mind
+git submodule init
+git submodule update
+```
+
+3. 参照上节内容，编译好依赖的子项目。
+
+4. 回到项目的根目录下运行：
 
 ```python
 python setup.py install
