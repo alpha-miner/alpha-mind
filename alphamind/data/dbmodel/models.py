@@ -670,6 +670,12 @@ class Experimental(Base):
     ep_q = Column(Float(53))
     ep_q_d_1w = Column(Float(53))
     ev = Column(Float(53))
+    liq = Column(Float(53))
+    pure_liq_0 = Column(Float(53))
+    pure_liq_1 = Column(Float(53))
+    pure_liq_2 = Column(Float(53))
+    pure_liq_3 = Column(Float(53))
+    pure_liq_4 = Column(Float(53))
 
 
 class FactorMaster(Base):
