@@ -76,10 +76,7 @@ def cross_section_analysis(ref_date,
 
 
 if __name__ == '__main__':
-    import numpy as np
-    import pandas as pd
-    import statsmodels.api as sm
-    from alphamind.api import *
+    from alphamind.api import SqlEngine, Universe, risk_styles, industry_styles
 
     factor_name = 'SIZE'
     data_source = 'postgres+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
