@@ -17,7 +17,8 @@ def linear_builder(er: np.ndarray,
                    risk_constraints: np.ndarray,
                    risk_target: Tuple[np.ndarray, np.ndarray],
                    turn_over_target: float = None,
-                   current_position: np.ndarray = None) -> Tuple[str, np.ndarray, np.ndarray]:
+                   current_position: np.ndarray = None,
+                   method: str='simplex') -> Tuple[str, np.ndarray, np.ndarray]:
     er = er.flatten()
     n, m = risk_constraints.shape
 
@@ -36,7 +37,7 @@ def linear_builder(er: np.ndarray,
 
     if not turn_over_target:
         cons_matrix = np.concatenate((risk_constraints.T, risk_lbound, risk_ubound), axis=1)
-        opt = LPOptimizer(cons_matrix, lbound, ubound, -er)
+        opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
 
         status = opt.status()
 
@@ -77,7 +78,7 @@ def linear_builder(er: np.ndarray,
         risk_ubound = np.concatenate((risk_ubound, np.inf * np.ones((n, 1))), axis=0)
 
         cons_matrix = np.concatenate((risk_constraints, risk_lbound, risk_ubound), axis=1)
-        opt = LPOptimizer(cons_matrix, lbound, ubound, -er)
+        opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
 
         status = opt.status()
 

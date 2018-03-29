@@ -7,13 +7,14 @@ Created on 2017-7-20
 """
 
 cimport numpy as cnp
+from libcpp.string cimport string
 from libcpp.vector cimport vector
 import numpy as np
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
     cdef cppclass LpOptimizer:
-        LpOptimizer(int, int, double*, double*, double*, double*) except +
+        LpOptimizer(int, int, double*, double*, double*, double*, string) except +
         vector[double] xValue()
         double feval()
         int status()
@@ -26,12 +27,15 @@ cdef class LPOptimizer:
     cdef int m
 
     def __cinit__(self,
-                 cnp.ndarray[double, ndim=2] cons_matrix,
-                 double[:] lbound,
-                 double[:] ubound,
-                 double[:] objective):
+                  cnp.ndarray[double, ndim=2] cons_matrix,
+                  double[:] lbound,
+                  double[:] ubound,
+                  double[:] objective,
+                  str method='simplex'):
         self.n = lbound.shape[0]
         self.m = cons_matrix.shape[0]
+        py_bytes = method.encode('ascii')
+        cdef char* c_str = py_bytes
         cdef double[:] cons = cons_matrix.flatten(order='C');
 
         self.cobj = new LpOptimizer(self.n,
@@ -39,7 +43,8 @@ cdef class LPOptimizer:
                                     &cons[0],
                                     &lbound[0],
                                     &ubound[0],
-                                    &objective[0])
+                                    &objective[0],
+                                    c_str)
 
     def __dealloc__(self):
         del self.cobj
@@ -151,9 +156,25 @@ cdef extern from "mvoptimizer.hpp" namespace "pfopt":
         int status()
 
 
+cdef extern from "qpalglib.hpp" namespace "pfopt":
+    cdef cppclass QPAlglib:
+        QPAlglib(int,
+                 double*,
+                 double*,
+                 double*,
+                 double*,
+                 double) except +
+        vector[double] xValue()
+        int status()
+
+
 cdef class QPOptimizer:
 
     cdef MVOptimizer* cobj
+    cdef QPAlglib* cobj2
+    cdef cnp.ndarray er
+    cdef cnp.ndarray cov
+    cdef double risk_aversion
     cdef int n
     cdef int m
 
@@ -169,12 +190,15 @@ cdef class QPOptimizer:
 
         self.n = lbound.shape[0]
         self.m = 0
+        self.er = np.array(expected_return)
+        self.cov = np.array(cov_matrix)
+        self.risk_aversion = risk_aversion
         cdef double[:] cov = cov_matrix.flatten(order='C')
         cdef double[:] cons
 
         if cons_matrix is not None:
             self.m = cons_matrix.shape[0]
-            cons = cons_matrix.flatten(order='C');
+            cons = cons_matrix.flatten(order='C')
 
             self.cobj = new MVOptimizer(self.n,
                                         &expected_return[0],
@@ -187,25 +211,39 @@ cdef class QPOptimizer:
                                         &cubound[0],
                                         risk_aversion)
         else:
-            self.cobj = new MVOptimizer(self.n,
-                                        &expected_return[0],
-                                        &cov[0],
-                                        &lbound[0],
-                                        &ubound[0],
-                                        0,
-                                        NULL,
-                                        NULL,
-                                        NULL,
-                                        risk_aversion)
+            self.cobj2 = new QPAlglib(self.n,
+                                      &expected_return[0],
+                                      &cov[0],
+                                      &lbound[0],
+                                      &ubound[0],
+                                      risk_aversion)
 
     def __dealloc__(self):
-        del self.cobj
+        if self.cobj:
+            del self.cobj
+        else:
+            del self.cobj2
 
     def feval(self):
-        return self.cobj.feval()
+        if self.cobj:
+            return self.cobj.feval()
+        else:
+            x = np.array(self.cobj2.xValue())
+            return 0.5 * self.risk_aversion * x @ self.cov @ x - self.er @ x
 
     def x_value(self):
-        return np.array(self.cobj.xValue())
+        if self.cobj:
+            return np.array(self.cobj.xValue())
+        else:
+            return np.array(self.cobj2.xValue())
 
     def status(self):
-        return self.cobj.status()
+        if self.cobj:
+            return self.cobj.status()
+        else:
+            status = self.cobj2.status()
+
+            if 1 <= status <= 4:
+                return 0
+            else:
+                return status
