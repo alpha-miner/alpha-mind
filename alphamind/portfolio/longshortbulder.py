@@ -11,15 +11,15 @@ from alphamind.utilities import simple_abssum
 from alphamind.utilities import transform
 
 
-def long_short_build(er: np.ndarray,
-                     leverage: float=1.,
-                     groups: np.ndarray=None,
-                     masks: np.ndarray=None) -> np.ndarray:
-
+def long_short_builder(er: np.ndarray,
+                       leverage: float = 1.,
+                       groups: np.ndarray = None,
+                       masks: np.ndarray = None) -> np.ndarray:
     er = er.copy()
 
     if masks is not None:
-        er[~masks] = 0.
+        er[masks] = 0.
+        er[~masks] = er[~masks] - er[~masks].mean()
 
     if er.ndim == 1:
         er = er.reshape((-1, 1))
