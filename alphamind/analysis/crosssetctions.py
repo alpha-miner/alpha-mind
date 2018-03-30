@@ -33,7 +33,7 @@ def cs_impl(ref_date,
     total_risk_exp = total_data[constraint_risk]
 
     er = total_data[[factor_name]].values.astype(float)
-    er = factor_processing(er, [winsorize_normal, standardize], total_risk_exp.values, [winsorize_normal, standardize]).flatten()
+    er = factor_processing(er, [winsorize_normal, standardize], total_risk_exp.values, [standardize]).flatten()
     industry = total_data.industry_name.values
 
     codes = total_data.code.tolist()
