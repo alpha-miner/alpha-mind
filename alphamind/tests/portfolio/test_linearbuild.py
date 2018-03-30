@@ -37,6 +37,25 @@ class TestLinearBuild(unittest.TestCase):
         expected_risk = np.zeros(self.risk_exp.shape[1])
         np.testing.assert_array_almost_equal(calc_risk, expected_risk)
 
+    def test_linear_build_with_interior(self):
+        bm = self.bm / self.bm.sum()
+        eplson = 1e-6
+
+        status, _, w = linear_builder(self.er,
+                                      0.,
+                                      0.01,
+                                      self.risk_exp,
+                                      (bm @ self.risk_exp, bm @ self.risk_exp),
+                                      method='interior')
+        self.assertEqual(status, 'optimal')
+        self.assertAlmostEqual(np.sum(w), 1.)
+        self.assertTrue(np.all(w <= 0.01 + eplson))
+        self.assertTrue(np.all(w >= -eplson))
+
+        calc_risk = (w - bm) @ self.risk_exp
+        expected_risk = np.zeros(self.risk_exp.shape[1])
+        np.testing.assert_array_almost_equal(calc_risk, expected_risk)
+
     def test_linear_build_with_inequality_constraints(self):
         bm = self.bm / self.bm.sum()
         eplson = 1e-6
