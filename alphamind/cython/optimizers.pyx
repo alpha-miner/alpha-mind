@@ -35,7 +35,7 @@ cdef class LPOptimizer:
         self.n = lbound.shape[0]
         self.m = cons_matrix.shape[0]
         py_bytes = method.encode('ascii')
-        cdef char* c_str = py_bytes
+        cdef string c_str = py_bytes
         cdef double[:] cons = cons_matrix.flatten(order='C');
 
         self.cobj = new LpOptimizer(self.n,
