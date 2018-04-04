@@ -493,8 +493,6 @@ class RiskExposure(Base):
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
     code = Column(Integer, primary_key=True, nullable=False)
-    exchangeCD = Column(String(4))
-    secShortName = Column(String(20))
     BETA = Column(Float(53))
     MOMENTUM = Column(Float(53))
     SIZE = Column(Float(53))
@@ -534,7 +532,6 @@ class RiskExposure(Base):
     AERODEF = Column(BigInteger)
     Conglomerates = Column(BigInteger)
     COUNTRY = Column(BigInteger)
-    updateTime = Column(DateTime)
 
 
 class RiskMaster(Base):
