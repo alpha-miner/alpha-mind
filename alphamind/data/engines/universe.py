@@ -14,8 +14,8 @@ from sqlalchemy import select
 from sqlalchemy import join
 from sqlalchemy import outerjoin
 from alphamind.data.dbmodel.models import Universe as UniverseTable
-from alphamind.data.dbmodel.models import FullFactor
 from alphamind.data.engines.utilities import _map_factors
+from alphamind.data.dbmodel.models import Market
 from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.transformer import Transformer
 from alphamind.utilities import encode
@@ -86,22 +86,22 @@ class Universe(object):
 
             dependency = transformer.dependency
             factor_cols = _map_factors(dependency, factor_tables)
-            big_table = FullFactor
+            big_table = Market
 
             for t in set(factor_cols.values()):
-                if t.__table__.name != FullFactor.__table__.name:
-                    big_table = outerjoin(big_table, t, and_(FullFactor.trade_date == t.trade_date,
-                                                             FullFactor.code == t.code,
-                                                             FullFactor.trade_date.in_(
-                                                                 dates) if dates else FullFactor.trade_date.between(
+                if t.__table__.name != Market.__table__.name:
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.in_(
+                                                                 dates) if dates else Market.trade_date.between(
                                                                  start_date, end_date)))
             big_table = join(big_table, UniverseTable,
-                             and_(FullFactor.trade_date == UniverseTable.trade_date,
-                                  FullFactor.code == UniverseTable.code,
+                             and_(Market.trade_date == UniverseTable.trade_date,
+                                  Market.code == UniverseTable.code,
                                   universe_cond))
 
             query = select(
-                [FullFactor.trade_date, FullFactor.code] + list(factor_cols.keys())) \
+                [Market.trade_date, Market.code] + list(factor_cols.keys())) \
                 .select_from(big_table).distinct()
 
             df = pd.read_sql(query, engine.engine).sort_values(['trade_date', 'code']).dropna()

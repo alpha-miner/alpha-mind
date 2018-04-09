@@ -19,6 +19,7 @@ cd ../..
 
 cd alphamind\pfopt
 
+set BUILD_TEST=OFF
 call build_windows.bat
 
 if %errorlevel% neq 0 exit /b 1

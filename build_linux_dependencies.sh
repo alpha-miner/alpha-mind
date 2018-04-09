@@ -21,7 +21,10 @@ fi
 cd ../..
 
 cd alphamind/pfopt
+
+export BUILD_TEST=OFF
 ./build_linux.sh
+
 if [ $? -ne 0 ] ; then
     cd ../..
     exit 1
