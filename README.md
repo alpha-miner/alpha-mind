@@ -20,6 +20,16 @@
 
 **Alpha - Mind** 是基于 **Python** 开发的股票多因子研究框架。
 
+## 依赖
+
+该项目主要有两个主要的github外部依赖：
+
+* [portfolio - optimizer](https://github.com/alpha-miner/portfolio-optimizer)：该项目是相同作者编写的用于资产组合配置的优化器工具包；
+
+* [xgboost](https://github.com/dmlc/xgboost)： 该项目是alpha - mind中一些机器模型的基础库。
+
+这两个库都已经使用git子模块的方式打包到alpha-mind代码库中。
+
 ## 功能
 
 alpha - mind 提供了多因子研究中常用的工具链，包括：

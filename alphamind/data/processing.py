@@ -9,6 +9,7 @@ from typing import Optional
 from typing import List
 import numpy as np
 from alphamind.data.neutralize import neutralize
+from alphamind.utilities import alpha_logger
 
 
 def factor_processing(raw_factors: np.ndarray,
@@ -29,6 +30,8 @@ def factor_processing(raw_factors: np.ndarray,
 
     if post_process:
         for p in post_process:
+            if p.__name__ == 'winsorize_normal':
+                alpha_logger.warning("winsorize_normal normally should not be done after neutralize")
             new_factors = p(new_factors, groups=groups)
 
     return new_factors
