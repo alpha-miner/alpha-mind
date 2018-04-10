@@ -68,12 +68,18 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
      cmake -G "Visual Studio 14 2015 Win646"
      ```
      - 将MSBuild的路径(默认是"C:\Program Files (x86)\MSBuild\14.0\Bin"")加入环境变量中。
+  
+  3. 在项目子目录"\alphamind\pfopt"下使用如下命令进行更新，确保所需文件都已经拷贝到本地。
+     ```
+     git submodule init
+     git submodule update
+     ```
      
-  3. 在项目根目录下双击批处理文件"build_windows_dependencies.bat"或者通过命令行执行	
-    ```bash
-    build_windows_dependencies.bat
-    ```
-    随后一系列依赖项目会自动编译。可能有若干警告，但没有错误。
+  4. 在项目根目录下双击批处理文件"build_windows_dependencies.bat"或者通过命令行执行	
+     ```bash
+     build_windows_dependencies.bat
+     ```
+     随后一系列依赖项目会自动编译。可能有若干警告，但没有错误。
 
 * Linux
 
@@ -92,16 +98,9 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 git clone https://github.com/alpha-miner/alpha-mind.git
 ```
 
-2. 由于alpha - mind 包含一些子模块，如pfopt和xgboost。在克隆项目时，默认会包含该子模块目录，但其中还没有任何文件，还需要执行以下命令
-```
-cd alpha-mind
-git submodule init
-git submodule update
-```
+2. 参照上节内容，编译好依赖的子项目。
 
-3. 参照上节内容，编译好依赖的子项目。
-
-4. 回到项目的根目录下运行：
+3. 回到项目的根目录下运行：
 
 ```python
 python setup.py install
