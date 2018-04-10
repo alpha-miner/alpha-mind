@@ -91,11 +91,14 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
 ## 安装
 
-暂时本项目还未发布到PyPI上，故安装需要直接clone或者下载源代码安装，具体流程为：
+安装需要直接clone或者下载源代码安装，具体流程为：
 
 1. 克隆项目到本地
 ```
 git clone https://github.com/alpha-miner/alpha-mind.git
+cd alpha-mind
+git submodule init
+git submodule update
 ```
 
 2. 参照上节内容，编译好依赖的子项目。
