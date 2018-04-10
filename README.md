@@ -39,6 +39,8 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 * pandas
 * scipy
 
+同时还依赖于一个工具包
+* [Finance-Python](https://github.com/alpha-miner/Finance-Python)
 
 ## 编译依赖
 
@@ -48,12 +50,20 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
   
   具体可按照如下流程配置：
   
-  1. 安装VS2015 社区版，在微软官网可以免费下载 
-  2. 安装CMake, 可以从[官网](https://cmake.org/download/)下载二进制安装文件"Windows win64-x64 ZIP"，解压缩后环境变量的设置可以参见[此文](https://blog.csdn.net/liyuebit/article/details/77092723)
-  3. 	
+  1. 安装VS2015 社区版，在微软官网可以免费下载。 
+  2. 安装CMake, 可以从[官网](https://cmake.org/download/)下载二进制安装文件，如"Windows win64-x64 ZIP"，解压缩后环境变量的设置可以参见[此文](https://blog.csdn.net/liyuebit/article/details/77092723)
+     
+     - 可以按照文中的例子，尝试使用如下CMake命令编译一个HelloWorld项目。
+     ```bash
+     cmake -G "Visual Studio 14 2015 Win646"
+     ```
+     - 将MSBuild的路径(默认是"C:\Program Files (x86)\MSBuild\14.0\Bin"")加入环境变量中。
+     
+  3. 在项目根目录下双击批处理文件"build_windows_dependencies.bat"或者通过命令行执行	
     ```bash
     build_windows_dependencies.bat
     ```
+    随后一系列依赖项目会自动编译。可能有若干警告，但没有错误。
 
 * Linux
 
@@ -72,7 +82,7 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 git clone https://github.com/alpha-miner/alpha-mind.git
 ```
 
-2. 由于alpha - mind 依赖于一些子模块，如pfopt和xgboost。在克隆项目时，默认会包含该子模块目录，但其中还没有任何文件，还需要执行以下命令
+2. 由于alpha - mind 包含一些子模块，如pfopt和xgboost。在克隆项目时，默认会包含该子模块目录，但其中还没有任何文件，还需要执行以下命令
 ```
 cd alpha-mind
 git submodule init
