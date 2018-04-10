@@ -58,7 +58,7 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
   在Windows上完整安装，需要有C++编译器(例如msvc)
   
-  具体可按照如下流程配置：
+  具体可按照如下流程配置(以VS2005为例)：
   
   1. 安装VS2015 社区版，在微软官网可以免费下载。 
   2. 安装CMake, 可以从[官网](https://cmake.org/download/)下载二进制安装文件，如"Windows win64-x64 ZIP"，解压缩后环境变量的设置可以参见[此文](https://blog.csdn.net/liyuebit/article/details/77092723)
@@ -103,7 +103,9 @@ git submodule update
 
 2. 参照上节内容，编译好依赖的子项目。
 
-3. 回到项目的根目录下运行：
+3. 确保环境变量'VS90COMNTOOLS'的值为安装的VS的Comntools下的地址，如'\vs2015\Common7\Tools\'
+
+4. 回到项目的根目录下运行：
 
 ```python
 python setup.py install
