@@ -45,6 +45,10 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
             if f not in excluded and f in t.__table__.columns:
                 factor_cols[t.__table__.columns[f]] = t
                 break
+
+    if not factor_cols:
+        raise ValueError(f"some factors in <{factors}> can't be find")
+
     return factor_cols
 
 
