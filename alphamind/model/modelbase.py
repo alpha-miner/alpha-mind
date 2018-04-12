@@ -66,8 +66,8 @@ class ModelBase(metaclass=abc.ABCMeta):
                           internal_model=self.impl.__class__.__module__ + "." + self.impl.__class__.__name__)
         return model_desc
 
-    @abc.abstractmethod
     @classmethod
+    @abc.abstractmethod
     def load(cls, model_desc: dict):
         obj_layout = cls()
         obj_layout.features = model_desc['features']
