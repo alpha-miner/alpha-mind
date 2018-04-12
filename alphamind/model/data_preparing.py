@@ -26,16 +26,16 @@ from alphamind.utilities import alpha_logger
 from alphamind.utilities import map_freq
 
 
-def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, neutralized_risk):
+def _merge_df(engine, names, factor_df, target_df, universe, dates, risk_model, neutralized_risk):
     risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
     alpha_logger.info("risk data loading finished")
     used_neutralized_risk = list(set(total_risk_factors).difference(names))
     risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
-    return_df = pd.merge(return_df, risk_df, on=['trade_date', 'code'])
+    target_df = pd.merge(target_df, risk_df, on=['trade_date', 'code'])
 
     if neutralized_risk:
         train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
-        train_y = return_df.copy()
+        train_y = target_df.copy()
 
         risk_exp = train_x[neutralized_risk].values.astype(float)
         x_values = train_x[names].values.astype(float)
@@ -43,14 +43,14 @@ def _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, 
     else:
         risk_exp = None
         train_x = factor_df.copy()
-        train_y = return_df.copy()
+        train_y = target_df.copy()
         x_values = train_x[names].values.astype(float)
         y_values = train_y[['dx']].values
 
     codes = train_x['code'].values
     date_label = pd.DatetimeIndex(factor_df.trade_date).to_pydatetime()
     dates = np.unique(date_label)
-    return return_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes
+    return target_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes
 
 
 def prepare_data(engine: SqlEngine,
@@ -281,15 +281,15 @@ def fetch_train_phase(engine,
     horizon = map_freq(frequency)
 
     factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates)
-    return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+    target_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
 
-    df = pd.merge(factor_df, return_df, on=['trade_date', 'code']).dropna()
+    df = pd.merge(factor_df, target_df, on=['trade_date', 'code']).dropna()
 
-    return_df, factor_df = df[['trade_date', 'code', 'dx']], df[
+    target_df, factor_df = df[['trade_date', 'code', 'dx']], df[
         ['trade_date', 'code', 'isOpen'] + transformer.names]
 
-    return_df, dates, date_label, risk_exp, x_values, y_values, _, _, codes = \
-        _merge_df(engine, transformer.names, factor_df, return_df, universe, dates, risk_model, neutralized_risk)
+    target_df, dates, date_label, risk_exp, x_values, y_values, _, _, codes = \
+        _merge_df(engine, transformer.names, factor_df, target_df, universe, dates, risk_model, neutralized_risk)
 
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
         pyFinAssert(len(dates) >= 2, ValueError, "No previous data for training for the date {0}".format(ref_date))
@@ -419,7 +419,7 @@ if __name__ == '__main__':
     engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     universe = Universe('zz500', ['hs300', 'zz500'])
     neutralized_risk = ['SIZE']
-    res = fetch_predict_phase(engine, ['ep_q'],
+    res = fetch_train_phase(engine, ['ep_q'],
                               '2012-01-05',
                               '5b',
                               universe,
