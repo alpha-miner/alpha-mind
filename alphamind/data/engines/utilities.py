@@ -7,6 +7,7 @@ Created on 2017-12-25
 
 from typing import Iterable
 from typing import Dict
+from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
@@ -22,7 +23,7 @@ from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
-factor_tables = [RiskExposure, Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
+factor_tables = [Market, RiskExposure, Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
