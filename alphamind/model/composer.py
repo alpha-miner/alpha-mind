@@ -9,7 +9,6 @@ import copy
 import bisect
 from typing import Iterable
 import pandas as pd
-from typing import Union
 from simpleutils.miscellaneous import list_eq
 from alphamind.model.modelbase import ModelBase
 from alphamind.model.data_preparing import fetch_train_phase
@@ -20,7 +19,6 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.rank import rank
 from alphamind.data.standardize import standardize
 from alphamind.model.loader import load_model
-from alphamind.data.transformer import Transformer
 
 PROCESS_MAPPING = {
     'winsorize_normal': winsorize_normal,
