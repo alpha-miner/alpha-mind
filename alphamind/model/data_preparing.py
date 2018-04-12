@@ -60,7 +60,8 @@ def prepare_data(engine: SqlEngine,
                  frequency: str,
                  universe: Universe,
                  benchmark: int,
-                 warm_start: int = 0):
+                 warm_start: int = 0,
+                 fit_target: Union[Transformer, object]=None):
     if warm_start > 0:
         p = Period(frequency)
         p = Period(length=-warm_start * p.length(), units=p.units())
@@ -86,14 +87,22 @@ def prepare_data(engine: SqlEngine,
                                           factors=transformer,
                                           dates=dates).sort_values(['trade_date', 'code'])
     alpha_logger.info("factor data loading finished")
-    return_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
-    alpha_logger.info("return data loading finished")
+
+    if fit_target is None:
+        target_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+    else:
+        one_more_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
+        target_df = engine.fetch_factor_range_forward(universe, factors=fit_target, dates=dates + [one_more_date])
+        target_df = target_df[target_df.trade_date.isin(dates)]
+        target_df = target_df.groupby('code').apply(lambda x: x.fillna(method='pad'))
+    alpha_logger.info("fit target data loading finished")
+
     industry_df = engine.fetch_industry_range(universe, dates=dates)
     alpha_logger.info("industry data loading finished")
     benchmark_df = engine.fetch_benchmark_range(benchmark, dates=dates)
     alpha_logger.info("benchmark data loading finished")
 
-    df = pd.merge(factor_df, return_df, on=['trade_date', 'code']).dropna()
+    df = pd.merge(factor_df, target_df, on=['trade_date', 'code']).dropna()
     df = pd.merge(df, benchmark_df, on=['trade_date', 'code'], how='left')
     df = pd.merge(df, industry_df, on=['trade_date', 'code'])
     df['weight'] = df['weight'].fillna(0.)
@@ -262,7 +271,7 @@ def fetch_train_phase(engine,
                       pre_process: Iterable[object] = None,
                       post_process: Iterable[object] = None,
                       warm_start: int = 0,
-                      fitting_target: Union[Transformer, object] = None) -> dict:
+                      fit_target: Union[Transformer, object] = None) -> dict:
     if isinstance(alpha_factors, Transformer):
         transformer = alpha_factors
     else:
@@ -282,11 +291,11 @@ def fetch_train_phase(engine,
     horizon = map_freq(frequency)
 
     factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates)
-    if fitting_target is None:
+    if fit_target is None:
         target_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
     else:
         one_more_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
-        target_df = engine.fetch_factor_range_forward(universe, factors=fitting_target, dates=dates + [one_more_date])
+        target_df = engine.fetch_factor_range_forward(universe, factors=fit_target, dates=dates + [one_more_date])
         target_df = target_df[target_df.trade_date.isin(dates)]
         target_df = target_df.groupby('code').apply(lambda x: x.fillna(method='pad'))
 
@@ -424,14 +433,16 @@ def fetch_predict_phase(engine,
 
 
 if __name__ == '__main__':
-    engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+    from alphamind.api import risk_styles, industry_styles, standardize
+    engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
     universe = Universe('zz500', ['hs300', 'zz500'])
-    neutralized_risk = ['SIZE']
+    neutralized_risk = risk_styles + industry_styles
     res = fetch_train_phase(engine, ['ep_q'],
                             '2012-01-05',
                             '5b',
                             universe,
                             16,
                             neutralized_risk=neutralized_risk,
-                            fitting_target='closePrice')
+                            post_process=[standardize],
+                            fit_target='closePrice')
     print(res)

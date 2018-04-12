@@ -9,6 +9,7 @@ import copy
 import bisect
 from typing import Iterable
 import pandas as pd
+from typing import Union
 from simpleutils.miscellaneous import list_eq
 from alphamind.model.modelbase import ModelBase
 from alphamind.model.data_preparing import fetch_train_phase
@@ -19,6 +20,7 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.rank import rank
 from alphamind.data.standardize import standardize
 from alphamind.model.loader import load_model
+from alphamind.data.transformer import Transformer
 
 PROCESS_MAPPING = {
     'winsorize_normal': winsorize_normal,
@@ -116,7 +118,8 @@ class DataMeta(object):
                                  self.risk_model,
                                  self.pre_process,
                                  self.post_process,
-                                 self.warm_start)
+                                 self.warm_start,
+                                 fit_target=alpha_model.fit_target)
 
     def fetch_predict_data(self,
                            ref_date: str,

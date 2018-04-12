@@ -27,8 +27,9 @@ class RandomForestRegressor(ModelBase):
                  n_estimators: int=100,
                  max_features: str='auto',
                  features=None,
+                 fit_target=None,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features=features, fit_target=fit_target)
         self.impl = RandomForestRegressorImpl(n_estimators=n_estimators,
                                               max_features=max_features,
                                               **kwargs)
@@ -59,8 +60,9 @@ class RandomForestClassifier(ModelBase):
                  n_estimators: int=100,
                  max_features: str='auto',
                  features=None,
+                 fit_target=None,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features=features, fit_target=fit_target)
         self.impl = RandomForestClassifierImpl(n_estimators=n_estimators,
                                                max_features=max_features,
                                                **kwargs)
@@ -92,9 +94,10 @@ class XGBRegressor(ModelBase):
                  learning_rate: float=0.1,
                  max_depth: int=3,
                  features=None,
+                 fit_target=None,
                  n_jobs: int=1,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features=features, fit_target=fit_target)
         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,
@@ -128,9 +131,10 @@ class XGBClassifier(ModelBase):
                  learning_rate: float=0.1,
                  max_depth: int=3,
                  features=None,
+                 fit_target=None,
                  n_jobs: int=1,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features=features, fit_target=fit_target)
         self.impl = XGBClassifierImpl(n_estimators=n_estimators,
                                       learning_rate=learning_rate,
                                       max_depth=max_depth,
@@ -171,10 +175,11 @@ class XGBTrainer(ModelBase):
                  subsample=1.,
                  colsample_bytree=1.,
                  features=None,
+                 fit_target=None,
                  random_state: int=0,
                  n_jobs: int=1,
                  **kwargs):
-        super().__init__(features)
+        super().__init__(features=features, fit_target=fit_target)
         self.params = {
             'silent': 1,
             'objective': objective,
