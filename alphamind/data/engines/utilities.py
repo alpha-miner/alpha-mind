@@ -51,7 +51,7 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
 def _map_industry_category(category: str) -> str:
     if category == 'sw':
         return '申万行业分类'
-    if category == 'sw_adj':
+    elif category == 'sw_adj':
         return '申万行业分类修订'
     elif category == 'zz':
         return '中证行业分类'
