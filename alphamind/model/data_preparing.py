@@ -106,6 +106,7 @@ def prepare_data(engine: SqlEngine,
     df = pd.merge(df, benchmark_df, on=['trade_date', 'code'], how='left')
     df = pd.merge(df, industry_df, on=['trade_date', 'code'])
     df['weight'] = df['weight'].fillna(0.)
+    df.dropna(inplace=True)
 
     return dates, df[['trade_date', 'code', 'dx']], df[
         ['trade_date', 'code', 'weight', 'isOpen', 'industry_code', 'industry'] + transformer.names]
@@ -400,8 +401,10 @@ def fetch_predict_phase(engine,
     else:
         train_x = pd.merge(factor_df, target_df, on=['trade_date', 'code'], how='left')
         risk_exp = None
+
+    train_x.dropna(inplace=True)
     x_values = train_x[names].values.astype(float)
-    y_values = train_x['dx'].values.astype(float)
+    y_values = train_x[['dx']].values.astype(float)
 
     date_label = pd.DatetimeIndex(train_x.trade_date).to_pydatetime()
     dates = np.unique(date_label)
