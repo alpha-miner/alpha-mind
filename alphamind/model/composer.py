@@ -8,6 +8,7 @@ Created on 2017-9-27
 import copy
 import bisect
 from typing import Iterable
+import numpy as np
 import pandas as pd
 from simpleutils.miscellaneous import list_eq
 from alphamind.model.modelbase import ModelBase
@@ -133,7 +134,8 @@ class DataMeta(object):
                                    self.pre_process,
                                    self.post_process,
                                    self.warm_start,
-                                   fillna=True)
+                                   fillna=True,
+                                   fit_target=alpha_model.fit_target)
 
 
 def train_model(ref_date: str,
@@ -186,6 +188,15 @@ class Composer(object):
             codes = x.index
             return pd.DataFrame(model.predict(x_values).flatten(), index=codes)
 
+    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None) -> float:
+        model = self._fetch_latest_model(ref_date)
+        if x is None:
+            predict_data = self.data_meta.fetch_predict_data(ref_date, model)
+            x = predict_data['predict']['x']
+            if y is None:
+                y = predict_data['predict']['y']
+        return model.score(x, y)
+
     def _fetch_latest_model(self, ref_date) -> ModelBase:
         if self.is_updated:
             sorted_keys = self.sorted_keys
@@ -211,35 +222,33 @@ class Composer(object):
 
 
 if __name__ == '__main__':
-    import numpy as np
-    from alphamind.data.standardize import standardize
-    from alphamind.data.winsorize import winsorize_normal
-    from alphamind.data.engines.sqlengine import industry_styles
-    from alphamind.model.linearmodel import ConstLinearModel
+    from PyFin.api import LAST
+    from alphamind.data.engines.sqlengine import risk_styles, industry_styles
+    from alphamind.model.linearmodel import LinearRegression
 
-    data_source = "postgres+psycopg2://postgres:we083826@localhost/alpha"
-    alpha_model = ConstLinearModel(['EPS'], np.array([1.]))
-    alpha_factors = ['EPS']
-    freq = '1w'
-    universe = Universe('zz500', ['zz500'])
-    batch = 4
-    neutralized_risk = ['SIZE'] + industry_styles
+    universe = Universe('custom', ['ashare_ex'])
+    freq = '20b'
+    batch = 0
+    neutralized_risk = risk_styles + industry_styles
     risk_model = 'short'
     pre_process = [winsorize_normal, standardize]
-    pos_process = [winsorize_normal, standardize]
+    post_process = [standardize]
+    warm_start = 0
+    data_source = "postgres+psycopg2://postgres:we083826@localhost/alpha"
 
-    data_meta = DataMeta(freq,
-                         universe,
-                         batch,
-                         neutralized_risk,
-                         risk_model,
-                         pre_process,
-                         pos_process,
+    data_meta = DataMeta(freq=freq,
+                         universe=universe,
+                         batch=batch,
+                         neutralized_risk=neutralized_risk,
+                         risk_model=risk_model,
+                         pre_process=pre_process,
+                         post_process=post_process,
+                         warm_start=warm_start,
                          data_source=data_source)
 
-    composer = Composer(alpha_model, data_meta)
+    alpha_model = LinearRegression({'roe_q': LAST('roe_q')}, fit_target='roe_q')
+    composer = Composer(alpha_model=alpha_model, data_meta=data_meta)
 
-    composer.train('2017-09-20')
-    composer.train('2017-09-22')
-    composer.train('2017-09-25')
-    composer.predict('2017-09-21')
+    ref_date = '2018-01-30'
+    composer.train(ref_date)
+    res = composer.predict(ref_date)

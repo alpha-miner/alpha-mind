@@ -310,10 +310,10 @@ def fetch_train_phase(engine,
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
         pyFinAssert(len(dates) >= 2, ValueError, "No previous data for training for the date {0}".format(ref_date))
         end = dates[-2]
-        start = dates[-batch - 1] if batch <= len(dates) - 1 else dates[0]
+        start = dates[-batch - 2] if batch <= len(dates) - 2 else dates[0]
     else:
         end = dates[-1]
-        start = dates[-batch] if batch <= len(dates) else dates[0]
+        start = dates[-batch - 1] if batch <= len(dates) else dates[0]
 
     index = (date_label >= start) & (date_label <= end)
     this_raw_x = x_values[index]
@@ -352,7 +352,8 @@ def fetch_predict_phase(engine,
                         pre_process: Iterable[object] = None,
                         post_process: Iterable[object] = None,
                         warm_start: int = 0,
-                        fillna: str = None):
+                        fillna: str = None,
+                        fit_target: Union[Transformer, object] = None):
     if isinstance(alpha_factors, Transformer):
         transformer = alpha_factors
     else:
@@ -369,6 +370,8 @@ def fetch_predict_phase(engine,
                          dateRule=BizDayConventions.Following,
                          dateGenerationRule=DateGeneration.Backward)
 
+    horizon = map_freq(frequency)
+
     factor_df = engine.fetch_factor_range(universe, factors=transformer, dates=dates)
 
     if fillna:
@@ -377,6 +380,14 @@ def fetch_predict_phase(engine,
     else:
         factor_df = factor_df.dropna()
 
+    if fit_target is None:
+        target_df = engine.fetch_dx_return_range(universe, dates=dates, horizon=horizon)
+    else:
+        one_more_date = advanceDateByCalendar('china.sse', dates[-1], frequency)
+        target_df = engine.fetch_factor_range_forward(universe, factors=fit_target, dates=dates + [one_more_date])
+        target_df = target_df[target_df.trade_date.isin(dates)]
+        target_df = target_df.groupby('code').apply(lambda x: x.fillna(method='pad'))
+
     names = transformer.names
 
     if neutralized_risk:
@@ -384,13 +395,15 @@ def fetch_predict_phase(engine,
         used_neutralized_risk = list(set(neutralized_risk).difference(names))
         risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
         train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
+        train_x = pd.merge(train_x, target_df, on=['trade_date', 'code'], how='left')
         risk_exp = train_x[neutralized_risk].values.astype(float)
     else:
-        train_x = factor_df.copy()
+        train_x = pd.merge(factor_df, target_df, on=['trade_date', 'code'], how='left')
         risk_exp = None
     x_values = train_x[names].values.astype(float)
+    y_values = train_x['dx'].values.astype(float)
 
-    date_label = pd.DatetimeIndex(factor_df.trade_date).to_pydatetime()
+    date_label = pd.DatetimeIndex(train_x.trade_date).to_pydatetime()
     dates = np.unique(date_label)
 
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
@@ -400,6 +413,7 @@ def fetch_predict_phase(engine,
         left_index = bisect.bisect_left(date_label, start)
         right_index = bisect.bisect_right(date_label, end)
         this_raw_x = x_values[left_index:right_index]
+        this_raw_y = y_values[left_index:right_index]
         sub_dates = date_label[left_index:right_index]
 
         if risk_exp is not None:
@@ -412,10 +426,16 @@ def fetch_predict_phase(engine,
                                  risk_factors=this_risk_exp,
                                  post_process=post_process)
 
+        ne_y = factor_processing(this_raw_y,
+                                 pre_process=pre_process,
+                                 risk_factors=this_risk_exp,
+                                 post_process=post_process)
+
         inner_left_index = bisect.bisect_left(sub_dates, end)
         inner_right_index = bisect.bisect_right(sub_dates, end)
 
         ne_x = ne_x[inner_left_index:inner_right_index]
+        ne_y = ne_y[inner_left_index:inner_right_index]
 
         left_index = bisect.bisect_left(date_label, end)
         right_index = bisect.bisect_right(date_label, end)
@@ -423,11 +443,12 @@ def fetch_predict_phase(engine,
         codes = train_x.code.values[left_index:right_index]
     else:
         ne_x = None
+        ne_y = None
         codes = None
 
     ret = dict()
     ret['x_names'] = transformer.names
-    ret['predict'] = {'x': pd.DataFrame(ne_x, columns=transformer.names), 'code': codes}
+    ret['predict'] = {'x': pd.DataFrame(ne_x, columns=transformer.names), 'code': codes, 'y': ne_y.flatten()}
 
     return ret
 
@@ -437,7 +458,7 @@ if __name__ == '__main__':
     engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
     universe = Universe('zz500', ['hs300', 'zz500'])
     neutralized_risk = risk_styles + industry_styles
-    res = fetch_train_phase(engine, ['ep_q'],
+    res = fetch_predict_phase(engine, ['ep_q'],
                             '2012-01-05',
                             '5b',
                             universe,
