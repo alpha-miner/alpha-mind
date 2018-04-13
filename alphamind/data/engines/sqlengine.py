@@ -417,8 +417,7 @@ class SqlEngine(object):
 
         df = pd.read_sql(query, self.engine)
         if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code'])
+            df = pd.merge(df, universe_df, how='inner', on=['trade_date', 'code'])
 
         if external_data is not None:
             df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
@@ -434,6 +433,55 @@ class SqlEngine(object):
         df['isOpen'] = df.isOpen.astype(bool)
         df = df.reset_index()
         return pd.merge(df, universe_df[['trade_date', 'code']], how='inner')
+
+    def fetch_factor_range_forward(self,
+                                   universe: Universe,
+                                   factors: Union[Transformer, object],
+                                   start_date: str = None,
+                                   end_date: str = None,
+                                   dates: Iterable[str] = None):
+
+        if isinstance(factors, Transformer):
+            transformer = factors
+        else:
+            transformer = Transformer(factors)
+
+        dependency = transformer.dependency
+        factor_cols = _map_factors(dependency, factor_tables)
+
+        codes = universe.query(self, start_date, end_date, dates)
+        total_codes = codes.code.unique().tolist()
+        total_dates = codes.trade_date.astype(str).unique().tolist()
+
+        big_table = Market
+        joined_tables = set()
+        joined_tables.add(Market.__table__.name)
+
+        for t in set(factor_cols.values()):
+            if t.__table__.name not in joined_tables:
+                if dates is not None:
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.in_(dates)))
+                else:
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.between(start_date, end_date)))
+                joined_tables.add(t.__table__.name)
+
+        stats = func.lag(list(factor_cols.keys())[0], -1).over(
+            partition_by=Market.code,
+            order_by=Market.trade_date).label('dx')
+
+        query = select([Market.trade_date, Market.code, stats]).select_from(big_table).where(
+            and_(
+                Market.trade_date.in_(total_dates),
+                Market.code.in_(total_codes)
+            )
+        )
+
+        df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code'])
+        return df
 
     def fetch_benchmark(self,
                         ref_date: str,
@@ -988,9 +1036,6 @@ if __name__ == '__main__':
     universe = Universe('', ['zz800'])
 
     codes = engine.fetch_codes(ref_date, universe)
-    dates = makeSchedule('2010-01-01', '2018-02-01', '10b', 'china.sse')
-    # df = engine.fetch_factor_range(universe, DIFF('roe_q'), dates=dates)
-
-    risk_cov, risk_exposure = engine.fetch_risk_model(ref_date, codes)
-    factor_data = engine.fetch_factor_range(universe, ['roe_q'], dates=dates)
-    risk_cov, risk_exposure = engine.fetch_risk_model_range(universe, dates=dates)
+    dates = makeSchedule('2018-01-01', '2018-02-01', '10b', 'china.sse')
+    factor_data = engine.fetch_factor_range_forward(universe, ['roe_q'], dates=dates)
+    print(factor_data)

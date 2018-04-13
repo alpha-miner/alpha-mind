@@ -16,8 +16,8 @@ class TargetVolExecutor(ExecutorBase):
 
     def __init__(self, window=30, target_vol=0.01):
         super().__init__()
-        self.m_vol = MovingStandardDeviation(window=window, dependency='return')
-        self.m_leverage = MovingAverage(window=window, dependency='leverage')
+        self.m_vol = MovingStandardDeviation(window, 'return')
+        self.m_leverage = MovingAverage(window, 'leverage')
         self.target_vol = target_vol
         self.multiplier = 1.
 

@@ -7,6 +7,7 @@ Created on 2017-12-25
 
 from typing import Iterable
 from typing import Dict
+from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import RiskCovDay
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
@@ -22,7 +23,7 @@ from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
-factor_tables = [RiskExposure, Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
+factor_tables = [Market, RiskExposure, Uqer, Gogoal, Experimental, LegacyFactor, Tiny]
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
@@ -44,13 +45,17 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
             if f not in excluded and f in t.__table__.columns:
                 factor_cols[t.__table__.columns[f]] = t
                 break
+
+    if not factor_cols:
+        raise ValueError(f"some factors in <{factors}> can't be find")
+
     return factor_cols
 
 
 def _map_industry_category(category: str) -> str:
     if category == 'sw':
         return '申万行业分类'
-    if category == 'sw_adj':
+    elif category == 'sw_adj':
         return '申万行业分类修订'
     elif category == 'zz':
         return '中证行业分类'

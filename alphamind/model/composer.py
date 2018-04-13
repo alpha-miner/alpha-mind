@@ -116,7 +116,8 @@ class DataMeta(object):
                                  self.risk_model,
                                  self.pre_process,
                                  self.post_process,
-                                 self.warm_start)
+                                 self.warm_start,
+                                 fit_target=alpha_model.fit_target)
 
     def fetch_predict_data(self,
                            ref_date: str,
