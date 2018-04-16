@@ -48,6 +48,18 @@ class TestLinearModel(unittest.TestCase):
         self.assertEqual(model.features, new_model.features)
         np.testing.assert_array_almost_equal(model.weights, new_model.weights)
 
+    def test_const_linear_model_score(self):
+        model = LinearRegression(['a', 'b', 'c'], fit_intercept=False)
+        model.fit(self.train_x, self.train_y)
+
+        expected_score = model.score(self.train_x, self.train_y)
+
+        const_model = ConstLinearModel(features=['a', 'b', 'c'],
+                                       weights=dict(zip(model.features, model.weights)))
+        calculated_score = const_model.score(self.train_x, self.train_y)
+
+        self.assertAlmostEqual(expected_score, calculated_score)
+
     def test_linear_regression(self):
         model = LinearRegression(['a', 'b', 'c'], fit_intercept=False)
         model.fit(self.train_x, self.train_y)

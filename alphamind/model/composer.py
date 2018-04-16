@@ -188,14 +188,27 @@ class Composer(object):
             codes = x.index
             return pd.DataFrame(model.predict(x_values).flatten(), index=codes)
 
-    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None) -> float:
+    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None, d_type: str = 'test') -> float:
         model = self._fetch_latest_model(ref_date)
         if x is None:
-            predict_data = self.data_meta.fetch_predict_data(ref_date, model)
-            x = predict_data['predict']['x']
-            if y is None:
-                y = predict_data['predict']['y']
+            if d_type == 'test':
+                test_data = self.data_meta.fetch_predict_data(ref_date, model)
+                x = test_data['predict']['x']
+                if y is None:
+                    y = test_data['predict']['y']
+            else:
+                test_data = self.data_meta.fetch_train_data(ref_date, model)
+                x = test_data['train']['x']
+                if y is None:
+                    y = test_data['train']['y']
         return model.score(x, y)
+
+    def ic(self, ref_date) -> float:
+        model = self._fetch_latest_model(ref_date)
+        test_data = self.data_meta.fetch_predict_data(ref_date, model)
+        x = test_data['predict']['x']
+        y = test_data['predict']['y']
+        return model.ic(x, y)
 
     def _fetch_latest_model(self, ref_date) -> ModelBase:
         if self.is_updated:
@@ -207,6 +220,9 @@ class Composer(object):
 
         latest_index = bisect.bisect_left(sorted_keys, ref_date) - 1
         return self.models[sorted_keys[latest_index]]
+
+    def __getitem__(self, ref_date) -> ModelBase:
+        return self.models[ref_date]
 
     def save(self) -> dict:
         return dict(

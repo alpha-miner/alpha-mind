@@ -49,6 +49,10 @@ class ModelBase(metaclass=abc.ABCMeta):
     def score(self, x: pd.DataFrame, y: np.ndarray) -> float:
         return self.impl.score(x[self.features].values, y)
 
+    def ic(self, x: pd.DataFrame, y: np.ndarray) -> float:
+        predict_y = self.impl.predict(x[self.features].values)
+        return np.corrcoef(predict_y, y)[0, 1]
+
     @abc.abstractmethod
     def save(self) -> dict:
 

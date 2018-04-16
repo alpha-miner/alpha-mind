@@ -27,6 +27,13 @@ class ConstLinearModelImpl(object):
     def predict(self, x: np.ndarray):
         return x @ self.weights
 
+    def score(self, x: np.ndarray, y: np.ndarray) -> float:
+        y_hat = self.predict(x)
+        y_bar = y.mean()
+        ssto = ((y - y_bar) ** 2).sum()
+        sse = ((y - y_hat) ** 2).sum()
+        return 1. - sse / ssto
+
 
 class ConstLinearModel(ModelBase):
 
