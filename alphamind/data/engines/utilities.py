@@ -47,7 +47,7 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
                 break
 
     if not factor_cols:
-        raise ValueError(f"some factors in <{factors}> can't be find")
+        raise ValueError("some factors in <{0}> can't be find".format(factors))
 
     return factor_cols
 

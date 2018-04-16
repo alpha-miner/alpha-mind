@@ -481,7 +481,7 @@ class SqlEngine(object):
         )
 
         df = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code'])
-        return df
+        return pd.merge(df, codes[['trade_date', 'code']], how='inner')
 
     def fetch_benchmark(self,
                         ref_date: str,
