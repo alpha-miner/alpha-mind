@@ -28,7 +28,6 @@ from alphamind.utilities import map_freq
 
 def _merge_df(engine, names, factor_df, target_df, universe, dates, risk_model, neutralized_risk):
     risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
-    alpha_logger.info("risk data loading finished")
     used_neutralized_risk = list(set(total_risk_factors).difference(names))
     risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
     target_df = pd.merge(target_df, risk_df, on=['trade_date', 'code'])
@@ -209,32 +208,34 @@ def fetch_data_package(engine: SqlEngine,
                        neutralized_risk: Iterable[str] = None,
                        risk_model: str = 'short',
                        pre_process: Iterable[object] = None,
-                       post_process: Iterable[object] = None) -> dict:
+                       post_process: Iterable[object] = None,
+                       fit_target: Union[Transformer, object] = None) -> dict:
     alpha_logger.info("Starting data package fetching ...")
     transformer = Transformer(alpha_factors)
     names = transformer.names
-    dates, return_df, factor_df = prepare_data(engine,
+    dates, target_df, factor_df = prepare_data(engine,
                                                transformer,
                                                start_date,
                                                end_date,
                                                frequency,
                                                universe,
                                                benchmark,
-                                               warm_start)
+                                               warm_start,
+                                               fit_target=fit_target)
 
-    return_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes = \
-        _merge_df(engine, names, factor_df, return_df, universe, dates, risk_model, neutralized_risk)
+    target_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes = \
+        _merge_df(engine, names, factor_df, target_df, universe, dates, risk_model, neutralized_risk)
 
     alpha_logger.info("data merging finished")
 
-    return_df['weight'] = train_x['weight']
-    return_df['industry'] = train_x['industry']
-    return_df['industry_code'] = train_x['industry_code']
-    return_df['isOpen'] = train_x['isOpen']
+    target_df['weight'] = train_x['weight']
+    target_df['industry'] = train_x['industry']
+    target_df['industry_code'] = train_x['industry_code']
+    target_df['isOpen'] = train_x['isOpen']
 
     if neutralized_risk:
         for i, name in enumerate(neutralized_risk):
-            return_df.loc[:, name] = risk_exp[:, i]
+            target_df.loc[:, name] = risk_exp[:, i]
 
     alpha_logger.info("Loading data is finished")
 
@@ -254,7 +255,7 @@ def fetch_data_package(engine: SqlEngine,
 
     ret = dict()
     ret['x_names'] = names
-    ret['settlement'] = return_df
+    ret['settlement'] = target_df
     ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets, 'risk': train_risk_buckets}
     ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets, 'risk': predict_risk_buckets,
                       'code': predict_codes_bucket}
@@ -266,7 +267,7 @@ def fetch_train_phase(engine,
                       ref_date,
                       frequency,
                       universe,
-                      batch,
+                      batch=1,
                       neutralized_risk: Iterable[str] = None,
                       risk_model: str = 'short',
                       pre_process: Iterable[object] = None,
@@ -279,7 +280,7 @@ def fetch_train_phase(engine,
         transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
-    p = Period(length=-(warm_start + batch + 1) * p.length(), units=p.units())
+    p = Period(length=-(warm_start + batch) * p.length(), units=p.units())
 
     start_date = advanceDateByCalendar('china.sse', ref_date, p, BizDayConventions.Following)
     dates = makeSchedule(start_date,
@@ -311,10 +312,10 @@ def fetch_train_phase(engine,
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
         pyFinAssert(len(dates) >= 2, ValueError, "No previous data for training for the date {0}".format(ref_date))
         end = dates[-2]
-        start = dates[-batch - 2] if batch <= len(dates) - 2 else dates[0]
+        start = dates[-batch - 1] if batch <= len(dates) - 1 else dates[0]
     else:
         end = dates[-1]
-        start = dates[-batch - 1] if batch <= len(dates) else dates[0]
+        start = dates[-batch] if batch <= len(dates) else dates[0]
 
     index = (date_label >= start) & (date_label <= end)
     this_raw_x = x_values[index]
@@ -347,7 +348,7 @@ def fetch_predict_phase(engine,
                         ref_date,
                         frequency,
                         universe,
-                        batch,
+                        batch=1,
                         neutralized_risk: Iterable[str] = None,
                         risk_model: str = 'short',
                         pre_process: Iterable[object] = None,
@@ -361,7 +362,7 @@ def fetch_predict_phase(engine,
         transformer = Transformer(alpha_factors)
 
     p = Period(frequency)
-    p = Period(length=-(warm_start + batch) * p.length(), units=p.units())
+    p = Period(length=-(warm_start + batch - 1) * p.length(), units=p.units())
 
     start_date = advanceDateByCalendar('china.sse', ref_date, p, BizDayConventions.Following)
     dates = makeSchedule(start_date,
@@ -458,15 +459,15 @@ def fetch_predict_phase(engine,
 
 if __name__ == '__main__':
     from alphamind.api import risk_styles, industry_styles, standardize
-    engine = SqlEngine('postgresql+psycopg2://postgres:we083826@localhost/alpha')
+    engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     universe = Universe('zz500', ['hs300', 'zz500'])
     neutralized_risk = risk_styles + industry_styles
-    res = fetch_predict_phase(engine, ['ep_q'],
-                            '2012-01-05',
-                            '5b',
-                            universe,
-                            16,
-                            neutralized_risk=neutralized_risk,
-                            post_process=[standardize],
-                            fit_target='closePrice')
+    res = fetch_train_phase(engine, ['ep_q'],
+                              '2012-01-05',
+                              '5b',
+                              universe,
+                              2,
+                              neutralized_risk=neutralized_risk,
+                              post_process=[standardize],
+                              fit_target='closePrice')
     print(res)
