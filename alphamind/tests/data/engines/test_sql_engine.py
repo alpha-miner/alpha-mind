@@ -12,6 +12,7 @@ from sqlalchemy import select, and_
 from PyFin.api import adjustDateByCalendar
 from PyFin.api import makeSchedule
 from PyFin.api import advanceDateByCalendar
+from alphamind.tests.test_suite import SKIP_ENGINE_TESTS
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
@@ -21,7 +22,7 @@ from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 
 
-@unittest.skip("Omit sql engine tests")
+@unittest.skipIf(SKIP_ENGINE_TESTS, "Omit sql engine tests")
 class TestSqlEngine(unittest.TestCase):
 
     def setUp(self):
@@ -277,3 +278,6 @@ class TestSqlEngine(unittest.TestCase):
             calculated_data = index_data[index_data.trade_date == ref_date]
             expected_data = df[df.trade_date == ref_date]
             np.testing.assert_array_almost_equal(calculated_data.weight.values, expected_data.weight.values)
+
+    def test_sql_engine_fetch_risk_model(self):
+        pass
