@@ -280,4 +280,10 @@ class TestSqlEngine(unittest.TestCase):
             np.testing.assert_array_almost_equal(calculated_data.weight.values, expected_data.weight.values)
 
     def test_sql_engine_fetch_risk_model(self):
-        pass
+        ref_date = adjustDateByCalendar('china.sse', '2017-01-31')
+        universe = Universe('custom', ['zz500', 'zz1000'])
+        codes = self.engine.fetch_codes(ref_date, universe)
+
+        risk_cov, risk_exp = self.engine.fetch_risk_model(ref_date, codes, risk_model='short')
+        self.assertListEqual(risk_cov.Factor.tolist(), risk_cov.columns[2:].tolist())
+
