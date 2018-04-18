@@ -15,6 +15,7 @@ from alphamind.tests.data.test_neutralize import TestNeutralize
 from alphamind.tests.data.test_standardize import TestStandardize
 from alphamind.tests.data.test_winsorize import TestWinsorize
 from alphamind.tests.data.test_quantile import TestQuantile
+from alphamind.tests.data.engines.test_sql_engine import TestSqlEngine
 from alphamind.tests.data.engines.test_universe import TestUniverse
 from alphamind.tests.portfolio.test_constraints import TestConstraints
 from alphamind.tests.portfolio.test_evolver import TestEvolver
@@ -45,6 +46,7 @@ if __name__ == '__main__':
                          TestStandardize,
                          TestWinsorize,
                          TestQuantile,
+                         TestSqlEngine,
                          TestUniverse,
                          TestConstraints,
                          TestEvolver,
