@@ -18,6 +18,8 @@ from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Uqer
+from alphamind.data.dbmodel.models import RiskCovShort
+from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 
@@ -286,4 +288,12 @@ class TestSqlEngine(unittest.TestCase):
 
         risk_cov, risk_exp = self.engine.fetch_risk_model(ref_date, codes, risk_model='short')
         self.assertListEqual(risk_cov.Factor.tolist(), risk_cov.columns[2:].tolist())
+
+        query = select([RiskCovShort]).where(
+            RiskCovShort.trade_date == ref_date
+        )
+
+        cov_df = pd.read_sql(query, con=self.engine.engine)
+
+
 
