@@ -294,6 +294,3 @@ class TestSqlEngine(unittest.TestCase):
         )
 
         cov_df = pd.read_sql(query, con=self.engine.engine)
-
-
-

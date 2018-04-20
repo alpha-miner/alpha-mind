@@ -238,19 +238,38 @@ class Composer(object):
 
 
 if __name__ == '__main__':
-    from PyFin.api import LAST
-    from alphamind.data.engines.sqlengine import risk_styles, industry_styles
-    from alphamind.model.linearmodel import LinearRegression
+    from alphamind.api import (risk_styles,
+                               industry_styles,
+                               standardize,
+                               winsorize_normal,
+                               DataMeta,
+                               LinearRegression,
+                               fetch_data_package,
+                               map_freq)
+    from PyFin.api import LAST, SHIFT
 
+    freq = '60b'
     universe = Universe('custom', ['ashare_ex'])
-    freq = '20b'
-    batch = 0
-    neutralized_risk = risk_styles + industry_styles
+    batch = 1
+    neutralized_risk = industry_styles
     risk_model = 'short'
     pre_process = [winsorize_normal, standardize]
     post_process = [standardize]
-    warm_start = 0
-    data_source = "postgres+psycopg2://postgres:we083826@localhost/alpha"
+    warm_start = 3
+    data_source = None
+    horizon = map_freq(freq)
+
+    engine = SqlEngine(data_source)
+
+    fit_intercept = True
+    kernal_feature = 'roe_q'
+    regress_features = {kernal_feature: LAST(kernal_feature),
+                        kernal_feature + '_l1': SHIFT(kernal_feature, 1),
+                        kernal_feature + '_l2': SHIFT(kernal_feature, 2),
+                        kernal_feature + '_l3': SHIFT(kernal_feature, 3)
+                        }
+    const_features = {kernal_feature: LAST(kernal_feature)}
+    fit_target = [kernal_feature]
 
     data_meta = DataMeta(freq=freq,
                          universe=universe,
@@ -262,9 +281,28 @@ if __name__ == '__main__':
                          warm_start=warm_start,
                          data_source=data_source)
 
-    alpha_model = LinearRegression({'roe_q': LAST('roe_q')}, fit_target='roe_q')
+    alpha_model = LinearRegression(features=regress_features, fit_intercept=True, fit_target=fit_target)
     composer = Composer(alpha_model=alpha_model, data_meta=data_meta)
 
-    ref_date = '2018-01-30'
-    composer.train(ref_date)
-    res = composer.predict(ref_date)
+    start_date = '2014-01-01'
+    end_date = '2016-01-01'
+
+    regression_model = LinearRegression(features=regress_features, fit_intercept=fit_intercept, fit_target=fit_target)
+    regression_composer = Composer(alpha_model=regression_model, data_meta=data_meta)
+    #regression_composer.train('2010-07-07')
+
+    data_package1 = fetch_data_package(engine,
+                                       alpha_factors=[kernal_feature],
+                                       start_date=start_date,
+                                       end_date=end_date,
+                                       frequency=freq,
+                                       universe=universe,
+                                       benchmark=906,
+                                       warm_start=warm_start,
+                                       batch=1,
+                                       neutralized_risk=neutralized_risk,
+                                       pre_process=pre_process,
+                                       post_process=post_process,
+                                       fit_target=fit_target)
+
+    pass

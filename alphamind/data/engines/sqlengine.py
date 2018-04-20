@@ -378,7 +378,6 @@ class SqlEngine(object):
             if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
 
-        df.dropna(inplace=True)
         df['isOpen'] = df.isOpen.astype(bool)
         df = df.loc[ref_date]
         df.index = list(range(len(df)))
@@ -447,7 +446,6 @@ class SqlEngine(object):
             if col not in set(['code', 'isOpen']) and col not in df.columns:
                 df[col] = res[col].values
 
-        df.dropna(inplace=True)
         df['isOpen'] = df.isOpen.astype(bool)
         df = df.reset_index()
         return pd.merge(df, universe_df[['trade_date', 'code']], how='inner')
