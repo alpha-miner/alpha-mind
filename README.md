@@ -58,14 +58,14 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
   在Windows上完整安装，需要有C++编译器(例如msvc)
   
-  具体可按照如下流程配置(以VS2005为例)：
+  具体可按照如下流程配置(以VS2015为例)：
   
   1. 安装VS2015 社区版，在微软官网可以免费下载。 
   2. 安装CMake, 可以从[官网](https://cmake.org/download/)下载二进制安装文件，如"Windows win64-x64 ZIP"，解压缩后环境变量的设置可以参见[此文](https://blog.csdn.net/liyuebit/article/details/77092723)
      
      - 可以按照文中的例子，尝试使用如下CMake命令编译一个HelloWorld项目。
      ```bash
-     cmake -G "Visual Studio 14 2015 Win646"
+     cmake -G "Visual Studio 14 2015 Win64"
      ```
      - 将MSBuild的路径(默认是"C:\Program Files (x86)\MSBuild\14.0\Bin"")加入环境变量中。
   
