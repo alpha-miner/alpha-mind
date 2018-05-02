@@ -262,6 +262,8 @@ class TestSqlEngine(unittest.TestCase):
 
             df = pd.read_sql(query, con=self.engine.engine)
             calculated_factor = factor_data[factor_data.trade_date == ref_date]
+            calculated_factor.set_index('code', inplace=True)
+            calculated_factor = calculated_factor.loc[df.code]
             np.testing.assert_array_almost_equal(calculated_factor.dx.values, df.ROE.values)
 
     def test_sql_engine_fetch_benchmark(self):
