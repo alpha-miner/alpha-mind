@@ -9,10 +9,13 @@ import random
 import unittest
 import numpy as np
 import pandas as pd
+from scipy.stats import rankdata
 from sqlalchemy import select, and_
 from PyFin.api import makeSchedule
 from PyFin.api import advanceDateByCalendar
 from PyFin.api import bizDatesList
+from PyFin.api import CSRank
+from PyFin.api import CSQuantiles
 from alphamind.tests.test_suite import SKIP_ENGINE_TESTS
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Market
@@ -332,7 +335,7 @@ class TestSqlEngine(unittest.TestCase):
         universe = Universe('custom', ['zz500', 'zz1000'])
         codes = self.engine.fetch_codes(ref_date, universe)
 
-        risk_matrix = self.engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
+        ind_matrix = self.engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
 
         query = select([Industry.code, Industry.industryName1]).where(
             and_(
@@ -345,7 +348,39 @@ class TestSqlEngine(unittest.TestCase):
         df = pd.read_sql(query, con=self.engine.engine)
         df = pd.get_dummies(df, prefix="", prefix_sep="")
 
-        self.assertEqual(len(risk_matrix), len(df))
+        self.assertEqual(len(ind_matrix), len(df))
         np.testing.assert_array_almost_equal(
-            df[risk_matrix.columns[2:]].values, risk_matrix.iloc[:, 2:].values
+            df[ind_matrix.columns[2:]].values, ind_matrix.iloc[:, 2:].values
         )
+
+    def test_sql_engine_fetch_factor_by_categories(self):
+        ref_date = '2016-08-01'
+        universe = Universe('custom', ['zz500', 'zz1000'])
+        codes = self.engine.fetch_codes(ref_date, universe)
+
+        factor1 = {'f': CSRank('ROE', groups='sw1')}
+        factor2 = {'f': CSQuantiles('ROE', groups='sw1')}
+        raw_factor = 'ROE'
+
+        df1 = self.engine.fetch_factor(ref_date, factor1, codes)
+        df2 = self.engine.fetch_factor(ref_date, factor2, codes)
+        df3 = self.engine.fetch_factor(ref_date, raw_factor, codes)
+
+        ind_matrix = self.engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
+
+        cols = sorted(ind_matrix.columns[2:].tolist())
+
+        series = (ind_matrix[cols] * np.array(range(1, len(cols)+1))).sum(axis=1)
+        df3['cat'] = series
+
+        expected_rank = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values) - 1.)
+        expected_rank[np.isnan(df3.ROE)] = np.nan
+        df3['rank'] = expected_rank['ROE'].values
+        np.testing.assert_array_almost_equal(df3['rank'].values,
+                                             df1['f'].values)
+
+        expected_quantile = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: (rankdata(x.values) - 1.) / (len(x) - 1))
+        expected_quantile[np.isnan(df3.ROE)] = np.nan
+        df3['quantile'] = expected_quantile['ROE'].values
+        np.testing.assert_array_almost_equal(df3['quantile'].values,
+                                             df2['f'].values)
