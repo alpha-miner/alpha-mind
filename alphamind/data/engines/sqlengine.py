@@ -32,7 +32,6 @@ from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
-from alphamind.data.dbmodel.models import Positions
 from alphamind.data.dbmodel.models import Outright
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.transformer import Transformer

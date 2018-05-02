@@ -12,6 +12,19 @@ Base = declarative_base()
 metadata = Base.metadata
 
 
+class Categories(Base):
+
+    __tablename__ = 'categories'
+    __table_args__ = (
+        Index('categories_pk', 'trade_date', 'code', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(BigInteger, primary_key=True, nullable=False)
+    sw1 = Column(Integer)
+    sw1_adj = Column(Integer)
+
+
 class DailyPortfolios(Base):
     __tablename__ = 'daily_portfolios'
     __table_args__ = (
@@ -299,21 +312,6 @@ class PortfolioSettings(Base):
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
     model_id = Column(BigInteger, primary_key=True, nullable=False)
     weight = Column(Float(53), nullable=False)
-
-
-class Positions(Base):
-    __tablename__ = 'positions'
-    __table_args__ = (
-        Index('positions_idx', 'trade_date', 'source', 'universe', 'benchmark', 'portfolio', 'type', unique=True),
-    )
-
-    source = Column(String(50), primary_key=True, nullable=False)
-    universe = Column(String(50), primary_key=True, nullable=False)
-    benchmark = Column(Integer, primary_key=True, nullable=False)
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio = Column(String(50), primary_key=True, nullable=False)
-    type = Column(String(50), primary_key=True, nullable=False)
-    weight = Column(JSON)
 
 
 class RebalanceLog(Base):
@@ -1316,5 +1314,5 @@ class Outright(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgres+psycopg2://postgres:we083826@192.168.0.102/alpha')
+    engine = create_engine('postgres+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
     Base.metadata.create_all(engine)
