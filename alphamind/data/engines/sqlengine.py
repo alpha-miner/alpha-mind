@@ -664,19 +664,7 @@ class SqlEngine(object):
         df = self.fetch_industry(ref_date, codes, category, level)
         df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
-        industries = industry_list(category, level)
-
-        in_s = []
-        out_s = []
-        for i in industries:
-            if i in df:
-                in_s.append(i)
-            else:
-                out_s.append(i)
-
-        res = df[['code', 'industry_code', 'industry_name'] + in_s]
-        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
-        return res
+        return df.drop('industry_code', axis=1)
 
     def fetch_industry_range(self,
                              universe: Universe,
@@ -721,20 +709,7 @@ class SqlEngine(object):
         df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
         df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
-        industries = industry_list(category, level)
-
-        in_s = []
-        out_s = []
-        for i in industries:
-            if i in df:
-                in_s.append(i)
-            else:
-                out_s.append(i)
-
-        res = df[['trade_date', 'code', 'industry_code', 'industry_name'] + in_s]
-
-        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
-        return res
+        return df.drop('industry_code', axis=1)
 
     def fetch_trade_status(self,
                            ref_date: str,
