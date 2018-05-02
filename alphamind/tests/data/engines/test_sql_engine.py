@@ -198,7 +198,7 @@ class TestSqlEngine(unittest.TestCase):
             )
         )
 
-        df = pd.read_sql(query, con=self.engine.engine).sort_values('code').dropna()
+        df = pd.read_sql(query, con=self.engine.engine).sort_values('code')
         np.testing.assert_array_almost_equal(factor_data.ROE.values, df.ROE.values)
 
     def test_sql_engine_fetch_factor_range(self):
@@ -219,7 +219,7 @@ class TestSqlEngine(unittest.TestCase):
                 )
             )
 
-            df = pd.read_sql(query, con=self.engine.engine).dropna()
+            df = pd.read_sql(query, con=self.engine.engine)
             calculated_factor = factor_data[factor_data.trade_date == ref_date]
             np.testing.assert_array_almost_equal(calculated_factor.ROE.values, df.ROE.values)
 
@@ -243,7 +243,7 @@ class TestSqlEngine(unittest.TestCase):
                 )
             )
 
-            df = pd.read_sql(query, con=self.engine.engine).dropna()
+            df = pd.read_sql(query, con=self.engine.engine)
             calculated_factor = factor_data[factor_data.trade_date == ref_date]
             np.testing.assert_array_almost_equal(calculated_factor.dx.values, df.ROE.values)
 
