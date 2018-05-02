@@ -58,58 +58,54 @@ class Universe(object):
             *or_conditions
         )
 
-        and_conditions = []
-        if self.exclude_universe:
-            and_conditions.append(UniverseTable.universe.notin_(self.exclude_universe))
-
         return and_(
             query,
             UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date),
-            *and_conditions
         )
 
     def query(self, engine, start_date: str = None, end_date: str = None, dates=None) -> pd.DataFrame:
 
         universe_cond = self._query_statements(start_date, end_date, dates)
 
-        if self.filter_cond is None:
+        if self.filter_cond is None and self.exclude_universe is None:
             # simple case
             query = select([UniverseTable.trade_date, UniverseTable.code]).where(
                 universe_cond
             ).distinct()
             return pd.read_sql(query, engine.engine)
         else:
-            if isinstance(self.filter_cond, Transformer):
-                transformer = self.filter_cond
-            else:
-                transformer = Transformer(self.filter_cond)
+            if self.filter_cond is not None:
+                if isinstance(self.filter_cond, Transformer):
+                    transformer = self.filter_cond
+                else:
+                    transformer = Transformer(self.filter_cond)
 
-            dependency = transformer.dependency
-            factor_cols = _map_factors(dependency, factor_tables)
-            big_table = Market
+                dependency = transformer.dependency
+                factor_cols = _map_factors(dependency, factor_tables)
+                big_table = Market
 
-            for t in set(factor_cols.values()):
-                if t.__table__.name != Market.__table__.name:
-                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
-                                                             Market.code == t.code,
-                                                             Market.trade_date.in_(
-                                                                 dates) if dates else Market.trade_date.between(
-                                                                 start_date, end_date)))
-            big_table = join(big_table, UniverseTable,
-                             and_(Market.trade_date == UniverseTable.trade_date,
-                                  Market.code == UniverseTable.code,
-                                  universe_cond))
+                for t in set(factor_cols.values()):
+                    if t.__table__.name != Market.__table__.name:
+                        big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                                 Market.code == t.code,
+                                                                 Market.trade_date.in_(
+                                                                     dates) if dates else Market.trade_date.between(
+                                                                     start_date, end_date)))
+                big_table = join(big_table, UniverseTable,
+                                 and_(Market.trade_date == UniverseTable.trade_date,
+                                      Market.code == UniverseTable.code,
+                                      universe_cond))
 
-            query = select(
-                [Market.trade_date, Market.code] + list(factor_cols.keys())) \
-                .select_from(big_table).distinct()
+                query = select(
+                    [Market.trade_date, Market.code] + list(factor_cols.keys())) \
+                    .select_from(big_table).distinct()
 
-            df = pd.read_sql(query, engine.engine).sort_values(['trade_date', 'code']).dropna()
-            df.set_index('trade_date', inplace=True)
-            filter_fields = transformer.names
-            pyFinAssert(len(filter_fields) == 1, ValueError, "filter fields can only be 1")
-            df = transformer.transform('code', df)
-            df = df[df[filter_fields[0]] == 1].reset_index()[['trade_date', 'code']]
+                df = pd.read_sql(query, engine.engine).sort_values(['trade_date', 'code']).dropna()
+                df.set_index('trade_date', inplace=True)
+                filter_fields = transformer.names
+                pyFinAssert(len(filter_fields) == 1, ValueError, "filter fields can only be 1")
+                df = transformer.transform('code', df)
+                df = df[df[filter_fields[0]] == 1].reset_index()[['trade_date', 'code']]
             return df
 
     def save(self):
@@ -141,10 +137,10 @@ if __name__ == '__main__':
     from alphamind.data.engines.sqlengine import SqlEngine
 
     engine = SqlEngine()
-    universe = Universe('ss', ['ashare_ex'], exclude_universe=['hs300', 'zz500'], special_codes=[603138])
+    universe = Universe('custom', ['zz800'], exclude_universe=['Bank'])
     print(universe.query(engine,
-                         start_date='2017-12-21',
-                         end_date='2017-12-25'))
+                         start_date='2018-04-26',
+                         end_date='2018-04-26'))
 
     print(universe.query(engine,
                          dates=['2017-12-21', '2017-12-25']))

@@ -356,7 +356,7 @@ class TestSqlEngine(unittest.TestCase):
         )
 
     def test_sql_engine_fetch_factor_by_categories(self):
-        ref_date = '2016-08-01'
+        ref_date = self.ref_date
         universe = Universe('custom', ['zz500', 'zz1000'])
         codes = self.engine.fetch_codes(ref_date, universe)
 
@@ -376,6 +376,7 @@ class TestSqlEngine(unittest.TestCase):
         df3['cat'] = series
 
         expected_rank = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values) - 1.)
+        expected_rank[np.isnan(df3.ROE)] = np.nan
         expected_rank[np.isnan(df3.ROE)] = np.nan
         df3['rank'] = expected_rank['ROE'].values
         np.testing.assert_array_almost_equal(df3['rank'].values,
