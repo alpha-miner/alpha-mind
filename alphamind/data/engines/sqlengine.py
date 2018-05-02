@@ -496,7 +496,6 @@ class SqlEngine(object):
 
         df = pd.read_sql(query, self.engine) \
             .replace([-np.inf, np.inf], np.nan) \
-            .dropna() \
             .sort_values(['trade_date', 'code'])
         return pd.merge(df, codes[['trade_date', 'code']], how='inner')
 
