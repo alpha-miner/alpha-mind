@@ -7,6 +7,7 @@ Created on 2017-4-25
 
 
 SKIP_ENGINE_TESTS = True
+DATA_ENGINE_URI = "postgres+psycopg2://postgres:we083826@localhost/alpha"
 
 
 if __name__ == '__main__':

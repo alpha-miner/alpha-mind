@@ -17,6 +17,7 @@ from PyFin.api import bizDatesList
 from PyFin.api import CSRank
 from PyFin.api import CSQuantiles
 from alphamind.tests.test_suite import SKIP_ENGINE_TESTS
+from alphamind.tests.test_suite import DATA_ENGINE_URI
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
@@ -34,7 +35,7 @@ from alphamind.utilities import alpha_logger
 class TestSqlEngine(unittest.TestCase):
 
     def setUp(self):
-        self.engine = SqlEngine()
+        self.engine = SqlEngine(DATA_ENGINE_URI)
         dates_list = bizDatesList('china.sse', '2010-10-01', '2018-04-27')
         self.ref_date = random.choice(dates_list).strftime('%Y-%m-%d')
         alpha_logger.info("Test date: {0}".format(self.ref_date))
