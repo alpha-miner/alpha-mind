@@ -22,7 +22,7 @@ class ConstLinearModelImpl(object):
         self.weights = weights.flatten()
 
     def fit(self, x: np.ndarray, y: np.ndarray):
-        pass
+        raise NotImplementedError("Const linear model doesn't offer fit methodology")
 
     def predict(self, x: np.ndarray):
         return x @ self.weights

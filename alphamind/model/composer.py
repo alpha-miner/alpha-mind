@@ -20,6 +20,7 @@ from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.rank import rank
 from alphamind.data.standardize import standardize
 from alphamind.model.loader import load_model
+from alphamind.model.linearmodel import ConstLinearModel
 
 PROCESS_MAPPING = {
     'winsorize_normal': winsorize_normal,
@@ -144,11 +145,13 @@ def train_model(ref_date: str,
                 x_values: pd.DataFrame = None,
                 y_values: pd.DataFrame = None):
     base_model = copy.deepcopy(alpha_model)
-    if x_values is None:
-        train_data = data_meta.fetch_train_data(ref_date, alpha_model)
-        x_values = train_data['train']['x']
-        y_values = train_data['train']['y']
-    base_model.fit(x_values, y_values)
+
+    if not isinstance(alpha_model, ConstLinearModel):
+        if x_values is None:
+            train_data = data_meta.fetch_train_data(ref_date, alpha_model)
+            x_values = train_data['train']['x']
+            y_values = train_data['train']['y']
+        base_model.fit(x_values, y_values)
     return base_model
 
 

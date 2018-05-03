@@ -1,182 +1,239 @@
 # -*- coding: utf-8 -*-
 """
-Created on 2017-9-14
+Created on 2018-5-3
 
 @author: cheng.li
 """
 
-import datetime as dt
+import copy
+import numpy as np
 import pandas as pd
-import alphamind.data as data_module
-import alphamind.model as model_module
-from alphamind.data.engines.universe import Universe
-from alphamind.model.modelbase import ModelBase
-from alphamind.data.engines.sqlengine import industry_styles
+from PyFin.api import makeSchedule
+from alphamind.utilities import map_freq
+from alphamind.utilities import alpha_logger
+from alphamind.model.composer import train_model
+from alphamind.portfolio.constraints import LinearConstraints
+from alphamind.portfolio.constraints import BoundaryType
+from alphamind.portfolio.constraints import create_box_bounds
+from alphamind.execution.naiveexecutor import NaiveExecutor
 from alphamind.data.engines.sqlengine import risk_styles
-from alphamind.model.data_preparing import fetch_data_package
-from alphamind.model.data_preparing import fetch_predict_phase
-from alphamind.model.data_preparing import fetch_train_phase
+from alphamind.data.engines.sqlengine import industry_styles
+from alphamind.data.engines.sqlengine import macro_styles
+from alphamind.data.processing import factor_processing
+from alphamind.analysis.factoranalysis import er_portfolio_analysis
+
+all_styles = risk_styles + industry_styles + macro_styles
+
+total_risk_names = ['benchmark', 'total']
+
+b_type = []
+l_val = []
+u_val = []
+
+for name in total_risk_names:
+    if name == 'benchmark':
+        b_type.append(BoundaryType.RELATIVE)
+        l_val.append(0.8)
+        u_val.append(1.0)
+    else:
+        b_type.append(BoundaryType.RELATIVE)
+        l_val.append(1.0)
+        u_val.append(1.0)
+
+bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
 
 
-def load_process(names: list) -> list:
+class RunningSetting(object):
 
-    return [getattr(data_module, name) for name in names]
-
-
-def load_neutralize_risks(names: list) -> list:
-
-    risks = []
-
-    for name in names:
-        if name == 'industry_styles':
-            risks.extend(industry_styles)
-        elif name == 'risk_styles':
-            risks.extend(risk_styles)
-        else:
-            risks.append(name)
-
-    return risks
-
-
-def load_model_meta(name: str) -> ModelBase:
-    return getattr(model_module, name)
-
-
-def load_universe(universe: list) -> Universe:
-    return Universe(universe[0], universe[1])
+    def __init__(self,
+                 universe,
+                 start_date,
+                 end_date,
+                 freq,
+                 benchmark=905,
+                 industry_cat='sw_adj',
+                 industry_level=1,
+                 rebalance_method='risk_neutral',
+                 **kwargs):
+        self.universe = universe
+        self.dates = makeSchedule(start_date, end_date, freq, 'china.sse')
+        self.dates = [d.strftime('%Y-%m-%d') for d in self.dates]
+        self.benchmark = benchmark
+        self.horizon = map_freq(freq)
+        self.executor = NaiveExecutor()
+        self.industry_cat = industry_cat
+        self.industry_level = industry_level
+        self.rebalance_method = rebalance_method
+        self.more_opts = kwargs
 
 
 class Strategy(object):
 
     def __init__(self,
-                 data_source,
-                 strategy_desc: dict,
-                 cache_start_date=None,
-                 cache_end_date=None):
-        self.data_source = data_source
-        self.strategy_name = strategy_desc['strategy_name']
-        self.pre_process = load_process(strategy_desc['data_process']['pre_process'])
-        self.post_process = load_process(strategy_desc['data_process']['pre_process'])
-        self.neutralize_risk = load_neutralize_risks(strategy_desc['data_process']['neutralize_risk'])
-        self.risk_model = strategy_desc['risk_model']
+                 alpha_model,
+                 data_meta,
+                 running_setting):
+        self.alpha_model = alpha_model
+        self.data_meta = data_meta
+        self.running_setting = running_setting
+        self.engine = self.data_meta.engine
 
-        self.model_type = load_model_meta(strategy_desc['alpha_model'])
-        self.parameters = strategy_desc['parameters']
-        self.features = strategy_desc['features']
-        self.model = self.model_type(features=self.features, **self.parameters)
+    def run(self):
 
-        self.is_const_model = isinstance(self.model, model_module.ConstLinearModel)
+        alpha_logger.info("starting backting ...")
 
-        if self.is_const_model:
-            self.weights = strategy_desc['weights']
+        total_factors = self.engine.fetch_factor_range(self.running_setting.universe,
+                                                       self.alpha_model.formulas,
+                                                       dates=self.running_setting.dates)
+        alpha_logger.info("alpha factor data loading finished ...")
 
-        self.freq = strategy_desc['freq']
-        self.universe = load_universe(strategy_desc['universe'])
-        self.benchmark = strategy_desc['benchmark']
+        total_industry = self.engine.fetch_industry_matrix_range(universe,
+                                                                 dates=self.running_setting.dates,
+                                                                 category=self.running_setting.industry_cat,
+                                                                 level=self.running_setting.industry_level)
+        alpha_logger.info("industry data loading finished ...")
 
-        self.batch = strategy_desc['batch']
-        self.warm_start = strategy_desc['warm_start']
+        total_benchmark = self.engine.fetch_benchmark_range(dates=self.running_setting.dates,
+                                                            benchmark=self.running_setting.benchmark)
+        alpha_logger.info("benchmark data loading finished ...")
 
-        if cache_start_date and cache_end_date:
-            self.cached_data = fetch_data_package(self.data_source,
-                                                  self.features,
-                                                  cache_start_date,
-                                                  cache_end_date,
-                                                  self.freq,
-                                                  self.universe,
-                                                  self.benchmark,
-                                                  self.warm_start,
-                                                  self.batch,
-                                                  self.neutralize_risk,
-                                                  self.risk_model,
-                                                  self.pre_process,
-                                                  self.post_process)
+        total_risk_cov, total_risk_exposure = self.engine.fetch_risk_model_range(
+            universe,
+            dates=self.running_setting.dates,
+            risk_model=self.data_meta.risk_model
+        )
+        alpha_logger.info("risk_model data loading finished ...")
 
-            # some cached data to fast processing
-            settlement_data = self.cached_data['settlement']
-            self.settle_dfs = settlement_data.set_index('code').groupby('trade_date')
+        total_returns = self.engine.fetch_dx_return_range(self.running_setting.universe,
+                                                          dates=self.running_setting.dates,
+                                                          horizon=self.running_setting.horizon,
+                                                          offset=1)
+        alpha_logger.info("returns data loading finished ...")
 
-            self.scheduled_dates = set(k.strftime('%Y-%m-%d') for k in self.cached_data['train']['x'].keys())
-        else:
-            self.cached_data = None
-            self.scheduled_dates = None
+        total_data = pd.merge(total_factors, total_industry, on=['trade_date', 'code'])
+        total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
+        total_data.fillna({'weight': 0.}, inplace=True)
+        total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
+        total_data = pd.merge(total_data, total_risk_exposure, on=['trade_date', 'code']).fillna(total_data.median())
 
-    def cached_dates(self):
-        return sorted(self.scheduled_dates)
+        total_data_groups = total_data.groupby('trade_date')
 
-    def model_train(self, ref_date: str):
+        rets = []
+        turn_overs = []
+        executor = copy.deepcopy(self.running_setting.executor)
+        positions = pd.DataFrame()
 
-        if not self.is_const_model:
-            if self.cached_data and ref_date in self.scheduled_dates:
-                ref_date = dt.datetime.strptime(ref_date, '%Y-%m-%d')
-                ne_x = self.cached_data['train']['x'][ref_date]
-                ne_y = self.cached_data['train']['y'][ref_date]
+        for ref_date, this_data in total_data_groups:
+            new_model = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
+
+            codes = this_data.code.values.tolist()
+
+            if self.running_setting.rebalance_method == 'tv':
+                risk_cov = total_risk_cov[total_risk_cov.trade_date == ref_date]
+                sec_cov = self._generate_sec_cov(this_data, risk_cov)
             else:
-                data = fetch_train_phase(self.data_source,
-                                         self.features,
-                                         ref_date,
-                                         self.freq,
-                                         self.universe,
-                                         self.batch,
-                                         self.neutralize_risk,
-                                         self.risk_model,
-                                         self.pre_process,
-                                         self.post_process,
-                                         self.warm_start)
+                sec_cov = None
 
-                ne_x = data['train']['x']
-                ne_y = data['train']['y']
-            self.model.fit(ne_x, ne_y)
+            benchmark_w = this_data.weight.values
+            is_in_benchmark = (benchmark_w > 0.).astype(float).reshape((-1, 1))
+            constraints_exp = np.concatenate([is_in_benchmark,
+                                              np.ones_like(is_in_benchmark)],
+                                             axis=1)
+            constraints_exp = pd.DataFrame(constraints_exp, columns=['benchmark', 'total'])
+            constraints = LinearConstraints(bounds, constraints_exp, benchmark_w)
 
-    def model_predict(self, ref_date: str) -> pd.DataFrame:
-        if self.cached_data and ref_date in self.scheduled_dates:
-            ref_date = dt.datetime.strptime(ref_date, '%Y-%m-%d')
-            ne_x = self.cached_data['predict']['x'][ref_date]
-            settlement_data = self.cached_data['settlement']
-            codes = settlement_data.loc[settlement_data.trade_date == ref_date, 'code'].values
-        else:
-            data = fetch_predict_phase(self.data_source,
-                                       self.features,
-                                       ref_date,
-                                       self.freq,
-                                       self.universe,
-                                       self.batch,
-                                       self.neutralize_risk,
-                                       self.risk_model,
-                                       self.pre_process,
-                                       self.post_process,
-                                       self.warm_start)
+            lbound = np.maximum(0., benchmark_w - 0.02)
+            ubound = 0.02 + benchmark_w
 
-            ne_x = data['predict']['x']
-            codes = data['predict']['code']
+            features = new_model.features
+            raw_factors = this_data[features].values
+            new_factors = factor_processing(raw_factors,
+                                            pre_process=self.data_meta.pre_process,
+                                            risk_factors=self.data_meta.neutralized_risk,
+                                            post_process=self.data_meta.post_process)
 
-        prediction = self.model.predict(ne_x).flatten()
-        return pd.DataFrame({'prediction': prediction,
-                             'code': codes})
+            er = new_model.predict(pd.DataFrame(new_factors, columns=features))
 
-    def settlement(self, ref_date: str, prediction: pd.DataFrame) -> float:
-        settlement_data = self.settle_dfs.get_group(ref_date)[['dx', 'weight']]
+            alpha_logger.info('{0} re-balance: {1} codes'.format(ref_date, len(er)))
+            target_pos, _ = er_portfolio_analysis(er,
+                                                  this_data.industry_name.values,
+                                                  None,
+                                                  constraints,
+                                                  False,
+                                                  benchmark_w,
+                                                  method=self.running_setting.rebalance_method,
+                                                  lbound=lbound,
+                                                  ubound=ubound,
+                                                  target_vol=0.05,
+                                                  cov=sec_cov)
+
+            target_pos['code'] = codes
+            target_pos['trade_date'] = ref_date
+            target_pos['benchmark_weight'] = benchmark_w
+            target_pos['dx'] = this_data.dx.values
+
+            turn_over, executed_pos = executor.execute(target_pos=target_pos)
+
+            ret = executed_pos.weight.values @ (np.exp(this_data.dx.values) - 1.)
+            rets.append(np.log(1. + ret))
+            executor.set_current(executed_pos)
+            turn_overs.append(turn_over)
+            positions = positions.append(target_pos)
+
+        trade_dates = positions.trade_date.unique()
+        ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs}, index=trade_dates)
+
+        index_return = self.engine.fetch_dx_return_index_range(self.running_setting.benchmark,
+                                                               dates=self.running_setting.dates,
+                                                               horizon=self.running_setting.horizon,
+                                                               offset=1).set_index('trade_date')
+        ret_df['benchmark_returns'] = index_return['dx']
+        ret_df.loc[advanceDateByCalendar('china.sse', ret_df.index[-1], freq)] = 0.
+        ret_df = ret_df.shift(1)
+        ret_df.iloc[0] = 0.
+        ret_df['excess_return'] = ret_df['returns'] - ret_df['benchmark_returns']
+
+        return ret_df, positions
+
+    @staticmethod
+    def _generate_sec_cov(current_data, risk_cov):
+        risk_exposure = current_data[all_styles].values
+        risk_cov = risk_cov[all_styles].values
+        special_risk = current_data['srisk'].values
+        sec_cov = risk_exposure @ risk_cov @ risk_exposure.T / 10000 + np.diag(special_risk ** 2) / 10000
+        return sec_cov
 
 
 if __name__ == '__main__':
-    import json
-    import pprint
-    from alphamind.data.engines.sqlengine import SqlEngine
-    from PyFin.api import makeSchedule
+    from matplotlib import pyplot as plt
+    from PyFin.api import *
+    from alphamind.api import Universe
+    from alphamind.api import ConstLinearModel
+    from alphamind.api import DataMeta
 
-    engine = SqlEngine()
+    start_date = '2010-01-01'
+    end_date = '2018-04-19'
+    freq = '10b'
+    neutralized_risk = None
+    universe = Universe("custom", ['zz800'])
 
-    start_date = '2017-06-01'
-    end_date = '2017-09-14'
+    factor = 'RVOL'
+    alpha_factors = {'f01': CSQuantiles(LAST(factor), groups='sw1_adj')}
+    weights = {'f01': 1.}
+    alpha_model = ConstLinearModel(features=alpha_factors, weights=weights)
 
-    with open("sample_strategy.json", 'r') as fp:
-        strategy_desc = json.load(fp)
-        strategy = Strategy(engine, strategy_desc, start_date, end_date)
+    data_meta = DataMeta(freq=freq,
+                         universe=universe,
+                         batch=1)
 
-        dates = strategy.cached_dates()
-        print(dates)
+    running_setting = RunningSetting(universe,
+                                     start_date,
+                                     end_date,
+                                     freq,
+                                     rebalance_method='tv')
 
-        for date in dates:
-            strategy.model_train(date)
-            prediction = strategy.model_predict(date)
-            strategy.settlement(date, prediction)
+    strategy = Strategy(alpha_model, data_meta, running_setting)
+    ret_df, positions = strategy.run()
+    ret_df['excess_return'].cumsum().plot()
+    plt.title(f"{factor}")
+    plt.show()
