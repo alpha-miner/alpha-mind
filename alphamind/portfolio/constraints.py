@@ -106,8 +106,6 @@ class LinearConstraints(object):
                  bounds: Dict[str, BoxBoundary],
                  cons_mat: pd.DataFrame,
                  backbone: np.ndarray=None):
-        pyFinAssert(len(bounds) == cons_mat.shape[1], "Number of bounds should be same as number of col of cons_mat")
-
         self.names = list(set(bounds.keys()).intersection(set(cons_mat.columns)))
         self.bounds = bounds
         self.cons_mat = cons_mat

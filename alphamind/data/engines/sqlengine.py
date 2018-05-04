@@ -230,7 +230,7 @@ class SqlEngine(object):
                                            risk_factors=df[neutralized_risks].values,
                                            post_process=post_process)
 
-        return df[['code', 'dx']]
+        return df[['code', 'dx']].drop_duplicates(['code'])
 
     def fetch_dx_return_range(self,
                               universe,
@@ -271,7 +271,7 @@ class SqlEngine(object):
 
         if dates:
             df = df[df.trade_date.isin(dates)]
-        return df.sort_values(['trade_date', 'code'])
+        return df.sort_values(['trade_date', 'code']).drop_duplicates(['trade_date', 'code'])
 
     def fetch_dx_return_index(self,
                               ref_date: str,
@@ -373,14 +373,10 @@ class SqlEngine(object):
             .set_index('trade_date')
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
-        for col in res.columns:
-            if col not in set(['code', 'isOpen']) and col not in df.columns:
-                df[col] = res[col].values
-
-        df['isOpen'] = df.isOpen.astype(bool)
-        df = df.loc[ref_date]
-        df.index = list(range(len(df)))
-        return df
+        res['isOpen'] = df.isOpen.astype(bool)
+        res = res.loc[ref_date]
+        res.index = list(range(len(res)))
+        return df.drop_duplicates(['trade_date', 'code'])
 
     def fetch_factor_range(self,
                            universe: Universe,
@@ -441,13 +437,9 @@ class SqlEngine(object):
         df.set_index('trade_date', inplace=True)
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
-        for col in res.columns:
-            if col not in set(['code', 'isOpen']) and col not in df.columns:
-                df[col] = res[col].values
-
-        df['isOpen'] = df.isOpen.astype(bool)
-        df = df.reset_index()
-        return pd.merge(df, universe_df[['trade_date', 'code']], how='inner')
+        res['isOpen'] = df.isOpen.astype(bool)
+        res = res.reset_index()
+        return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
 
     def fetch_factor_range_forward(self,
                                    universe: Universe,
@@ -497,7 +489,7 @@ class SqlEngine(object):
         df = pd.read_sql(query, self.engine) \
             .replace([-np.inf, np.inf], np.nan) \
             .sort_values(['trade_date', 'code'])
-        return pd.merge(df, codes[['trade_date', 'code']], how='inner')
+        return pd.merge(df, codes[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
 
     def fetch_benchmark(self,
                         ref_date: str,
@@ -571,7 +563,7 @@ class SqlEngine(object):
 
         risk_exp = pd.read_sql(query, self.engine).dropna()
 
-        return risk_cov, risk_exp
+        return risk_cov, risk_exp.drop_duplicates(['code'])
 
     def fetch_risk_model_range(self,
                                universe: Universe,
@@ -631,7 +623,7 @@ class SqlEngine(object):
             risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(
                 ['trade_date', 'code'])
 
-        return risk_cov, risk_exp
+        return risk_cov, risk_exp.drop_duplicates(['trade_date', 'code'])
 
     def fetch_industry(self,
                        ref_date: str,
@@ -653,7 +645,7 @@ class SqlEngine(object):
             )
         ).distinct()
 
-        return pd.read_sql(query, self.engine).dropna()
+        return pd.read_sql(query, self.engine).dropna().drop_duplicates(['code'])
 
     def fetch_industry_matrix(self,
                               ref_date: str,
@@ -695,7 +687,7 @@ class SqlEngine(object):
         if universe.is_filtered:
             codes = universe.query(self, start_date, end_date, dates)
             df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
-        return df
+        return df.drop_duplicates(['trade_date', 'code'])
 
     def fetch_industry_matrix_range(self,
                                     universe: Universe,
@@ -708,7 +700,7 @@ class SqlEngine(object):
         df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
         df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
-        return df.drop('industry_code', axis=1)
+        return df.drop('industry_code', axis=1).drop_duplicates(['trade_date', 'code'])
 
     def fetch_trade_status(self,
                            ref_date: str,
@@ -934,31 +926,6 @@ class SqlEngine(object):
 
         self.engine.execute(query)
         df.to_sql(Performance.__table__.name, self.engine, if_exists='append', index=False)
-
-    def upsert_positions(self, ref_date, df):
-        universes = df.universe.unique().tolist()
-        benchmarks = df.benchmark.unique().tolist()
-        build_types = df.type.unique().tolist()
-        sources = df.source.unique().tolist()
-        portfolios = df.portfolio.unique().tolist()
-
-        query = delete(Positions).where(
-            and_(
-                Positions.trade_date == ref_date,
-                Positions.type.in_(build_types),
-                Positions.universe.in_(universes),
-                Positions.benchmark.in_(benchmarks),
-                Positions.source.in_(sources),
-                Positions.portfolio.in_(portfolios)
-            )
-        )
-
-        self.engine.execute(query)
-        df.to_sql(Positions.__table__.name,
-                  self.engine,
-                  if_exists='append',
-                  index=False,
-                  dtype={'weight': sa.types.JSON})
 
     def fetch_outright_status(self, ref_date: str, is_open=True, ignore_internal_borrow=False):
         table = Outright
