@@ -9,6 +9,7 @@ import copy
 import numpy as np
 import pandas as pd
 from PyFin.api import makeSchedule
+from PyFin.api import advanceDateByCalendar
 from alphamind.utilities import map_freq
 from alphamind.utilities import alpha_logger
 from alphamind.model.composer import train_model
@@ -44,6 +45,7 @@ class RunningSetting(object):
         self.dates = [d.strftime('%Y-%m-%d') for d in self.dates]
         self.benchmark = benchmark
         self.weights_bandwidth = weights_bandwidth
+        self.freq = freq
         self.horizon = map_freq(freq)
         self.executor = NaiveExecutor()
         self.industry_cat = industry_cat
@@ -72,7 +74,7 @@ class Strategy(object):
                                                        dates=self.running_setting.dates)
         alpha_logger.info("alpha factor data loading finished ...")
 
-        total_industry = self.engine.fetch_industry_matrix_range(universe,
+        total_industry = self.engine.fetch_industry_matrix_range(self.running_setting.universe,
                                                                  dates=self.running_setting.dates,
                                                                  category=self.running_setting.industry_cat,
                                                                  level=self.running_setting.industry_level)
@@ -83,7 +85,7 @@ class Strategy(object):
         alpha_logger.info("benchmark data loading finished ...")
 
         total_risk_cov, total_risk_exposure = self.engine.fetch_risk_model_range(
-            universe,
+            self.running_setting.universe,
             dates=self.running_setting.dates,
             risk_model=self.data_meta.risk_model
         )
@@ -187,7 +189,7 @@ class Strategy(object):
                                                                horizon=self.running_setting.horizon,
                                                                offset=1).set_index('trade_date')
         ret_df['benchmark_returns'] = index_return['dx']
-        ret_df.loc[advanceDateByCalendar('china.sse', ret_df.index[-1], freq)] = 0.
+        ret_df.loc[advanceDateByCalendar('china.sse', ret_df.index[-1], self.running_setting.freq)] = 0.
         ret_df = ret_df.shift(1)
         ret_df.iloc[0] = 0.
         ret_df['excess_return'] = ret_df['returns'] - ret_df['benchmark_returns'] * ret_df['leverage']
