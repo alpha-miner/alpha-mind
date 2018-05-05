@@ -56,7 +56,9 @@ class TestSqlEngine(unittest.TestCase):
         self.assertListEqual(codes, list(df.code.values))
 
     def test_sql_engine_fetch_codes_range(self):
-        ref_dates = makeSchedule('2017-01-01', '2017-06-30', '60b', 'china.sse')
+        ref_dates = makeSchedule(advanceDateByCalendar('china.sse', self.ref_date, '-6m'),
+                                 self.ref_date,
+                                 '60b', 'china.sse')
         universe = Universe('custom', ['zz500', 'zz1000'])
         codes = self.engine.fetch_codes_range(universe, dates=ref_dates)
 
@@ -374,7 +376,7 @@ class TestSqlEngine(unittest.TestCase):
         cols = sorted(ind_matrix.columns[2:].tolist())
 
         series = (ind_matrix[cols] * np.array(range(1, len(cols)+1))).sum(axis=1)
-        df3['cat'] = series
+        df3['cat'] = series.values
 
         expected_rank = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values) - 1.)
         expected_rank[np.isnan(df3.ROE)] = np.nan

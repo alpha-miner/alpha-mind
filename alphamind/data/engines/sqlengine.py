@@ -376,7 +376,7 @@ class SqlEngine(object):
         res['isOpen'] = df.isOpen.astype(bool)
         res = res.loc[ref_date]
         res.index = list(range(len(res)))
-        return df.drop_duplicates(['trade_date', 'code'])
+        return res.drop_duplicates(['trade_date', 'code'])
 
     def fetch_factor_range(self,
                            universe: Universe,
