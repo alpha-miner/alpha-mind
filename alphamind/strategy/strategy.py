@@ -17,6 +17,7 @@ from alphamind.portfolio.constraints import LinearConstraints
 from alphamind.portfolio.constraints import BoundaryType
 from alphamind.portfolio.constraints import create_box_bounds
 from alphamind.execution.naiveexecutor import NaiveExecutor
+from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.sqlengine import risk_styles
 from alphamind.data.engines.sqlengine import industry_styles
 from alphamind.data.engines.sqlengine import macro_styles
@@ -60,11 +61,13 @@ class Strategy(object):
     def __init__(self,
                  alpha_model,
                  data_meta,
-                 running_setting):
+                 running_setting,
+                 dask_client=None):
         self.alpha_model = alpha_model
         self.data_meta = data_meta
         self.running_setting = running_setting
-        self.engine = self.data_meta.engine
+        self.engine = SqlEngine(self.data_meta.data_source)
+        self.dask_client = dask_client
 
     def run(self):
         alpha_logger.info("starting backting ...")
@@ -151,7 +154,7 @@ class Strategy(object):
                                             risk_factors=this_data[self.data_meta.neutralized_risk].values.astype(float) if self.data_meta.neutralized_risk else None,
                                             post_process=self.data_meta.post_process)
 
-            er = new_model.predict(pd.DataFrame(new_factors, columns=features))
+            er = new_model.predict(pd.DataFrame(new_factors, columns=features)).astype(float)
 
             alpha_logger.info('{0} re-balance: {1} codes'.format(ref_date, len(er)))
             target_pos = self._calculate_pos(er,
@@ -226,14 +229,15 @@ if __name__ == '__main__':
     from PyFin.api import *
     from alphamind.api import Universe
     from alphamind.api import ConstLinearModel
+    from alphamind.api import XGBTrainer
     from alphamind.api import DataMeta
     from alphamind.api import industry_list
     from alphamind.api import winsorize_normal
     from alphamind.api import standardize
 
-    start_date = '2010-01-01'
-    end_date = '2018-04-27'
-    freq = '10b'
+    start_date = '2017-01-01'
+    end_date = '2018-05-04'
+    freq = '5b'
     neutralized_risk = None
     universe = Universe("custom", ['zz800', 'cyb'])
 
@@ -249,89 +253,32 @@ if __name__ == '__main__':
         'f09': CSQuantiles(LAST('DividendPaidRatio'), groups='sw1_adj'),
     }
 
-    # alpha_factors = {
-    #     'f01': LAST('ep_q'),
-    #     'f02': LAST('roe_q'),
-    #     'f03': LAST('SGRO'),
-    #     'f04': LAST('GREV'),
-    #     'f05': LAST('con_target_price'),
-    #     'f06': LAST('con_pe_rolling_order'),
-    #     'f07': LAST('IVR'),
-    #     'f08': LAST('ILLIQUIDITY'),
-    # }
-
-    weights = dict(
-                   f01=0.5,
-                   f02=1.,
-                   f03=1.,
-                   f04=1.,
-                   f05=-1.,
-                   f06=-0.5,
-                   f07=0.5,
-                   f08=0.5,
-                   f09=0.5
-                   )
-
-    alpha_model = ConstLinearModel(features=alpha_factors, weights=weights)
+    alpha_model = XGBTrainer(objective='reg:linear',
+                             booster='gbtree',
+                             n_estimators=300,
+                             eval_sample=0.25,
+                             features=alpha_factors)
 
     data_meta = DataMeta(freq=freq,
                          universe=universe,
-                         batch=1,
+                         batch=32,
                          neutralized_risk=None, # industry_styles,
                          pre_process=None, # [winsorize_normal, standardize],
                          post_process=None) # [standardize])
 
     industries = industry_list('sw_adj', 1)
 
-    total_risk_names = ['benchmark', 'total'] + \
-                       ['EARNYILD', 'LIQUIDTY', 'GROWTH', 'SIZE', 'BETA', 'MOMENTUM'] + \
-                       industry_list('sw_adj', 1)
+    total_risk_names = ['total']
 
     b_type = []
     l_val = []
     u_val = []
 
     for name in total_risk_names:
-        if name == 'benchmark':
-            b_type.append(BoundaryType.RELATIVE)
-            l_val.append(0.8)
-            u_val.append(1.0)
-        elif name == 'total':
+        if name == 'total':
             b_type.append(BoundaryType.ABSOLUTE)
             l_val.append(.0)
             u_val.append(.0)
-        elif name == 'EARNYILD':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0.00)
-            u_val.append(0.20)
-        elif name == 'GROWTH':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0.00)
-            u_val.append(0.20)
-        elif name == 'MOMENTUM':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0.20)
-            u_val.append(0.20)
-        elif name == 'SIZE':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(-0.2)
-            u_val.append(0.0)
-        elif name == 'LIQUIDTY':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(-0.40)
-            u_val.append(-0.20)
-        elif name in ["银行", "保险", "证券", "多元金融"]:
-            b_type.append(BoundaryType.RELATIVE)
-            l_val.append(0.8)
-            u_val.append(0.8)
-        elif name in ["计算机", "医药生物", "国防军工", "信息服务", "机械设备"]:
-            b_type.append(BoundaryType.RELATIVE)
-            l_val.append(1.0)
-            u_val.append(2.0)
-        else:
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0)
-            u_val.append(0)
 
     bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
 

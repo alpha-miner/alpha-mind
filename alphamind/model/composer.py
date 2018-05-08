@@ -49,7 +49,6 @@ class DataMeta(object):
                  warm_start: int = 0,
                  data_source: str = None):
         self.data_source = data_source
-        self.engine = SqlEngine(self.data_source)
         self.freq = freq
         self.universe = universe
         self.batch = batch
@@ -108,7 +107,7 @@ class DataMeta(object):
     def fetch_train_data(self,
                          ref_date,
                          alpha_model: ModelBase):
-        return fetch_train_phase(self.engine,
+        return fetch_train_phase(SqlEngine(self.data_source),
                                  alpha_model.formulas,
                                  ref_date,
                                  self.freq,
@@ -124,7 +123,7 @@ class DataMeta(object):
     def fetch_predict_data(self,
                            ref_date: str,
                            alpha_model: ModelBase):
-        return fetch_predict_phase(self.engine,
+        return fetch_predict_phase(SqlEngine(self.data_source),
                                    alpha_model.formulas,
                                    ref_date,
                                    self.freq,
