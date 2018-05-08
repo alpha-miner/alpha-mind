@@ -5,41 +5,100 @@ Created on 2017-9-5
 @author: cheng.li
 """
 
-import sqlalchemy as sa
-import arrow
-import numpy as np
+import math
 import pandas as pd
+import numpy as np
+from PyFin.api import *
 from alphamind.api import *
-from alphamind.data.dbmodel.models import Models
-from alphamind.model.linearmodel import LinearRegression
 
-engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+factor = 'ROE'
+universe = Universe('custom', ['zz800'])
+start_date = '2010-01-01'
+end_date = '2018-04-26'
+freq = '10b'
+category = 'sw_adj'
+level = 1
+horizon = map_freq(freq)
+ref_dates = makeSchedule(start_date, end_date, freq, 'china.sse')
 
-x = np.random.randn(1000, 3)
-y = np.random.randn(1000)
 
-model = LinearRegression(['a', 'b', 'c'])
-model.fit(x, y)
+def factor_analysis(factor):
+    engine = SqlEngine()
 
-model_desc = model.save()
+    factors = {
+        'f1': CSQuantiles(factor),
+        'f2': CSQuantiles(factor, groups='sw1_adj'),
+        'f3': LAST(factor)
+    }
 
-df = pd.DataFrame()
+    total_factor = engine.fetch_factor_range(universe, factors, dates=ref_dates)
+    _, risk_exp = engine.fetch_risk_model_range(universe, dates=ref_dates)
+    industry = engine.fetch_industry_range(universe, dates=ref_dates, category=category, level=level)
+    rets = engine.fetch_dx_return_range(universe, horizon=horizon, offset=1, dates=ref_dates)
 
-new_row = dict(trade_date='2017-09-05',
-               portfolio_name='test',
-               model_type='LinearRegression',
-               version=1,
-               model_desc=model_desc,
-               update_time=arrow.now().format())
+    total_factor = pd.merge(total_factor, industry[['trade_date', 'code', 'industry']], on=['trade_date', 'code'])
+    total_factor = pd.merge(total_factor, risk_exp, on=['trade_date', 'code'])
+    total_factor = pd.merge(total_factor, rets, on=['trade_date', 'code']).dropna()
 
-df = df.append([new_row])
+    df_ret = pd.DataFrame(columns=['f1', 'f2', 'f3'])
+    df_ic = pd.DataFrame(columns=['f1', 'f2', 'f3'])
 
-df.to_sql(Models.__table__.name, engine.engine,
-          if_exists='append',
-          index=False,
-          dtype={'model_desc': sa.types.JSON})
+    total_factor_groups = total_factor.groupby('trade_date')
 
-model_in_db = engine.fetch_model('2017-09-05')
+    for date, this_factors in total_factor_groups:
+        raw_factors = this_factors['f3'].values
+        industry_exp = this_factors[industry_styles + ['COUNTRY']].values.astype(float)
+        processed_values = factor_processing(raw_factors, pre_process=[], risk_factors=industry_exp,
+                                             post_process=[percentile])
+        this_factors['f3'] = processed_values
 
-print(model_in_db)
+        factor_values = this_factors[['f1', 'f2', 'f3']].values
+        positions = (factor_values >= 0.8) * 1.
+        positions[factor_values <= 0.2] = -1
+        positions /= np.abs(positions).sum(axis=0)
 
+        ret_values = this_factors.dx.values @ positions
+        df_ret.loc[date] = ret_values
+        ic_values = this_factors[['dx', 'f1', 'f2', 'f3']].corr().values[0, 1:]
+        df_ic.loc[date] = ic_values
+
+    print(f"{factor} is finished")
+
+    return {'ic': (df_ic.mean(axis=0), df_ic.std(axis=0) / math.sqrt(len(df_ic))),
+            'ret': (df_ret.mean(axis=0), df_ret.std(axis=0) / math.sqrt(len(df_ic))),
+            'factor': factor}
+
+
+if __name__ == '__main__':
+
+    from dask.distributed import Client
+
+    try:
+        client = Client("10.63.6.176:8786")
+        cols = pd.MultiIndex.from_product([['mean', 'std'], ['raw', 'peer', 'neutralized']])
+        factors_ret = pd.DataFrame(columns=cols)
+        factors_ic = pd.DataFrame(columns=cols)
+
+        factors = ['ep_q',
+                   'roe_q',
+                   'SGRO',
+                   'GREV',
+                   'IVR',
+                   'ILLIQUIDITY',
+                   'con_target_price',
+                   'con_pe_rolling_order',
+                   'DividendPaidRatio']
+        l = client.map(factor_analysis, factors)
+        results = client.gather(l)
+
+        for res in results:
+            factor = res['factor']
+            factors_ret.loc[factor, 'mean'] = res['ret'][0].values
+            factors_ret.loc[factor, 'std'] = res['ret'][1].values
+
+            factors_ic.loc[factor, 'mean'] = res['ic'][0].values
+            factors_ic.loc[factor, 'std'] = res['ic'][1].values
+
+        print(factors_ret)
+    finally:
+        client.close()

@@ -104,6 +104,7 @@ class Strategy(object):
         total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
         total_data.fillna({'weight': 0.}, inplace=True)
         total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
+        total_data = pd.merge(total_data, total_risk_exposure, on=['trade_date', 'code'])
 
         is_in_benchmark = (total_data.weight > 0.).astype(float).reshape((-1, 1))
         total_data.loc[:, 'benchmark'] = is_in_benchmark
@@ -134,7 +135,7 @@ class Strategy(object):
         for ref_date, this_data in total_data_groups:
             new_model = models[ref_date]
 
-            this_data.fillna(total_data.median(), inplace=True)
+            this_data = this_data.fillna(this_data[new_model.features].median())
             codes = this_data.code.values.tolist()
 
             if self.running_setting.rebalance_method == 'tv':
@@ -251,35 +252,34 @@ if __name__ == '__main__':
 
     start_date = '2011-01-01'
     end_date = '2018-05-04'
-    freq = '5b'
+    freq = '20b'
     neutralized_risk = None
-    universe = Universe("custom", ['zz800', 'cyb', 'zz1000'])
+    universe = Universe("custom", ['zz800'])
     dask_client = Client('10.63.6.176:8786')
 
+    factor = CSQuantiles(LAST('NetProfitRatio'),
+                         groups='sw1_adj')
     alpha_factors = {
-        'f01': CSQuantiles(LAST('ep_q'), groups='sw1_adj'),
-        'f02': CSQuantiles(LAST('roe_q'), groups='sw1_adj'),
-        'f03': CSQuantiles(LAST('SGRO'), groups='sw1_adj'),
-        'f04': CSQuantiles(LAST('GREV'), groups='sw1_adj'),
-        'f05': CSQuantiles(LAST('con_peg_rolling'), groups='sw1_adj'),
-        'f06': CSQuantiles(LAST('con_pe_rolling_order'), groups='sw1_adj'),
-        'f07': CSQuantiles(LAST('IVR'), groups='sw1_adj'),
-        'f08': CSQuantiles(LAST('ILLIQUIDITY'), groups='sw1_adj'),
-        'f09': CSQuantiles(LAST('DividendPaidRatio'), groups='sw1_adj'),
+        str(factor): factor,
     }
 
-    alpha_model = XGBTrainer(objective='reg:linear',
-                             booster='gbtree',
-                             n_estimators=300,
-                             eval_sample=0.25,
-                             features=alpha_factors)
+    weights = {str(factor): 1.}
+
+    # alpha_model = XGBTrainer(objective='reg:linear',
+    #                          booster='gbtree',
+    #                          n_estimators=300,
+    #                          eval_sample=0.25,
+    #                          features=alpha_factors)
+
+    alpha_model = ConstLinearModel(features=alpha_factors, weights=weights)
 
     data_meta = DataMeta(freq=freq,
                          universe=universe,
                          batch=32,
                          neutralized_risk=None, # industry_styles,
                          pre_process=None, # [winsorize_normal, standardize],
-                         post_process=None) # [standardize])
+                         post_process=None,
+                         warm_start=12) # [standardize])
 
     industries = industry_list('sw_adj', 1)
 
@@ -301,7 +301,7 @@ if __name__ == '__main__':
                                      start_date,
                                      end_date,
                                      freq,
-                                     benchmark=905,
+                                     benchmark=906,
                                      weights_bandwidth=0.01,
                                      rebalance_method='tv',
                                      bounds=bounds,
@@ -311,5 +311,5 @@ if __name__ == '__main__':
     strategy = Strategy(alpha_model, data_meta, running_setting, dask_client=dask_client)
     ret_df, positions = strategy.run()
     ret_df[['excess_return', 'turn_over']].cumsum().plot(secondary_y='turn_over')
-    plt.title(f"{alpha_factors.keys()}")
+    plt.title(f"{str(factor)[20:40]}")
     plt.show()
