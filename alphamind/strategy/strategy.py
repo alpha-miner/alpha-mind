@@ -104,7 +104,6 @@ class Strategy(object):
         total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
         total_data.fillna({'weight': 0.}, inplace=True)
         total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
-        total_data = pd.merge(total_data, total_risk_exposure, on=['trade_date', 'code']).fillna(total_data.median())
 
         is_in_benchmark = (total_data.weight > 0.).astype(float).reshape((-1, 1))
         total_data.loc[:, 'benchmark'] = is_in_benchmark
@@ -119,9 +118,23 @@ class Strategy(object):
         executor = copy.deepcopy(self.running_setting.executor)
         positions = pd.DataFrame()
 
-        for ref_date, this_data in total_data_groups:
-            new_model = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
+        if self.dask_client is None:
+            models = {}
+            for ref_date, _ in total_data_groups:
+                models[ref_date] = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
+        else:
+            def worker(parameters):
+                new_model = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1], parameters[2])
+                return parameters[0], new_model
 
+            l = self.dask_client.map(worker, [(d[0], self.alpha_model, self.data_meta) for d in total_data_groups])
+            results = self.dask_client.gather(l)
+            models = dict(results)
+
+        for ref_date, this_data in total_data_groups:
+            new_model = models[ref_date]
+
+            this_data.fillna(total_data.median(), inplace=True)
             codes = this_data.code.values.tolist()
 
             if self.running_setting.rebalance_method == 'tv':
@@ -227,6 +240,7 @@ class Strategy(object):
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
     from PyFin.api import *
+    from dask.distributed import Client
     from alphamind.api import Universe
     from alphamind.api import ConstLinearModel
     from alphamind.api import XGBTrainer
@@ -235,11 +249,12 @@ if __name__ == '__main__':
     from alphamind.api import winsorize_normal
     from alphamind.api import standardize
 
-    start_date = '2017-01-01'
+    start_date = '2011-01-01'
     end_date = '2018-05-04'
     freq = '5b'
     neutralized_risk = None
-    universe = Universe("custom", ['zz800', 'cyb'])
+    universe = Universe("custom", ['zz800', 'cyb', 'zz1000'])
+    dask_client = Client('10.63.6.176:8786')
 
     alpha_factors = {
         'f01': CSQuantiles(LAST('ep_q'), groups='sw1_adj'),
@@ -288,12 +303,12 @@ if __name__ == '__main__':
                                      freq,
                                      benchmark=905,
                                      weights_bandwidth=0.01,
-                                     rebalance_method='risk_neutral',
+                                     rebalance_method='tv',
                                      bounds=bounds,
                                      target_vol=0.045,
                                      turn_over_target=0.4)
 
-    strategy = Strategy(alpha_model, data_meta, running_setting)
+    strategy = Strategy(alpha_model, data_meta, running_setting, dask_client=dask_client)
     ret_df, positions = strategy.run()
     ret_df[['excess_return', 'turn_over']].cumsum().plot(secondary_y='turn_over')
     plt.title(f"{alpha_factors.keys()}")
