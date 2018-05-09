@@ -8,7 +8,11 @@ Created on 2017-4-25
 import os
 
 SKIP_ENGINE_TESTS = True
-DATA_ENGINE_URI = os.environ['DB_URI']
+
+if not SKIP_ENGINE_TESTS:
+    DATA_ENGINE_URI = os.environ['DB_URI']
+else:
+    DATA_ENGINE_URI = None
 
 
 if __name__ == '__main__':
