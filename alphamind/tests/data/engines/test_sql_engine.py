@@ -10,7 +10,7 @@ import unittest
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 from PyFin.api import makeSchedule
 from PyFin.api import advanceDateByCalendar
 from PyFin.api import bizDatesList
@@ -48,9 +48,12 @@ class TestSqlEngine(unittest.TestCase):
         query = select([UniverseTable.code]).where(
             and_(
                 UniverseTable.trade_date == ref_date,
-                UniverseTable.universe.in_(['zz500', 'zz1000'])
+                or_(
+                    UniverseTable.zz500 == 1,
+                    UniverseTable.zz1000 == 1
+                )
             )
-        ).distinct()
+        )
 
         df = pd.read_sql(query, con=self.engine.engine).sort_values('code')
         self.assertListEqual(codes, list(df.code.values))
@@ -65,9 +68,12 @@ class TestSqlEngine(unittest.TestCase):
         query = select([UniverseTable.trade_date, UniverseTable.code]).where(
             and_(
                 UniverseTable.trade_date.in_(ref_dates),
-                UniverseTable.universe.in_(['zz500', 'zz1000'])
+                or_(
+                    UniverseTable.zz500 == 1,
+                    UniverseTable.zz1000 == 1
+                )
             )
-        ).distinct()
+        )
 
         df = pd.read_sql(query, con=self.engine.engine).sort_values('code')
 
@@ -75,6 +81,22 @@ class TestSqlEngine(unittest.TestCase):
             calculated_codes = list(sorted(codes[codes.trade_date == ref_date].code.values))
             expected_codes = list(sorted(df[df.trade_date == ref_date].code.values))
             self.assertListEqual(calculated_codes, expected_codes)
+
+    def test_sdl_engine_fetch_codes_with_exclude_universe(self):
+        ref_date = self.ref_date
+        universe = Universe('custom', ['zz500'], exclude_universe=['cyb'])
+        codes = self.engine.fetch_codes(ref_date, universe)
+
+        query = select([UniverseTable.code]).where(
+            and_(
+                UniverseTable.trade_date == ref_date,
+                UniverseTable.zz500 == 1,
+                UniverseTable.cyb == 0
+            )
+        )
+
+        df = pd.read_sql(query, con=self.engine.engine).sort_values('code')
+        self.assertListEqual(codes, list(df.code.values))
 
     def test_sql_engine_fetch_dx_return(self):
         horizon = 4

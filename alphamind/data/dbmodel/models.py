@@ -644,12 +644,48 @@ class Strategy(Base):
 class Universe(Base):
     __tablename__ = 'universe'
     __table_args__ = (
-        Index('universe_idx', 'trade_date', 'universe', 'code', unique=True),
+        Index('universe_trade_date_code_uindex', 'trade_date', 'code', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    universe = Column(String(20), primary_key=True, nullable=False)
+    code = Column(BigInteger, primary_key=True, nullable=False)
+    aerodef = Column(Integer)
+    agriforest = Column(Integer)
+    auto = Column(Integer)
+    bank = Column(Integer)
+    builddeco = Column(Integer)
+    chem = Column(Integer)
+    conmat = Column(Integer)
+    commetrade = Column(Integer)
+    computer = Column(Integer)
+    conglomerates = Column(Integer)
+    eleceqp = Column(Integer)
+    electronics = Column(Integer)
+    foodbever = Column(Integer)
+    health = Column(Integer)
+    houseapp = Column(Integer)
+    ironsteel = Column(Integer)
+    leiservice = Column(Integer)
+    lightindus = Column(Integer)
+    machiequip = Column(Integer)
+    media = Column(Integer)
+    mining = Column(Integer)
+    nonbankfinan = Column(Integer)
+    nonfermetal = Column(Integer)
+    realestate = Column(Integer)
+    telecom = Column(Integer)
+    textile = Column(Integer)
+    transportation = Column(Integer)
+    utilities = Column(Integer)
+    ashare = Column(Integer)
+    ashare_ex = Column(Integer)
+    cyb = Column(Integer)
+    hs300 = Column(Integer)
+    sh50 = Column(Integer)
+    zxb = Column(Integer)
+    zz1000 = Column(Integer)
+    zz500 = Column(Integer)
+    zz800 = Column(Integer)
 
 
 class Uqer(Base):

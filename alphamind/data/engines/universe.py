@@ -31,8 +31,8 @@ class Universe(object):
                  special_codes: Iterable = None,
                  filter_cond=None):
         self.name = name
-        self.base_universe = sorted(base_universe) if base_universe else None
-        self.exclude_universe = sorted(exclude_universe) if exclude_universe else None
+        self.base_universe = sorted([u.lower() for u in base_universe]) if base_universe else None
+        self.exclude_universe = sorted([u.lower() for u in exclude_universe]) if exclude_universe else None
         self.special_codes = sorted(special_codes) if special_codes else None
         self.filter_cond = filter_cond
 
@@ -50,16 +50,27 @@ class Universe(object):
     def _query_statements(self, start_date, end_date, dates):
 
         or_conditions = []
+
+        for u in self.base_universe:
+            or_conditions.append(
+                getattr(UniverseTable, u) == 1
+            )
+
         if self.special_codes:
             or_conditions.append(UniverseTable.code.in_(self.special_codes))
 
         query = or_(
-            UniverseTable.universe.in_(self.base_universe),
             *or_conditions
         )
 
+        and_conditions = []
+        if self.exclude_universe:
+            for u in self.exclude_universe:
+                and_conditions.append( getattr(UniverseTable, u) != 1)
+
         return and_(
             query,
+            *and_conditions,
             UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date),
         )
 
@@ -67,11 +78,11 @@ class Universe(object):
 
         universe_cond = self._query_statements(start_date, end_date, dates)
 
-        if self.filter_cond is None and self.exclude_universe is None:
+        if self.filter_cond is None:
             # simple case
             query = select([UniverseTable.trade_date, UniverseTable.code]).where(
                 universe_cond
-            ).distinct()
+            )
             return pd.read_sql(query, engine.engine)
         else:
             if self.filter_cond is not None:
