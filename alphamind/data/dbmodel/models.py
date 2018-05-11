@@ -81,6 +81,7 @@ class Experimental(Base):
     pure_liq_2 = Column(Float(53))
     pure_liq_3 = Column(Float(53))
     pure_liq_4 = Column(Float(53))
+    pe_hist60 = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -1223,5 +1224,5 @@ class Outright(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgres+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:we083826@101.132.104.118/alpha')
     Base.metadata.create_all(engine)
