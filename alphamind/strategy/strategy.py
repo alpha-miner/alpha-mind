@@ -35,7 +35,9 @@ class RunningSetting(object):
                  end_date,
                  freq,
                  benchmark=905,
-                 weights_bandwidth=0.02,
+                 lbound=None,
+                 ubound=None,
+                 weights_bandwidth=None,
                  industry_cat='sw_adj',
                  industry_level=1,
                  rebalance_method='risk_neutral',
@@ -45,6 +47,8 @@ class RunningSetting(object):
         self.dates = makeSchedule(start_date, end_date, freq, 'china.sse')
         self.dates = [d.strftime('%Y-%m-%d') for d in self.dates]
         self.benchmark = benchmark
+        self.lbound = lbound
+        self.ubound = ubound
         self.weights_bandwidth = weights_bandwidth
         self.freq = freq
         self.horizon = map_freq(freq)
@@ -149,8 +153,12 @@ class Strategy(object):
                                             this_data,
                                             benchmark_w)
 
-            lbound = np.maximum(0., benchmark_w - self.running_setting.weights_bandwidth)
-            ubound = self.running_setting.weights_bandwidth + benchmark_w
+            if self.running_setting.weights_bandwidth:
+                lbound = np.maximum(0., benchmark_w - self.running_setting.weights_bandwidth)
+                ubound = self.running_setting.weights_bandwidth + benchmark_w
+            else:
+                lbound = np.ones(benchmark_w) * self.running_setting.lbound
+                ubound = np.ones(benchmark_w) * self.running_setting.ubound
 
             if previous_pos.empty:
                 current_position = None
@@ -257,7 +265,7 @@ if __name__ == '__main__':
     universe = Universe("custom", ['zz800'])
     dask_client = Client('10.63.6.176:8786')
 
-    factor = CSQuantiles(LAST('NetProfitRatio'),
+    factor = CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'),
                          groups='sw1_adj')
     alpha_factors = {
         str(factor): factor,
@@ -311,5 +319,5 @@ if __name__ == '__main__':
     strategy = Strategy(alpha_model, data_meta, running_setting, dask_client=dask_client)
     ret_df, positions = strategy.run()
     ret_df[['excess_return', 'turn_over']].cumsum().plot(secondary_y='turn_over')
-    plt.title(f"{str(factor)[20:40]}")
+    plt.title(f"{str(factor)[20:60]}")
     plt.show()
