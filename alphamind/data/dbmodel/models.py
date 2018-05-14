@@ -686,6 +686,8 @@ class Universe(Base):
     zz1000 = Column(Integer)
     zz500 = Column(Integer)
     zz800 = Column(Integer)
+    hs300_adj = Column(Integer)
+    zz500_adj = Column(Integer)
 
 
 class Uqer(Base):
