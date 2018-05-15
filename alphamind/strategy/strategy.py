@@ -73,6 +73,50 @@ class Strategy(object):
         self.engine = SqlEngine(self.data_meta.data_source)
         self.dask_client = dask_client
 
+    def _create_lu_bounds(self, codes, benchmark_w, current_position, is_tradable):
+
+        codes = np.array(codes)
+
+        if self.running_setting.weights_bandwidth:
+            lbound = np.maximum(0., benchmark_w - self.running_setting.weights_bandwidth)
+            ubound = self.running_setting.weights_bandwidth + benchmark_w
+
+        lb = self.running_setting.lbound
+        ub = self.running_setting.ubound
+
+        if lb or ub:
+            if not isinstance(lb, dict):
+                lbound = np.ones_like(benchmark_w) * lb
+            else:
+                lbound = np.zeros_like(benchmark_w)
+                for c in lb:
+                    lbound[codes == c] = lb[c]
+
+                if 'other' in lb:
+                    for i, c in enumerate(codes):
+                        if c not in lb:
+                            lbound[i] = lb['other']
+            if not isinstance(ub, dict):
+                ubound = np.ones_like(benchmark_w) * ub
+            else:
+                ubound = np.ones_like(benchmark_w)
+                for c in ub:
+                    ubound[codes == c] = ub[c]
+
+                if 'other' in ub:
+                    for i, c in enumerate(codes):
+                        if c not in ub:
+                            ubound[i] = ub['other']
+
+        if current_position is None:
+            lbound[~is_tradable] = 0.
+            ubound[~is_tradable] = 0.
+        else:
+            lbound[~is_tradable] = current_position[~is_tradable]
+            ubound[~is_tradable] = current_position[~is_tradable]
+
+        return lbound, ubound
+
     def run(self):
         alpha_logger.info("starting backting ...")
 
@@ -137,10 +181,24 @@ class Strategy(object):
             models = dict(results)
 
         for ref_date, this_data in total_data_groups:
+
             new_model = models[ref_date]
 
             this_data = this_data.fillna(this_data[new_model.features].median())
             codes = this_data.code.values.tolist()
+
+            # fast path optimization to disable trading on codes touch price limit
+            # should be refined later
+            is_tradable = (this_data.isOpen) & (this_data.chgPct <= 0.099) & (this_data.chgPct >= -0.099)
+
+            if previous_pos.empty:
+                current_position = None
+            else:
+                previous_pos.set_index('code', inplace=True)
+                remained_pos = previous_pos.loc[codes]
+
+                remained_pos.fillna(0., inplace=True)
+                current_position = remained_pos.weight.values
 
             if self.running_setting.rebalance_method == 'tv':
                 risk_cov = total_risk_cov[total_risk_cov.trade_date == ref_date]
@@ -153,21 +211,7 @@ class Strategy(object):
                                             this_data,
                                             benchmark_w)
 
-            if self.running_setting.weights_bandwidth:
-                lbound = np.maximum(0., benchmark_w - self.running_setting.weights_bandwidth)
-                ubound = self.running_setting.weights_bandwidth + benchmark_w
-            else:
-                lbound = np.ones(benchmark_w) * self.running_setting.lbound
-                ubound = np.ones(benchmark_w) * self.running_setting.ubound
-
-            if previous_pos.empty:
-                current_position = None
-            else:
-                previous_pos.set_index('code', inplace=True)
-                remained_pos = previous_pos.loc[codes]
-
-                remained_pos.fillna(0., inplace=True)
-                current_position = remained_pos.weight.values
+            lbound, ubound = self._create_lu_bounds(codes, benchmark_w, current_position, is_tradable)
 
             features = new_model.features
             raw_factors = this_data[features].values
@@ -258,7 +302,7 @@ if __name__ == '__main__':
     from alphamind.api import winsorize_normal
     from alphamind.api import standardize
 
-    start_date = '2011-01-01'
+    start_date = '2018-01-01'
     end_date = '2018-05-04'
     freq = '20b'
     neutralized_risk = None
