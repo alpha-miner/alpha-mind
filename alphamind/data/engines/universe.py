@@ -31,9 +31,9 @@ class Universe(object):
                  special_codes: Iterable = None,
                  filter_cond=None):
         self.name = name
-        self.base_universe = sorted([u.lower() for u in base_universe]) if base_universe else None
-        self.exclude_universe = sorted([u.lower() for u in exclude_universe]) if exclude_universe else None
-        self.special_codes = sorted(special_codes) if special_codes else None
+        self.base_universe = sorted([u.lower() for u in base_universe]) if base_universe else []
+        self.exclude_universe = sorted([u.lower() for u in exclude_universe]) if exclude_universe else []
+        self.special_codes = sorted(special_codes) if special_codes else []
         self.filter_cond = filter_cond
 
     def __eq__(self, rhs):
