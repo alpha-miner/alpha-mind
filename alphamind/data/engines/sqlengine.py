@@ -363,7 +363,7 @@ class SqlEngine(object):
                 joined_tables.add(t.__table__.name)
 
         query = select(
-            [Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.isOpen, Market.chgPct] + list(factor_cols.keys())) \
             .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
                                                Market.code.in_(codes)))
 
@@ -374,6 +374,7 @@ class SqlEngine(object):
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
         res['isOpen'] = df.isOpen.astype(bool)
+        res['chgPct'] = df.chgPct
         res = res.loc[ref_date]
         res.index = list(range(len(res)))
         return res.drop_duplicates(['trade_date', 'code'])
@@ -418,7 +419,7 @@ class SqlEngine(object):
         universe_df = universe.query(self, start_date, end_date, dates)
 
         query = select(
-            [Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.isOpen, Market.chgPct] + list(factor_cols.keys())) \
             .select_from(big_table).where(
                 and_(
                     Market.code.in_(universe_df.code.unique().tolist()),
@@ -438,6 +439,7 @@ class SqlEngine(object):
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
         res['isOpen'] = df.isOpen.astype(bool)
+        res['chgPct'] = df.chgPct
         res = res.reset_index()
         return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
 
@@ -479,7 +481,7 @@ class SqlEngine(object):
             partition_by=Market.code,
             order_by=Market.trade_date).label('dx')
 
-        query = select([Market.trade_date, Market.code, stats]).select_from(big_table).where(
+        query = select([Market.trade_date, Market.code, Market.chgPct, stats]).select_from(big_table).where(
             and_(
                 Market.trade_date.in_(total_dates),
                 Market.code.in_(total_codes)
