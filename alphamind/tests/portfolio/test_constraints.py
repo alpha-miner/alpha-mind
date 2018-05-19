@@ -78,6 +78,34 @@ class TestConstraints(unittest.TestCase):
         self.assertAlmostEqual(l, 1.76)
         self.assertAlmostEqual(u, 2.42)
 
+    def test_max_abs_relative_boundary(self):
+        lower = BoundaryImpl(BoundaryDirection.LOWER,
+                             BoundaryType.MAXABSREL,
+                             (0.02, 0.2))
+        upper = BoundaryImpl(BoundaryDirection.UPPER,
+                             BoundaryType.MAXABSREL,
+                             (0.02, 0.2))
+        bound = BoxBoundary(lower, upper)
+
+        center = 2.2
+        l, u = bound.bounds(center)
+        self.assertAlmostEqual(l, 1.76)
+        self.assertAlmostEqual(u, 2.64)
+
+    def test_min_abs_relative_boundary(self):
+        lower = BoundaryImpl(BoundaryDirection.LOWER,
+                             BoundaryType.MINABSREL,
+                             (0.02, 0.2))
+        upper = BoundaryImpl(BoundaryDirection.UPPER,
+                             BoundaryType.MINABSREL,
+                             (0.02, 0.2))
+        bound = BoxBoundary(lower, upper)
+
+        center = 2.2
+        l, u = bound.bounds(center)
+        self.assertAlmostEqual(l, 2.18)
+        self.assertAlmostEqual(u, 2.22)
+
     def test_create_box_bounds_single_value(self):
         names = ['a', 'b', 'c']
         b_type = BoundaryType.RELATIVE

@@ -57,7 +57,6 @@ class BoundaryImpl(object):
         elif self.b_type == BoundaryType.MAXABSREL:
             abs_threshold = self.val[0]
             rel_threshold = self.val[1]
-            pyFinAssert(rel_threshold >= 0., ValueError, "relative bounds only support positive value")
             if self.direction == BoundaryDirection.LOWER:
                 rel_bound = center - abs(center) * rel_threshold
                 abs_bound = center - abs_threshold
@@ -69,7 +68,6 @@ class BoundaryImpl(object):
         elif self.b_type == BoundaryType.MINABSREL:
             abs_threshold = self.val[0]
             rel_threshold = self.val[1]
-            pyFinAssert(rel_threshold >= 0., ValueError, "relative bounds only support positive value")
             if self.direction == BoundaryDirection.LOWER:
                 rel_bound = center - abs(center) * rel_threshold
                 abs_bound = center - abs_threshold
