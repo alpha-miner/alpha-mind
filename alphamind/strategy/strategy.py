@@ -292,8 +292,9 @@ class Strategy(object):
 
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
-    from PyFin.api import *
     from dask.distributed import Client
+    from PyFin.api import CSQuantiles
+    from PyFin.api import LAST
     from alphamind.api import Universe
     from alphamind.api import ConstLinearModel
     from alphamind.api import XGBTrainer
@@ -302,14 +303,20 @@ if __name__ == '__main__':
     from alphamind.api import winsorize_normal
     from alphamind.api import standardize
 
-    start_date = '2018-01-01'
-    end_date = '2018-05-04'
-    freq = '20b'
+    from matplotlib import pyplot as plt
+    from matplotlib.pylab import mpl
+    plt.style.use('seaborn-whitegrid')
+    mpl.rcParams['font.sans-serif'] = ['SimHei']
+    mpl.rcParams['axes.unicode_minus'] = False
+
+    start_date = '2010-01-01'
+    end_date = '2018-05-14'
+    freq = '10b'
     neutralized_risk = None
     universe = Universe("custom", ['zz800'])
     dask_client = Client('10.63.6.176:8786')
 
-    factor = CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'),
+    factor = CSQuantiles(LAST('ILLIQUIDITY'),
                          groups='sw1_adj')
     alpha_factors = {
         str(factor): factor,
@@ -327,25 +334,24 @@ if __name__ == '__main__':
 
     data_meta = DataMeta(freq=freq,
                          universe=universe,
-                         batch=32,
+                         batch=1,
                          neutralized_risk=None, # industry_styles,
                          pre_process=None, # [winsorize_normal, standardize],
                          post_process=None,
-                         warm_start=12) # [standardize])
+                         warm_start=1) # [standardize])
 
     industries = industry_list('sw_adj', 1)
 
-    total_risk_names = ['total']
+    total_risk_names = ['total'] + industries
 
     b_type = []
     l_val = []
     u_val = []
 
     for name in total_risk_names:
-        if name == 'total':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(.0)
-            u_val.append(.0)
+        b_type.append(BoundaryType.ABSOLUTE)
+        l_val.append(.0)
+        u_val.append(.0)
 
     bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
 
@@ -357,11 +363,12 @@ if __name__ == '__main__':
                                      weights_bandwidth=0.01,
                                      rebalance_method='tv',
                                      bounds=bounds,
-                                     target_vol=0.045,
+                                     target_vol=0.05,
                                      turn_over_target=0.4)
 
     strategy = Strategy(alpha_model, data_meta, running_setting, dask_client=dask_client)
     ret_df, positions = strategy.run()
-    ret_df[['excess_return', 'turn_over']].cumsum().plot(secondary_y='turn_over')
-    plt.title(f"{str(factor)[20:60]}")
+    ret_df.rename(columns={'excess_return': '超额收益', 'turn_over': '换手率'}, inplace=True)
+    ret_df[['超额收益', '换手率']].cumsum().plot(secondary_y='换手率', figsize=(14, 7))
+    plt.title("原始ILLIQUIDITY因子")
     plt.show()
