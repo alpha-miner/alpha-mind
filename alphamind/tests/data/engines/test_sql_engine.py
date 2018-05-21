@@ -42,7 +42,7 @@ class TestSqlEngine(unittest.TestCase):
 
     def test_sql_engine_fetch_codes(self):
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         query = select([UniverseTable.code]).where(
@@ -62,7 +62,7 @@ class TestSqlEngine(unittest.TestCase):
         ref_dates = makeSchedule(advanceDateByCalendar('china.sse', self.ref_date, '-6m'),
                                  self.ref_date,
                                  '60b', 'china.sse')
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes_range(universe, dates=ref_dates)
 
         query = select([UniverseTable.trade_date, UniverseTable.code]).where(
@@ -84,7 +84,7 @@ class TestSqlEngine(unittest.TestCase):
 
     def test_sdl_engine_fetch_codes_with_exclude_universe(self):
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500'], exclude_universe=['cyb'])
+        universe = Universe('zz500') - Universe('cyb')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         query = select([UniverseTable.code]).where(
@@ -102,7 +102,7 @@ class TestSqlEngine(unittest.TestCase):
         horizon = 4
         offset = 1
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         dx_return = self.engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=offset)
@@ -123,7 +123,7 @@ class TestSqlEngine(unittest.TestCase):
         horizon = 4
         offset = 0
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         dx_return = self.engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=offset)
@@ -145,7 +145,7 @@ class TestSqlEngine(unittest.TestCase):
         ref_dates = makeSchedule(advanceDateByCalendar('china.sse', self.ref_date, '-6m'),
                                  self.ref_date,
                                  '60b', 'china.sse')
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
 
         dx_return = self.engine.fetch_dx_return_range(universe,
                                                       dates=ref_dates,
@@ -223,7 +223,7 @@ class TestSqlEngine(unittest.TestCase):
 
     def test_sql_engine_fetch_factor(self):
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
         factor = 'ROE'
 
@@ -243,7 +243,7 @@ class TestSqlEngine(unittest.TestCase):
         ref_dates = makeSchedule(advanceDateByCalendar('china.sse', self.ref_date, '-6m'),
                                  self.ref_date,
                                  '60b', 'china.sse')
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         factor = 'ROE'
 
         factor_data = self.engine.fetch_factor_range(universe, factor, dates=ref_dates)
@@ -268,7 +268,7 @@ class TestSqlEngine(unittest.TestCase):
                                  self.ref_date,
                                  '60b', 'china.sse')
         ref_dates = ref_dates + [advanceDateByCalendar('china.sse', ref_dates[-1], '60b').strftime('%Y-%m-%d')]
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         factor = 'ROE'
 
         factor_data = self.engine.fetch_factor_range_forward(universe, factor, dates=ref_dates)
@@ -329,7 +329,7 @@ class TestSqlEngine(unittest.TestCase):
 
     def test_sql_engine_fetch_risk_model(self):
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         risk_cov, risk_exp = self.engine.fetch_risk_model(ref_date, codes, risk_model='short')
@@ -359,7 +359,7 @@ class TestSqlEngine(unittest.TestCase):
 
     def test_sql_engine_fetch_industry_matrix(self):
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         ind_matrix = self.engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
@@ -382,7 +382,7 @@ class TestSqlEngine(unittest.TestCase):
 
     def test_sql_engine_fetch_factor_by_categories(self):
         ref_date = self.ref_date
-        universe = Universe('custom', ['zz500', 'zz1000'])
+        universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
         factor1 = {'f': CSRank('ROE', groups='sw1')}

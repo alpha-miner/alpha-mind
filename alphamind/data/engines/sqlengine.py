@@ -265,10 +265,6 @@ class SqlEngine(object):
         query = select([t]).select_from(big_table)
         df = pd.read_sql(query, self.session.bind).dropna()
 
-        if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code'])
-
         if dates:
             df = df[df.trade_date.isin(dates)]
         return df.sort_values(['trade_date', 'code']).drop_duplicates(['trade_date', 'code'])
@@ -428,8 +424,6 @@ class SqlEngine(object):
         ).distinct()
 
         df = pd.read_sql(query, self.engine).replace([-np.inf, np.inf], np.nan)
-        if universe.is_filtered:
-            df = pd.merge(df, universe_df, how='inner', on=['trade_date', 'code'])
 
         if external_data is not None:
             df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
@@ -620,12 +614,7 @@ class SqlEngine(object):
 
         risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).dropna()
 
-        if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(
-                ['trade_date', 'code'])
-
-        return risk_cov, risk_exp.drop_duplicates(['trade_date', 'code'])
+        return risk_cov, risk_exp
 
     def fetch_industry(self,
                        ref_date: str,
@@ -683,13 +672,10 @@ class SqlEngine(object):
         query = select([Industry.trade_date,
                         Industry.code,
                         getattr(Industry, code_name).label('industry_code'),
-                        getattr(Industry, category_name).label('industry')]).select_from(big_table).distinct()
+                        getattr(Industry, category_name).label('industry')]).select_from(big_table)\
+            .order_by(Industry.trade_date, Industry.code)
 
-        df = pd.read_sql(query, self.engine).dropna()
-        if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
-        return df.drop_duplicates(['trade_date', 'code'])
+        return pd.read_sql(query, self.engine).dropna()
 
     def fetch_industry_matrix_range(self,
                                     universe: Universe,
