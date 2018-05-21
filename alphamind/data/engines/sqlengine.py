@@ -249,25 +249,24 @@ class SqlEngine(object):
 
         stats = self._create_stats(Market, horizon, offset)
 
-        cond = universe._query_statements(start_date, end_date, None)
+        codes = universe.query(self.engine, start_date, end_date, dates)
 
         t = select([Market.trade_date, Market.code, stats]).where(
-            Market.trade_date.between(start_date, end_date)
-        ).alias('t')
-        big_table = join(t, UniverseTable,
-                         and_(
-                             t.columns['trade_date'] == UniverseTable.trade_date,
-                             t.columns['code'] == UniverseTable.code,
-                             cond
-                         )
-                         )
+            and_(
+                Market.trade_date.between(start_date, end_date),
+                Market.code.in_(codes.code.unique().tolist())
+            )
+        ).cte('t')
 
-        query = select([t]).select_from(big_table)
+        cond = universe._query_statements(start_date, end_date, dates)
+        query = select([t]).where(
+            and_(t.columns['trade_date'] == UniverseTable.trade_date,
+                 t.columns['code'] == UniverseTable.code,
+                 cond)
+        )
+
         df = pd.read_sql(query, self.session.bind).dropna()
-
-        if dates:
-            df = df[df.trade_date.isin(dates)]
-        return df.sort_values(['trade_date', 'code']).drop_duplicates(['trade_date', 'code'])
+        return df.sort_values(['trade_date', 'code'])
 
     def fetch_dx_return_index(self,
                               ref_date: str,
