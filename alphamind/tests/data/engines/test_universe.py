@@ -6,42 +6,24 @@ Created on 2018-2-9
 """
 
 import unittest
-from PyFin.api import LAST
 from alphamind.data.engines.universe import Universe
+from alphamind.data.engines.universe import load_universe
 
 
 class TestUniverse(unittest.TestCase):
 
     def test_universe_equal(self):
-        universe1 = Universe('custom', ['zz500'])
-        universe2 = Universe('custom', ['zz500'])
+        universe1 = Universe('zz500')
+        universe2 = Universe('zz500')
         self.assertEqual(universe1, universe2)
 
-        universe1 = Universe('custom', ['zz500'])
-        universe2 = Universe('custom', ['zz800'])
-        self.assertNotEqual(universe1, universe2)
-
-        filter_cond = LAST('x') > 1.
-        universe1 = Universe('custom', ['zz500'], filter_cond=filter_cond)
-        universe2 = Universe('custom', ['zz500'], filter_cond=filter_cond)
-        self.assertEqual(universe1, universe2)
-
-        universe1 = Universe('custom', ['zz500'], filter_cond=LAST('x') > 1.)
-        universe2 = Universe('custom', ['zz500'], filter_cond=LAST('x') > 2.)
+        universe1 = Universe('zz500')
+        universe2 = Universe('zz800')
         self.assertNotEqual(universe1, universe2)
 
     def test_universe_persistence(self):
-        universe = Universe('custom', ['zz500'])
+        universe = Universe('zz500')
         univ_desc = universe.save()
-        loaded_universe = Universe.load(univ_desc)
+        loaded_universe = load_universe(univ_desc)
 
-        self.assertEqual(universe.name, loaded_universe.name)
-        self.assertListEqual(universe.base_universe, loaded_universe.base_universe)
-
-        universe = Universe('custom', ['zz500'], filter_cond=LAST('x') > 1.)
-        univ_desc = universe.save()
-        loaded_universe = Universe.load(univ_desc)
-
-        self.assertEqual(universe.name, loaded_universe.name)
-        self.assertListEqual(universe.base_universe, loaded_universe.base_universe)
-        self.assertEqual(str(universe.filter_cond), str(loaded_universe.filter_cond))
+        self.assertEqual(universe, loaded_universe)
