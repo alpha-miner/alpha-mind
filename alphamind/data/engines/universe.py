@@ -5,142 +5,175 @@ Created on 2017-7-7
 @author: cheng.li
 """
 
-from typing import Iterable
+import sys
+import abc
 import pandas as pd
-from simpleutils.miscellaneous import list_eq
 from sqlalchemy import and_
 from sqlalchemy import or_
+from sqlalchemy import not_
 from sqlalchemy import select
-from sqlalchemy import join
-from sqlalchemy import outerjoin
 from alphamind.data.dbmodel.models import Universe as UniverseTable
-from alphamind.data.engines.utilities import _map_factors
-from alphamind.data.dbmodel.models import Market
-from alphamind.data.engines.utilities import factor_tables
-from alphamind.data.transformer import Transformer
-from alphamind.utilities import encode
-from alphamind.utilities import decode
 
 
-class Universe(object):
+class BaseUniverse(metaclass=abc.ABCMeta):
 
-    def __init__(self,
-                 name: str,
-                 base_universe: Iterable,
-                 exclude_universe: Iterable = None,
-                 special_codes: Iterable = None,
-                 filter_cond=None):
-        self.name = name
-        self.base_universe = sorted([u.lower() for u in base_universe]) if base_universe else []
-        self.exclude_universe = sorted([u.lower() for u in exclude_universe]) if exclude_universe else []
-        self.special_codes = sorted(special_codes) if special_codes else []
-        self.filter_cond = filter_cond
+    @abc.abstractmethod
+    def condition(self):
+        pass
 
-    def __eq__(self, rhs):
-        return self.name == rhs.name \
-               and list_eq(self.base_universe, rhs.base_universe) \
-               and list_eq(self.exclude_universe, rhs.exclude_universe) \
-               and list_eq(self.special_codes, rhs.special_codes) \
-               and str(self.filter_cond) == str(rhs.filter_cond)
+    def __add__(self, rhs):
+        return OrUniverse(self, rhs)
 
-    @property
-    def is_filtered(self):
-        return True if self.filter_cond is not None else False
+    def __sub__(self, rhs):
+        return XorUniverse(self, rhs)
 
-    def _query_statements(self, start_date, end_date, dates):
+    def __and__(self, rhs):
+        return AndUniverse(self, rhs)
 
-        or_conditions = []
+    def __or__(self, rhs):
+        return OrUniverse(self, rhs)
 
-        for u in self.base_universe:
-            or_conditions.append(
-                getattr(UniverseTable, u) == 1
-            )
+    def isin(self, rhs):
+        return AndUniverse(self, rhs)
 
-        if self.special_codes:
-            or_conditions.append(UniverseTable.code.in_(self.special_codes))
+    @abc.abstractmethod
+    def save(self):
+        pass
 
-        query = or_(
-            *or_conditions
+    @classmethod
+    def load(cls, u_desc: dict):
+        pass
+
+    def query(self, engine, start_date: str = None, end_date: str = None, dates=None):
+        query = select([UniverseTable.trade_date, UniverseTable.code]).where(
+            self._query_statements(start_date, end_date, dates)
         )
+        return pd.read_sql(query, engine.engine)
 
-        and_conditions = []
-        if self.exclude_universe:
-            for u in self.exclude_universe:
-                and_conditions.append( getattr(UniverseTable, u) != 1)
-
+    def _query_statements(self, start_date: str = None, end_date: str = None, dates=None):
         return and_(
-            query,
-            *and_conditions,
-            UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date),
+            self.condition(),
+            UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date)
         )
 
-    def query(self, engine, start_date: str = None, end_date: str = None, dates=None) -> pd.DataFrame:
 
-        universe_cond = self._query_statements(start_date, end_date, dates)
+class Universe(BaseUniverse):
 
-        if self.filter_cond is None:
-            # simple case
-            query = select([UniverseTable.trade_date, UniverseTable.code]).where(
-                universe_cond
-            )
-            return pd.read_sql(query, engine.engine)
-        else:
-            if self.filter_cond is not None:
-                if isinstance(self.filter_cond, Transformer):
-                    transformer = self.filter_cond
-                else:
-                    transformer = Transformer(self.filter_cond)
+    def __init__(self, u_name: str):
+        self.u_name = u_name
 
-                dependency = transformer.dependency
-                factor_cols = _map_factors(dependency, factor_tables)
-                big_table = Market
-
-                for t in set(factor_cols.values()):
-                    if t.__table__.name != Market.__table__.name:
-                        big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
-                                                                 Market.code == t.code,
-                                                                 Market.trade_date.in_(
-                                                                     dates) if dates else Market.trade_date.between(
-                                                                     start_date, end_date)))
-                big_table = join(big_table, UniverseTable,
-                                 and_(Market.trade_date == UniverseTable.trade_date,
-                                      Market.code == UniverseTable.code,
-                                      universe_cond))
-
-                query = select(
-                    [Market.trade_date, Market.code] + list(factor_cols.keys())) \
-                    .select_from(big_table).distinct()
-
-                df = pd.read_sql(query, engine.engine).sort_values(['trade_date', 'code']).dropna()
-                df.set_index('trade_date', inplace=True)
-                filter_fields = transformer.names
-                pyFinAssert(len(filter_fields) == 1, ValueError, "filter fields can only be 1")
-                df = transformer.transform('code', df)
-                df = df[df[filter_fields[0]] == 1].reset_index()[['trade_date', 'code']]
-            return df
+    def condition(self):
+        return getattr(UniverseTable, self.u_name) == 1
 
     def save(self):
         return dict(
-            name=self.name,
-            base_universe=self.base_universe,
-            exclude_universe=self.exclude_universe,
-            special_codes=self.special_codes,
-            filter_cond=encode(self.filter_cond)
+            u_type=self.__class__.__name__,
+            u_name=self.u_name
         )
 
     @classmethod
-    def load(cls, universe_desc: dict):
-        name = universe_desc['name']
-        base_universe = universe_desc['base_universe']
-        exclude_universe = universe_desc['exclude_universe']
-        special_codes = universe_desc['special_codes']
-        filter_cond = decode(universe_desc['filter_cond'])
+    def load(cls, u_desc: dict):
+        return cls(u_name=u_desc['u_name'])
 
-        return cls(name=name,
-                   base_universe=base_universe,
-                   exclude_universe=exclude_universe,
-                   special_codes=special_codes,
-                   filter_cond=filter_cond)
+    def __eq__(self, other):
+        return self.u_name == other.u_name
+
+
+class OrUniverse(BaseUniverse):
+
+    def __init__(self, lhs: BaseUniverse, rhs: BaseUniverse):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def condition(self):
+        return or_(self.lhs.condition(), self.rhs.condition())
+
+    def save(self):
+        return dict(
+            u_type=self.__class__.__name__,
+            lhs=self.lhs.save(),
+            rhs=self.rhs.save()
+        )
+
+    @classmethod
+    def load(cls, u_desc: dict):
+        lhs = u_desc['lhs']
+        rhs = u_desc['rhs']
+        return cls(
+            lhs=getattr(sys.modules[__name__], lhs['u_type']).load(lhs),
+            rhs=getattr(sys.modules[__name__], rhs['u_type']).load(rhs),
+        )
+
+    def __eq__(self, other):
+        return self.lhs == other.lhs and self.rhs == other.rhs and isinstance(other, OrUniverse)
+
+
+class AndUniverse(BaseUniverse):
+    def __init__(self, lhs: BaseUniverse, rhs: BaseUniverse):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def condition(self):
+        return and_(self.lhs.condition(), self.rhs.condition())
+
+    def save(self):
+        return dict(
+            u_type=self.__class__.__name__,
+            lhs=self.lhs.save(),
+            rhs=self.rhs.save()
+        )
+
+    @classmethod
+    def load(cls, u_desc: dict):
+        lhs = u_desc['lhs']
+        rhs = u_desc['rhs']
+        return cls(
+            lhs=getattr(sys.modules[__name__], lhs['u_type']).load(lhs),
+            rhs=getattr(sys.modules[__name__], rhs['u_type']).load(rhs),
+        )
+
+    def __eq__(self, other):
+        return self.lhs == other.lhs and self.rhs == other.rhs and isinstance(other, AndUniverse)
+
+
+class XorUniverse(BaseUniverse):
+    def __init__(self, lhs: BaseUniverse, rhs: BaseUniverse):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def condition(self):
+        return and_(self.lhs.condition(), not_(self.rhs.condition()))
+
+    def save(self):
+        return dict(
+            u_type=self.__class__.__name__,
+            lhs=self.lhs.save(),
+            rhs=self.rhs.save()
+        )
+
+    @classmethod
+    def load(cls, u_desc: dict):
+        lhs = u_desc['lhs']
+        rhs = u_desc['rhs']
+        return cls(
+            lhs=getattr(sys.modules[__name__], lhs['u_type']).load(lhs),
+            rhs=getattr(sys.modules[__name__], rhs['u_type']).load(rhs),
+        )
+
+    def __eq__(self, other):
+        return self.lhs == other.lhs and self.rhs == other.rhs and isinstance(other, XorUniverse)
+
+
+def load_universe(u_desc: dict):
+    u_name = u_desc['u_type']
+    if u_name == 'Universe':
+        return Universe.load(u_desc)
+    elif u_name == 'OrUniverse':
+        return OrUniverse.load(u_desc)
+    elif u_name == 'AndUniverse':
+        return AndUniverse.load(u_desc)
+    elif u_name == 'XorUniverse':
+        return XorUniverse.load(u_desc)
 
 
 if __name__ == '__main__':
