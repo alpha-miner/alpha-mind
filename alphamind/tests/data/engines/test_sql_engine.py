@@ -171,6 +171,36 @@ class TestSqlEngine(unittest.TestCase):
             calculated_return = dx_return[dx_return.trade_date == ref_date]
             np.testing.assert_array_almost_equal(calculated_return.dx.values, res.chgPct.values)
 
+    def test_sql_engine_fetch_dx_return_with_universe_adjustment(self):
+        ref_dates = makeSchedule(advanceDateByCalendar('china.sse', '2017-01-26', '-6m'),
+                                 '2017-01-26',
+                                 '60b', 'china.sse')
+
+        universe = Universe('zz500')
+        dx_return = self.engine.fetch_dx_return_range(universe,
+                                                      dates=ref_dates,
+                                                      horizon=4,
+                                                      offset=1)
+
+        codes = self.engine.fetch_codes_range(universe, dates=ref_dates)
+        groups = codes.groupby('trade_date')
+
+        for ref_date, g in groups:
+            start_date = advanceDateByCalendar('china.sse', ref_date, '2b')
+            end_date = advanceDateByCalendar('china.sse', ref_date, '6b')
+
+            query = select([Market.code, Market.chgPct]).where(
+                and_(
+                    Market.trade_date.between(start_date, end_date),
+                    Market.code.in_(g.code.unique().tolist())
+                )
+            )
+
+            df = pd.read_sql(query, con=self.engine.engine)
+            res = df.groupby('code').apply(lambda x: np.log(1. + x).sum())
+            calculated_return = dx_return[dx_return.trade_date == ref_date]
+            np.testing.assert_array_almost_equal(calculated_return.dx.values, res.chgPct.values)
+
     def test_sql_engine_fetch_dx_return_index(self):
         horizon = 4
         offset = 1
