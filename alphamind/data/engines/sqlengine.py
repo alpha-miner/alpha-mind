@@ -358,7 +358,7 @@ class SqlEngine(object):
                 joined_tables.add(t.__table__.name)
 
         query = select(
-            [Market.trade_date, Market.code, Market.isOpen, Market.chgPct] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct] + list(factor_cols.keys())) \
             .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
                                                Market.code.in_(codes)))
 
@@ -368,7 +368,6 @@ class SqlEngine(object):
             .set_index('trade_date')
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
-        res['isOpen'] = df.isOpen.astype(bool)
         res['chgPct'] = df.chgPct
         res = res.loc[ref_date]
         res.index = list(range(len(res)))
@@ -414,7 +413,7 @@ class SqlEngine(object):
         universe_df = universe.query(self, start_date, end_date, dates)
 
         query = select(
-            [Market.trade_date, Market.code, Market.isOpen, Market.chgPct] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct] + list(factor_cols.keys())) \
             .select_from(big_table).where(
                 and_(
                     Market.code.in_(universe_df.code.unique().tolist()),
@@ -431,7 +430,6 @@ class SqlEngine(object):
         df.set_index('trade_date', inplace=True)
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
-        res['isOpen'] = df.isOpen.astype(bool)
         res['chgPct'] = df.chgPct
         res = res.reset_index()
         return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
@@ -728,7 +726,7 @@ class SqlEngine(object):
         end_date = advanceDateByCalendar('china.sse', end_date,
                                          str(offset) + 'b').strftime('%Y-%m-%d')
 
-        stats = func.lead(Market.isOpen, 1).over(
+        stats = func.lead(Market.isOpen, offset).over(
             partition_by=Market.code,
             order_by=Market.trade_date).label('is_open')
         cte = select([Market.trade_date, Market.code, stats]).where(
