@@ -30,31 +30,16 @@ all_styles = risk_styles + industry_styles + macro_styles
 class RunningSetting(object):
 
     def __init__(self,
-                 universe,
-                 start_date,
-                 end_date,
-                 freq,
-                 benchmark=905,
                  lbound=None,
                  ubound=None,
                  weights_bandwidth=None,
-                 industry_cat='sw_adj',
-                 industry_level=1,
                  rebalance_method='risk_neutral',
                  bounds=None,
                  **kwargs):
-        self.universe = universe
-        self.dates = makeSchedule(start_date, end_date, freq, 'china.sse')
-        self.dates = [d.strftime('%Y-%m-%d') for d in self.dates]
-        self.benchmark = benchmark
         self.lbound = lbound
         self.ubound = ubound
         self.weights_bandwidth = weights_bandwidth
-        self.freq = freq
-        self.horizon = map_freq(freq)
         self.executor = NaiveExecutor()
-        self.industry_cat = industry_cat
-        self.industry_level = industry_level
         self.rebalance_method = rebalance_method
         self.bounds = bounds
         self.more_opts = kwargs
@@ -65,24 +50,83 @@ class Strategy(object):
     def __init__(self,
                  alpha_model,
                  data_meta,
-                 running_setting,
+                 universe,
+                 start_date,
+                 end_date,
+                 freq,
+                 benchmark=905,
+                 industry_cat='sw_adj',
+                 industry_level=1,
                  dask_client=None):
         self.alpha_model = alpha_model
         self.data_meta = data_meta
-        self.running_setting = running_setting
+        self.universe = universe
+        self.benchmark = benchmark
+        self.dates = makeSchedule(start_date, end_date, freq, 'china.sse')
+        self.dates = [d.strftime('%Y-%m-%d') for d in self.dates]
+        self.industry_cat = industry_cat
+        self.industry_level = industry_level
+        self.freq = freq
+        self.horizon = map_freq(freq)
         self.engine = SqlEngine(self.data_meta.data_source)
         self.dask_client = dask_client
 
-    def _create_lu_bounds(self, codes, benchmark_w):
+    def prepare_backtest_data(self):
+        total_factors = self.engine.fetch_factor_range(self.universe,
+                                                       self.alpha_model.formulas,
+                                                       dates=self.dates)
+        alpha_logger.info("alpha factor data loading finished ...")
+
+        total_industry = self.engine.fetch_industry_matrix_range(self.universe,
+                                                                 dates=self.dates,
+                                                                 category=self.industry_cat,
+                                                                 level=self.industry_level)
+        alpha_logger.info("industry data loading finished ...")
+
+        total_benchmark = self.engine.fetch_benchmark_range(dates=self.dates,
+                                                            benchmark=self.benchmark)
+        alpha_logger.info("benchmark data loading finished ...")
+
+        total_risk_cov, total_risk_exposure = self.engine.fetch_risk_model_range(
+            self.universe,
+            dates=self.dates,
+            risk_model=self.data_meta.risk_model
+        )
+        alpha_logger.info("risk_model data loading finished ...")
+
+        total_returns = self.engine.fetch_dx_return_range(self.universe,
+                                                          dates=self.dates,
+                                                          horizon=self.horizon,
+                                                          offset=1)
+        alpha_logger.info("returns data loading finished ...")
+
+        total_data = pd.merge(total_factors, total_industry, on=['trade_date', 'code'])
+        total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
+        total_data.fillna({'weight': 0.}, inplace=True)
+        total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
+        total_data = pd.merge(total_data, total_risk_exposure, on=['trade_date', 'code'])
+
+        is_in_benchmark = (total_data.weight > 0.).astype(float).values.reshape((-1, 1))
+        total_data.loc[:, 'benchmark'] = is_in_benchmark
+        total_data.loc[:, 'total'] = np.ones_like(is_in_benchmark)
+        total_data.sort_values(['trade_date', 'code'], inplace=True)
+        self.index_return = self.engine.fetch_dx_return_index_range(self.benchmark,
+                                                                    dates=self.dates,
+                                                                    horizon=self.horizon,
+                                                                    offset=1).set_index('trade_date')
+        self.total_data = total_data
+        self.total_risk_cov = total_risk_cov
+
+    def _create_lu_bounds(self, running_setting, codes, benchmark_w):
 
         codes = np.array(codes)
 
-        if self.running_setting.weights_bandwidth:
-            lbound = np.maximum(0., benchmark_w - self.running_setting.weights_bandwidth)
-            ubound = self.running_setting.weights_bandwidth + benchmark_w
+        if running_setting.weights_bandwidth:
+            lbound = np.maximum(0., benchmark_w - running_setting.weights_bandwidth)
+            ubound = running_setting.weights_bandwidth + benchmark_w
 
-        lb = self.running_setting.lbound
-        ub = self.running_setting.ubound
+        lb = running_setting.lbound
+        ub = running_setting.ubound
 
         if lb or ub:
             if not isinstance(lb, dict):
@@ -109,59 +153,20 @@ class Strategy(object):
                             ubound[i] = ub['other']
         return lbound, ubound
 
-    def run(self):
+    def run(self, running_setting):
         alpha_logger.info("starting backting ...")
-
-        total_factors = self.engine.fetch_factor_range(self.running_setting.universe,
-                                                       self.alpha_model.formulas,
-                                                       dates=self.running_setting.dates)
-        alpha_logger.info("alpha factor data loading finished ...")
-
-        total_industry = self.engine.fetch_industry_matrix_range(self.running_setting.universe,
-                                                                 dates=self.running_setting.dates,
-                                                                 category=self.running_setting.industry_cat,
-                                                                 level=self.running_setting.industry_level)
-        alpha_logger.info("industry data loading finished ...")
-
-        total_benchmark = self.engine.fetch_benchmark_range(dates=self.running_setting.dates,
-                                                            benchmark=self.running_setting.benchmark)
-        alpha_logger.info("benchmark data loading finished ...")
-
-        total_risk_cov, total_risk_exposure = self.engine.fetch_risk_model_range(
-            self.running_setting.universe,
-            dates=self.running_setting.dates,
-            risk_model=self.data_meta.risk_model
-        )
-        alpha_logger.info("risk_model data loading finished ...")
-
-        total_returns = self.engine.fetch_dx_return_range(self.running_setting.universe,
-                                                          dates=self.running_setting.dates,
-                                                          horizon=self.running_setting.horizon,
-                                                          offset=1)
-        alpha_logger.info("returns data loading finished ...")
-
-        total_data = pd.merge(total_factors, total_industry, on=['trade_date', 'code'])
-        total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
-        total_data.fillna({'weight': 0.}, inplace=True)
-        total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
-        total_data = pd.merge(total_data, total_risk_exposure, on=['trade_date', 'code'])
-
-        is_in_benchmark = (total_data.weight > 0.).astype(float).values.reshape((-1, 1))
-        total_data.loc[:, 'benchmark'] = is_in_benchmark
-        total_data.loc[:, 'total'] = np.ones_like(is_in_benchmark)
-        total_data.sort_values(['trade_date', 'code'], inplace=True)
-        total_data_groups = total_data.groupby('trade_date')
+        total_data_groups = self.total_data.groupby('trade_date')
 
         rets = []
         turn_overs = []
         leverags = []
         previous_pos = pd.DataFrame()
-        executor = copy.deepcopy(self.running_setting.executor)
+        executor = copy.deepcopy(running_setting.executor)
         positions = pd.DataFrame()
 
         if self.dask_client is None:
             models = {}
-            for ref_date, _ in total_data_groups:
+            for ref_date, _ in self.total_data_groups:
                 models[ref_date] = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
         else:
             def worker(parameters):
@@ -185,18 +190,18 @@ class Strategy(object):
                 remained_pos.fillna(0., inplace=True)
                 current_position = remained_pos.weight.values
 
-            if self.running_setting.rebalance_method == 'tv':
-                risk_cov = total_risk_cov[total_risk_cov.trade_date == ref_date]
+            if running_setting.rebalance_method == 'tv':
+                risk_cov = self.total_risk_cov[self.total_risk_cov.trade_date == ref_date]
                 sec_cov = self._generate_sec_cov(this_data, risk_cov)
             else:
                 sec_cov = None
 
             benchmark_w = this_data.weight.values
-            constraints = LinearConstraints(self.running_setting.bounds,
+            constraints = LinearConstraints(running_setting.bounds,
                                             this_data,
                                             benchmark_w)
 
-            lbound, ubound = self._create_lu_bounds(codes, benchmark_w)
+            lbound, ubound = self._create_lu_bounds(running_setting, codes, benchmark_w)
 
             features = new_model.features
             dfs = []
@@ -205,7 +210,9 @@ class Strategy(object):
                 raw_factors = data_cleaned[[name]].values
                 new_factors = factor_processing(raw_factors,
                                                 pre_process=self.data_meta.pre_process,
-                                                risk_factors=data_cleaned[self.data_meta.neutralized_risk].values.astype(float) if self.data_meta.neutralized_risk else None,
+                                                risk_factors=data_cleaned[
+                                                    self.data_meta.neutralized_risk].values.astype(
+                                                    float) if self.data_meta.neutralized_risk else None,
                                                 post_process=self.data_meta.post_process)
                 df = pd.DataFrame(new_factors, columns=[name], index=data_cleaned.code)
                 dfs.append(df)
@@ -215,15 +222,15 @@ class Strategy(object):
             er = new_model.predict(new_factors).astype(float)
 
             alpha_logger.info('{0} re-balance: {1} codes'.format(ref_date, len(er)))
-            target_pos = self._calculate_pos(er,
+            target_pos = self._calculate_pos(running_setting,
+                                             er,
                                              this_data,
                                              constraints,
                                              benchmark_w,
                                              lbound,
                                              ubound,
                                              sec_cov=sec_cov,
-                                             current_position=current_position,
-                                             **self.running_setting.more_opts)
+                                             current_position=current_position)
 
             target_pos['code'] = codes
             target_pos['trade_date'] = ref_date
@@ -239,18 +246,14 @@ class Strategy(object):
             positions = positions.append(executed_pos)
             previous_pos = executed_pos
 
-        positions['benchmark_weight'] = total_data['weight'].values
-        positions['dx'] = total_data.dx.values
+        positions['benchmark_weight'] = self.total_data['weight'].values
+        positions['dx'] = self.total_data.dx.values
 
         trade_dates = positions.trade_date.unique()
         ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverags}, index=trade_dates)
 
-        index_return = self.engine.fetch_dx_return_index_range(self.running_setting.benchmark,
-                                                               dates=self.running_setting.dates,
-                                                               horizon=self.running_setting.horizon,
-                                                               offset=1).set_index('trade_date')
-        ret_df['benchmark_returns'] = index_return['dx']
-        ret_df.loc[advanceDateByCalendar('china.sse', ret_df.index[-1], self.running_setting.freq)] = 0.
+        ret_df['benchmark_returns'] = self.index_return['dx']
+        ret_df.loc[advanceDateByCalendar('china.sse', ret_df.index[-1], self.freq)] = 0.
         ret_df = ret_df.shift(1)
         ret_df.iloc[0] = 0.
         ret_df['excess_return'] = ret_df['returns'] - ret_df['benchmark_returns'] * ret_df['leverage']
@@ -265,20 +268,22 @@ class Strategy(object):
         sec_cov = risk_exposure @ risk_cov @ risk_exposure.T / 10000 + np.diag(special_risk ** 2) / 10000
         return sec_cov
 
-    def _calculate_pos(self, er, data, constraints, benchmark_w, lbound, ubound, **kwargs):
+    def _calculate_pos(self, running_setting, er, data, constraints, benchmark_w, lbound, ubound, sec_cov,
+                       current_position):
+        more_opts = running_setting.more_opts
         target_pos, _ = er_portfolio_analysis(er,
                                               industry=data.industry_name.values,
                                               dx_return=None,
                                               constraints=constraints,
                                               detail_analysis=False,
                                               benchmark=benchmark_w,
-                                              method=self.running_setting.rebalance_method,
+                                              method=running_setting.rebalance_method,
                                               lbound=lbound,
                                               ubound=ubound,
-                                              current_position=kwargs.get('current_position'),
-                                              target_vol=kwargs.get('target_vol'),
-                                              cov=kwargs.get('sec_cov'),
-                                              turn_over_target=kwargs.get('turn_over_target'))
+                                              current_position=current_position,
+                                              target_vol=more_opts.get('target_vol'),
+                                              cov=sec_cov,
+                                              turn_over_target=more_opts.get('turn_over_target'))
         return target_pos
 
 
@@ -298,6 +303,7 @@ if __name__ == '__main__':
 
     from matplotlib import pyplot as plt
     from matplotlib.pylab import mpl
+
     plt.style.use('seaborn-whitegrid')
     mpl.rcParams['font.sans-serif'] = ['SimHei']
     mpl.rcParams['axes.unicode_minus'] = False
@@ -308,7 +314,6 @@ if __name__ == '__main__':
     neutralized_risk = None
     universe = Universe('zz800')
     dask_client = Client('10.63.6.176:8786')
-
 
     alpha_factors = {
         'f1': CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'), groups='sw1_adj'),
@@ -329,8 +334,8 @@ if __name__ == '__main__':
                          universe=universe,
                          batch=1,
                          neutralized_risk=neutralized_risk,
-                         pre_process=None, #[winsorize_normal, standardize],
-                         post_process=None, #[standardize],
+                         pre_process=None,  # [winsorize_normal, standardize],
+                         post_process=None,  # [standardize],
                          warm_start=1)
 
     industries = industry_list('sw_adj', 1)
@@ -357,12 +362,7 @@ if __name__ == '__main__':
 
     bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
 
-    running_setting = RunningSetting(universe,
-                                     start_date,
-                                     end_date,
-                                     freq,
-                                     benchmark=906,
-                                     lbound=None,
+    running_setting = RunningSetting(lbound=None,
                                      ubound=None,
                                      weights_bandwidth=0.01,
                                      rebalance_method='risk_neutral',
@@ -370,8 +370,17 @@ if __name__ == '__main__':
                                      target_vol=0.05,
                                      turn_over_target=0.4)
 
-    strategy = Strategy(alpha_model, data_meta, running_setting, dask_client=dask_client)
-    ret_df, positions = strategy.run()
+    strategy = Strategy(alpha_model,
+                        data_meta,
+                        universe=universe,
+                        start_date=start_date,
+                        end_date=end_date,
+                        freq=freq,
+                        benchmark=906,
+                        dask_client=dask_client)
+    strategy.prepare_backtest_data()
+
+    ret_df, positions = strategy.run(running_setting)
     ret_df.rename(columns={'excess_return': '超额收益', 'turn_over': '换手率'}, inplace=True)
     ret_df[['超额收益', '换手率']].cumsum().plot(secondary_y='换手率')
     plt.title("原始ILLIQUIDITY因子")
