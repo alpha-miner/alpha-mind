@@ -23,7 +23,7 @@ def rank(x: np.ndarray, groups: Optional[np.ndarray]=None) -> np.ndarray:
         start = 0
         for diff_loc in index_diff:
             curr_idx = order[start:diff_loc + 1]
-            res[curr_idx] = rankdata(x[curr_idx]).astype(float) - 1.
+            res[curr_idx] = (rankdata(x[curr_idx]).astype(float) - 1.).reshape((-1, 1))
             start = diff_loc + 1
         return res
     else:
