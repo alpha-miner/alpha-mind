@@ -35,7 +35,7 @@ def linear_builder(er: np.ndarray,
     if isinstance(ubound, float):
         ubound = np.ones(n) * ubound
 
-    if not turn_over_target:
+    if not turn_over_target or current_position is None:
         cons_matrix = np.concatenate((risk_constraints.T, risk_lbound, risk_ubound), axis=1)
         opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
 

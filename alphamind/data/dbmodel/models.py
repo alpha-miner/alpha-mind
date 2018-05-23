@@ -12,6 +12,19 @@ Base = declarative_base()
 metadata = Base.metadata
 
 
+class Categories(Base):
+
+    __tablename__ = 'categories'
+    __table_args__ = (
+        Index('categories_pk', 'trade_date', 'code', unique=True),
+    )
+
+    trade_date = Column(DateTime, primary_key=True, nullable=False)
+    code = Column(BigInteger, primary_key=True, nullable=False)
+    sw1 = Column(Integer)
+    sw1_adj = Column(Integer)
+
+
 class DailyPortfolios(Base):
     __tablename__ = 'daily_portfolios'
     __table_args__ = (
@@ -68,6 +81,7 @@ class Experimental(Base):
     pure_liq_2 = Column(Float(53))
     pure_liq_3 = Column(Float(53))
     pure_liq_4 = Column(Float(53))
+    pe_hist60 = Column(Float(53))
 
 
 class FactorMaster(Base):
@@ -135,82 +149,6 @@ class Industry(Base):
     industryName3 = Column(String(50))
     IndustryID4 = Column(BigInteger)
     IndustryName4 = Column(String(50))
-
-
-class LegacyFactor(Base):
-    __tablename__ = 'legacy_factor'
-    __table_args__ = (
-        Index('legacy_factor_idx', 'trade_date', 'code', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    ROEAfterNonRecurring = Column(Float(53))
-    EPSAfterNonRecurring = Column(Float(53))
-    EODPrice = Column(Float(53))
-    LogFloatCap = Column(Float(53))
-    BPS = Column(Float(53))
-    SPS = Column(Float(53))
-    DebtToAsset = Column(Float(53))
-    STOM = Column(Float(53))
-    DROEAfterNonRecurring = Column(Float(53))
-    LogTotalCap = Column(Float(53))
-    BP = Column(Float(53))
-    SP = Column(Float(53))
-    EPAfterNonRecurring = Column(Float(53))
-    DivToB = Column(Float(53))
-    DivP = Column(Float(53))
-    EBITToSales = Column(Float(53))
-    EBITAToSales = Column(Float(53))
-    EVToSales = Column(Float(53))
-    EVToEBIT = Column(Float(53))
-    EVToEBITDA = Column(Float(53))
-    EVToNOPLAT = Column(Float(53))
-    EVToIC = Column(Float(53))
-    ROIC = Column(Float(53))
-    FCFFPS = Column(Float(53))
-    FCFFToEarningAfterNonRecurring = Column(Float(53))
-    FCFFP = Column(Float(53))
-    ProfitToAsset = Column(Float(53))
-    GrossProfitRatio = Column(Float(53))
-    NetProfitRatio = Column(Float(53))
-    LATO = Column(Float(53))
-    FATO = Column(Float(53))
-    TATO = Column(Float(53))
-    EquityTO = Column(Float(53))
-    PayableTO = Column(Float(53))
-    RecievableTO = Column(Float(53))
-    RevenueGrowth = Column(Float(53))
-    GrossProfitGrowth = Column(Float(53))
-    NetProfitGrowth = Column(Float(53))
-    GrossCFToRevenue = Column(Float(53))
-    CFToRevenue = Column(Float(53))
-    CFToProfit = Column(Float(53))
-    CFToAsset = Column(Float(53))
-    GrossCFGrowth = Column(Float(53))
-    CFGrowth = Column(Float(53))
-    ICFGrowth = Column(Float(53))
-    AveAmount60 = Column(Float(53))
-    PeriodReturn60 = Column(Float(53))
-    AmountRatio60to250 = Column(Float(53))
-    CFPS = Column(Float(53))
-    CFP = Column(Float(53))
-    NetCFGrowth = Column(Float(53))
-    NetCFGrowthP = Column(Float(53))
-    NetCash = Column(Float(53))
-    NetCashP = Column(Float(53))
-    BVPSGrowth = Column(Float(53))
-    EquityPSGrowth = Column(Float(53))
-    WholeSales = Column(Float(53))
-    WholeProfitAfterNonRecurring = Column(Float(53))
-    ExpenseRatio = Column(Float(53))
-    CurrentRatio = Column(Float(53))
-    QuickRatio = Column(Float(53))
-    AcidTestRatio = Column(Float(53))
-    TimeInterestEarnedRatio = Column(Float(53))
-    DepositReceivedVsSale = Column(Float(53))
-    DebtRatioExcemptDepRec = Column(Float(53))
-    SNBARatio = Column(Float(53))
 
 
 class Market(Base):
@@ -299,21 +237,6 @@ class PortfolioSettings(Base):
     portfolio_name = Column(String(50), primary_key=True, nullable=False)
     model_id = Column(BigInteger, primary_key=True, nullable=False)
     weight = Column(Float(53), nullable=False)
-
-
-class Positions(Base):
-    __tablename__ = 'positions'
-    __table_args__ = (
-        Index('positions_idx', 'trade_date', 'source', 'universe', 'benchmark', 'portfolio', 'type', unique=True),
-    )
-
-    source = Column(String(50), primary_key=True, nullable=False)
-    universe = Column(String(50), primary_key=True, nullable=False)
-    benchmark = Column(Integer, primary_key=True, nullable=False)
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio = Column(String(50), primary_key=True, nullable=False)
-    type = Column(String(50), primary_key=True, nullable=False)
-    weight = Column(JSON)
 
 
 class RebalanceLog(Base):
@@ -718,30 +641,53 @@ class Strategy(Base):
     source = Column(String(20), primary_key=True, nullable=False)
 
 
-class Tiny(Base):
-    __tablename__ = 'tiny'
-    __table_args__ = (
-        Index('tiny_idx', 'trade_date', 'code', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    CFinc1 = Column(Float(53))
-    BDTO = Column(Float(53))
-    RVOL = Column(Float(53))
-    CHV = Column(Float(53))
-    VAL = Column(Float(53))
-
-
 class Universe(Base):
     __tablename__ = 'universe'
     __table_args__ = (
-        Index('universe_idx', 'trade_date', 'universe', 'code', unique=True),
+        Index('universe_trade_date_code_uindex', 'trade_date', 'code', unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    universe = Column(String(20), primary_key=True, nullable=False)
+    code = Column(BigInteger, primary_key=True, nullable=False)
+    aerodef = Column(Integer)
+    agriforest = Column(Integer)
+    auto = Column(Integer)
+    bank = Column(Integer)
+    builddeco = Column(Integer)
+    chem = Column(Integer)
+    conmat = Column(Integer)
+    commetrade = Column(Integer)
+    computer = Column(Integer)
+    conglomerates = Column(Integer)
+    eleceqp = Column(Integer)
+    electronics = Column(Integer)
+    foodbever = Column(Integer)
+    health = Column(Integer)
+    houseapp = Column(Integer)
+    ironsteel = Column(Integer)
+    leiservice = Column(Integer)
+    lightindus = Column(Integer)
+    machiequip = Column(Integer)
+    media = Column(Integer)
+    mining = Column(Integer)
+    nonbankfinan = Column(Integer)
+    nonfermetal = Column(Integer)
+    realestate = Column(Integer)
+    telecom = Column(Integer)
+    textile = Column(Integer)
+    transportation = Column(Integer)
+    utilities = Column(Integer)
+    ashare = Column(Integer)
+    ashare_ex = Column(Integer)
+    cyb = Column(Integer)
+    hs300 = Column(Integer)
+    sh50 = Column(Integer)
+    zxb = Column(Integer)
+    zz1000 = Column(Integer)
+    zz500 = Column(Integer)
+    zz800 = Column(Integer)
+    hs300_adj = Column(Integer)
+    zz500_adj = Column(Integer)
 
 
 class Uqer(Base):
@@ -1316,5 +1262,5 @@ class Outright(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgres+psycopg2://postgres:we083826@192.168.0.102/alpha')
+    engine = create_engine('postgresql+psycopg2://postgres:we083826@101.132.104.118/alpha')
     Base.metadata.create_all(engine)

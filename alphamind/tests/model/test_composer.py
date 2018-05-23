@@ -21,7 +21,7 @@ class TestComposer(unittest.TestCase):
     def test_data_meta_persistence(self):
 
         freq = '5b'
-        universe = Universe('custom', ['zz800'])
+        universe = Universe('zz800')
         batch = 4
         neutralized_risk = ['SIZE']
         risk_model = 'long'
@@ -55,7 +55,7 @@ class TestComposer(unittest.TestCase):
 
     def test_composer_persistence(self):
         freq = '5b'
-        universe = Universe('custom', ['zz800'])
+        universe = Universe('zz800')
         batch = 4
         neutralized_risk = ['SIZE']
         risk_model = 'long'

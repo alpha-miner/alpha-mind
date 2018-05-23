@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_, outerjoin, join, delete, insert
+from sqlalchemy import select, and_, outerjoin, join, delete, insert, column
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import bindparam
 from alphamind.data.engines.universe import Universe
@@ -32,7 +32,6 @@ from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import Formulas
 from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
 from alphamind.data.dbmodel.models import Performance
-from alphamind.data.dbmodel.models import Positions
 from alphamind.data.dbmodel.models import Outright
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.transformer import Transformer
@@ -231,7 +230,7 @@ class SqlEngine(object):
                                            risk_factors=df[neutralized_risks].values,
                                            post_process=post_process)
 
-        return df[['code', 'dx']]
+        return df[['code', 'dx']].drop_duplicates(['code'])
 
     def fetch_dx_return_range(self,
                               universe,
@@ -250,28 +249,23 @@ class SqlEngine(object):
 
         stats = self._create_stats(Market, horizon, offset)
 
-        cond = universe._query_statements(start_date, end_date, None)
+        codes = universe.query(self.engine, start_date, end_date, dates)
 
         t = select([Market.trade_date, Market.code, stats]).where(
-            Market.trade_date.between(start_date, end_date)
-        ).alias('t')
-        big_table = join(t, UniverseTable,
-                         and_(
-                             t.columns['trade_date'] == UniverseTable.trade_date,
-                             t.columns['code'] == UniverseTable.code,
-                             cond
-                         )
-                         )
+            and_(
+                Market.trade_date.between(start_date, end_date),
+                Market.code.in_(codes.code.unique().tolist())
+            )
+        ).cte('t')
 
-        query = select([t]).select_from(big_table)
+        cond = universe._query_statements(start_date, end_date, dates)
+        query = select([t]).where(
+            and_(t.columns['trade_date'] == UniverseTable.trade_date,
+                 t.columns['code'] == UniverseTable.code,
+                 cond)
+        )
+
         df = pd.read_sql(query, self.session.bind).dropna()
-
-        if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code'])
-
-        if dates:
-            df = df[df.trade_date.isin(dates)]
         return df.sort_values(['trade_date', 'code'])
 
     def fetch_dx_return_index(self,
@@ -364,7 +358,7 @@ class SqlEngine(object):
                 joined_tables.add(t.__table__.name)
 
         query = select(
-            [Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct] + list(factor_cols.keys())) \
             .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
                                                Market.code.in_(codes)))
 
@@ -374,15 +368,10 @@ class SqlEngine(object):
             .set_index('trade_date')
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
-        for col in res.columns:
-            if col not in set(['code', 'isOpen']) and col not in df.columns:
-                df[col] = res[col].values
-
-        df.dropna(inplace=True)
-        df['isOpen'] = df.isOpen.astype(bool)
-        df = df.loc[ref_date]
-        df.index = list(range(len(df)))
-        return df
+        res['chgPct'] = df.chgPct
+        res = res.loc[ref_date]
+        res.index = list(range(len(res)))
+        return res.drop_duplicates(['trade_date', 'code'])
 
     def fetch_factor_range(self,
                            universe: Universe,
@@ -424,7 +413,7 @@ class SqlEngine(object):
         universe_df = universe.query(self, start_date, end_date, dates)
 
         query = select(
-            [Market.trade_date, Market.code, Market.isOpen] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct] + list(factor_cols.keys())) \
             .select_from(big_table).where(
                 and_(
                     Market.code.in_(universe_df.code.unique().tolist()),
@@ -433,8 +422,6 @@ class SqlEngine(object):
         ).distinct()
 
         df = pd.read_sql(query, self.engine).replace([-np.inf, np.inf], np.nan)
-        if universe.is_filtered:
-            df = pd.merge(df, universe_df, how='inner', on=['trade_date', 'code'])
 
         if external_data is not None:
             df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
@@ -443,14 +430,9 @@ class SqlEngine(object):
         df.set_index('trade_date', inplace=True)
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
-        for col in res.columns:
-            if col not in set(['code', 'isOpen']) and col not in df.columns:
-                df[col] = res[col].values
-
-        df.dropna(inplace=True)
-        df['isOpen'] = df.isOpen.astype(bool)
-        df = df.reset_index()
-        return pd.merge(df, universe_df[['trade_date', 'code']], how='inner')
+        res['chgPct'] = df.chgPct
+        res = res.reset_index()
+        return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
 
     def fetch_factor_range_forward(self,
                                    universe: Universe,
@@ -490,7 +472,7 @@ class SqlEngine(object):
             partition_by=Market.code,
             order_by=Market.trade_date).label('dx')
 
-        query = select([Market.trade_date, Market.code, stats]).select_from(big_table).where(
+        query = select([Market.trade_date, Market.code, Market.chgPct, stats]).select_from(big_table).where(
             and_(
                 Market.trade_date.in_(total_dates),
                 Market.code.in_(total_codes)
@@ -499,9 +481,8 @@ class SqlEngine(object):
 
         df = pd.read_sql(query, self.engine) \
             .replace([-np.inf, np.inf], np.nan) \
-            .dropna() \
             .sort_values(['trade_date', 'code'])
-        return pd.merge(df, codes[['trade_date', 'code']], how='inner')
+        return pd.merge(df, codes[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
 
     def fetch_benchmark(self,
                         ref_date: str,
@@ -575,7 +556,7 @@ class SqlEngine(object):
 
         risk_exp = pd.read_sql(query, self.engine).dropna()
 
-        return risk_cov, risk_exp
+        return risk_cov, risk_exp.drop_duplicates(['code'])
 
     def fetch_risk_model_range(self,
                                universe: Universe,
@@ -630,11 +611,6 @@ class SqlEngine(object):
 
         risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).dropna()
 
-        if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            risk_exp = pd.merge(risk_exp, codes, how='inner', on=['trade_date', 'code']).sort_values(
-                ['trade_date', 'code'])
-
         return risk_cov, risk_exp
 
     def fetch_industry(self,
@@ -657,7 +633,7 @@ class SqlEngine(object):
             )
         ).distinct()
 
-        return pd.read_sql(query, self.engine).dropna()
+        return pd.read_sql(query, self.engine).dropna().drop_duplicates(['code'])
 
     def fetch_industry_matrix(self,
                               ref_date: str,
@@ -667,19 +643,7 @@ class SqlEngine(object):
         df = self.fetch_industry(ref_date, codes, category, level)
         df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
-        industries = industry_list(category, level)
-
-        in_s = []
-        out_s = []
-        for i in industries:
-            if i in df:
-                in_s.append(i)
-            else:
-                out_s.append(i)
-
-        res = df[['code', 'industry_code', 'industry_name'] + in_s]
-        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
-        return res
+        return df.drop('industry_code', axis=1)
 
     def fetch_industry_range(self,
                              universe: Universe,
@@ -705,13 +669,10 @@ class SqlEngine(object):
         query = select([Industry.trade_date,
                         Industry.code,
                         getattr(Industry, code_name).label('industry_code'),
-                        getattr(Industry, category_name).label('industry')]).select_from(big_table).distinct()
+                        getattr(Industry, category_name).label('industry')]).select_from(big_table)\
+            .order_by(Industry.trade_date, Industry.code)
 
-        df = pd.read_sql(query, self.engine).dropna()
-        if universe.is_filtered:
-            codes = universe.query(self, start_date, end_date, dates)
-            df = pd.merge(df, codes, how='inner', on=['trade_date', 'code']).sort_values(['trade_date', 'code'])
-        return df
+        return pd.read_sql(query, self.engine).dropna()
 
     def fetch_industry_matrix_range(self,
                                     universe: Universe,
@@ -724,32 +685,61 @@ class SqlEngine(object):
         df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
         df['industry_name'] = df['industry']
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
-        industries = industry_list(category, level)
-
-        in_s = []
-        out_s = []
-        for i in industries:
-            if i in df:
-                in_s.append(i)
-            else:
-                out_s.append(i)
-
-        res = df[['trade_date', 'code', 'industry_code', 'industry_name'] + in_s]
-
-        res = res.assign(**dict(zip(out_s, [0] * len(out_s))))
-        return res
+        return df.drop('industry_code', axis=1).drop_duplicates(['trade_date', 'code'])
 
     def fetch_trade_status(self,
                            ref_date: str,
-                           codes: Iterable[int]):
+                           codes: Iterable[int],
+                           offset=0):
 
-        query = select([Market.code, Market.isOpen]).where(
+        target_date = advanceDateByCalendar('china.sse', ref_date,
+                                            str(offset) + 'b').strftime('%Y%m%d')
+
+        stats = func.lead(Market.isOpen, 1).over(
+            partition_by=Market.code,
+            order_by=Market.trade_date).label('is_open')
+
+        cte = select([Market.trade_date, Market.code, stats]).where(
             and_(
-                Market.trade_date == ref_date,
+                Market.trade_date.in_([ref_date, target_date]),
                 Market.code.in_(codes)
             )
-        )
+        ).cte('cte')
+
+        query = select([column('code'), column('is_open')]).select_from(cte).where(
+            column('trade_date') == ref_date
+        ).order_by(column('code'))
         return pd.read_sql(query, self.engine).sort_values(['code'])
+
+    def fetch_trade_status_range(self,
+                                 universe: Universe,
+                                 start_date: str = None,
+                                 end_date: str = None,
+                                 dates: Iterable[str] = None,
+                                 offset=0):
+        codes = universe.query(self, start_date, end_date, dates)
+
+        if dates:
+            start_date = dates[0]
+            end_date = dates[-1]
+
+        end_date = advanceDateByCalendar('china.sse', end_date,
+                                         str(offset) + 'b').strftime('%Y-%m-%d')
+
+        stats = func.lead(Market.isOpen, offset).over(
+            partition_by=Market.code,
+            order_by=Market.trade_date).label('is_open')
+        cte = select([Market.trade_date, Market.code, stats]).where(
+            and_(
+                Market.trade_date.between(start_date, end_date),
+                Market.code.in_(codes.code.unique().tolist())
+            )
+        ).cte('cte')
+
+        query = select([cte]).select_from(cte).order_by(cte.columns['trade_date'], cte.columns['code'])
+        df = pd.read_sql(query, self.engine)
+
+        return pd.merge(df, codes[['trade_date', 'code']], on=['trade_date', 'code'])
 
     def fetch_data(self,
                    ref_date: str,
@@ -964,31 +954,6 @@ class SqlEngine(object):
         self.engine.execute(query)
         df.to_sql(Performance.__table__.name, self.engine, if_exists='append', index=False)
 
-    def upsert_positions(self, ref_date, df):
-        universes = df.universe.unique().tolist()
-        benchmarks = df.benchmark.unique().tolist()
-        build_types = df.type.unique().tolist()
-        sources = df.source.unique().tolist()
-        portfolios = df.portfolio.unique().tolist()
-
-        query = delete(Positions).where(
-            and_(
-                Positions.trade_date == ref_date,
-                Positions.type.in_(build_types),
-                Positions.universe.in_(universes),
-                Positions.benchmark.in_(benchmarks),
-                Positions.source.in_(sources),
-                Positions.portfolio.in_(portfolios)
-            )
-        )
-
-        self.engine.execute(query)
-        df.to_sql(Positions.__table__.name,
-                  self.engine,
-                  if_exists='append',
-                  index=False,
-                  dtype={'weight': sa.types.JSON})
-
     def fetch_outright_status(self, ref_date: str, is_open=True, ignore_internal_borrow=False):
         table = Outright
         if is_open:
@@ -1052,10 +1017,12 @@ if __name__ == '__main__':
 
     from PyFin.api import *
     engine = SqlEngine()
-    ref_date = '2017-06-29'
-    universe = Universe('', ['zz800'])
+    ref_date = '2017-05-03'
+    universe = Universe('custon', ['zz800'])
 
     codes = engine.fetch_codes(ref_date, universe)
-    dates = makeSchedule('2018-01-01', '2018-02-01', '10b', 'china.sse')
-    factor_data = engine.fetch_dx_return('2018-01-30', codes, neutralized_risks=risk_styles+industry_styles)
-    print(factor_data)
+    # df = engine.fetch_trade_status(ref_date, codes, offset=1)
+
+    dates = ['2017-05-02', '2017-05-03', '2017-05-04']
+    df = engine.fetch_trade_status_range(universe, dates=dates, offset=1)
+    print(df)

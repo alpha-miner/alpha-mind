@@ -27,6 +27,8 @@ class BoundaryDirection(IntEnum):
 class BoundaryType(IntEnum):
     ABSOLUTE = 0
     RELATIVE = 1
+    MAXABSREL = 2
+    MINABSREL = 3
 
 
 class BoundaryImpl(object):
@@ -34,14 +36,14 @@ class BoundaryImpl(object):
     def __init__(self,
                  direction: BoundaryDirection,
                  b_type: BoundaryType,
-                 val: float):
+                 val):
         self.direction = direction
         self.b_type = b_type
         self.val = val
         self._validation()
 
     def _validation(self):
-        pyFinAssert(self.b_type == BoundaryType.ABSOLUTE or self.b_type == BoundaryType.RELATIVE,
+        pyFinAssert(self.b_type in [BoundaryType.ABSOLUTE, BoundaryType.RELATIVE, BoundaryType.MAXABSREL, BoundaryType.MINABSREL],
                     ValueError,
                     "Boundary Type {0} is not recognized".format(self.b_type))
 
@@ -52,6 +54,28 @@ class BoundaryImpl(object):
     def __call__(self, center: float):
         if self.b_type == BoundaryType.ABSOLUTE:
             return self.val + center
+        elif self.b_type == BoundaryType.MAXABSREL:
+            abs_threshold = self.val[0]
+            rel_threshold = self.val[1]
+            if self.direction == BoundaryDirection.LOWER:
+                rel_bound = center - abs(center) * rel_threshold
+                abs_bound = center - abs_threshold
+                return min(rel_bound, abs_bound)
+            elif self.direction == BoundaryDirection.UPPER:
+                rel_bound = center + abs(center) * rel_threshold
+                abs_bound = center + abs_threshold
+                return max(rel_bound, abs_bound)
+        elif self.b_type == BoundaryType.MINABSREL:
+            abs_threshold = self.val[0]
+            rel_threshold = self.val[1]
+            if self.direction == BoundaryDirection.LOWER:
+                rel_bound = center - abs(center) * rel_threshold
+                abs_bound = center - abs_threshold
+                return max(rel_bound, abs_bound)
+            elif self.direction == BoundaryDirection.UPPER:
+                rel_bound = center + abs(center) * rel_threshold
+                abs_bound = center + abs_threshold
+                return min(rel_bound, abs_bound)
         else:
             pyFinAssert(center >= 0., ValueError, "relative bounds only support positive back bone value")
             return self.val * center
@@ -106,9 +130,7 @@ class LinearConstraints(object):
                  bounds: Dict[str, BoxBoundary],
                  cons_mat: pd.DataFrame,
                  backbone: np.ndarray=None):
-        pyFinAssert(len(bounds) == cons_mat.shape[1], "Number of bounds should be same as number of col of cons_mat")
-
-        self.names = list(bounds.keys())
+        self.names = list(set(bounds.keys()).intersection(set(cons_mat.columns)))
         self.bounds = bounds
         self.cons_mat = cons_mat
         self.backbone = backbone

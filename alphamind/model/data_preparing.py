@@ -30,7 +30,7 @@ def _merge_df(engine, names, factor_df, target_df, universe, dates, risk_model, 
     risk_df = engine.fetch_risk_model_range(universe, dates=dates, risk_model=risk_model)[1]
     used_neutralized_risk = list(set(total_risk_factors).difference(names))
     risk_df = risk_df[['trade_date', 'code'] + used_neutralized_risk].dropna()
-    target_df = pd.merge(target_df, risk_df, on=['trade_date', 'code'])
+    target_df = pd.merge(target_df, risk_df, on=['trade_date', 'code']).dropna()
 
     if neutralized_risk:
         train_x = pd.merge(factor_df, risk_df, on=['trade_date', 'code'])
@@ -220,7 +220,7 @@ def fetch_data_package(engine: SqlEngine,
                                                frequency,
                                                universe,
                                                benchmark,
-                                               warm_start,
+                                               warm_start + batch,
                                                fit_target=fit_target)
 
     target_df, dates, date_label, risk_exp, x_values, y_values, train_x, train_y, codes = \
@@ -255,7 +255,17 @@ def fetch_data_package(engine: SqlEngine,
 
     ret = dict()
     ret['x_names'] = names
-    ret['settlement'] = target_df
+    ret['settlement'] = target_df[target_df.trade_date >= start_date]
+
+    train_x_buckets = {k: train_x_buckets[k] for k in train_x_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    train_y_buckets = {k: train_y_buckets[k] for k in train_y_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    train_risk_buckets = {k: train_risk_buckets[k] for k in train_risk_buckets if k.strftime('%Y-%m-%d') >= start_date}
+
+    predict_x_buckets = {k: predict_x_buckets[k] for k in predict_x_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    predict_y_buckets = {k: predict_y_buckets[k] for k in predict_y_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    predict_risk_buckets = {k: predict_risk_buckets[k] for k in predict_risk_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    predict_codes_bucket = {k: predict_codes_bucket[k] for k in predict_codes_bucket if k.strftime('%Y-%m-%d') >= start_date}
+
     ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets, 'risk': train_risk_buckets}
     ret['predict'] = {'x': predict_x_buckets, 'y': predict_y_buckets, 'risk': predict_risk_buckets,
                       'code': predict_codes_bucket}
@@ -403,7 +413,7 @@ def fetch_predict_phase(engine,
         train_x = pd.merge(factor_df, target_df, on=['trade_date', 'code'], how='left')
         risk_exp = None
 
-    train_x.dropna(inplace=True)
+    train_x.dropna(inplace=True, subset=train_x.columns[:-1])
     x_values = train_x[names].values.astype(float)
     y_values = train_x[['dx']].values.astype(float)
 
@@ -456,18 +466,3 @@ def fetch_predict_phase(engine,
 
     return ret
 
-
-if __name__ == '__main__':
-    from alphamind.api import risk_styles, industry_styles, standardize
-    engine = SqlEngine('postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha')
-    universe = Universe('zz500', ['hs300', 'zz500'])
-    neutralized_risk = risk_styles + industry_styles
-    res = fetch_train_phase(engine, ['ep_q'],
-                              '2012-01-05',
-                              '5b',
-                              universe,
-                              2,
-                              neutralized_risk=neutralized_risk,
-                              post_process=[standardize],
-                              fit_target='closePrice')
-    print(res)
