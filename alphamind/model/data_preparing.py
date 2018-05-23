@@ -108,7 +108,7 @@ def prepare_data(engine: SqlEngine,
     df.dropna(inplace=True)
 
     return dates, df[['trade_date', 'code', 'dx']], df[
-        ['trade_date', 'code', 'weight', 'isOpen', 'industry_code', 'industry'] + transformer.names]
+        ['trade_date', 'code', 'weight', 'industry_code', 'industry'] + transformer.names]
 
 
 def batch_processing(names,
@@ -231,7 +231,6 @@ def fetch_data_package(engine: SqlEngine,
     target_df['weight'] = train_x['weight']
     target_df['industry'] = train_x['industry']
     target_df['industry_code'] = train_x['industry_code']
-    target_df['isOpen'] = train_x['isOpen']
 
     if neutralized_risk:
         for i, name in enumerate(neutralized_risk):
@@ -314,7 +313,7 @@ def fetch_train_phase(engine,
     df = pd.merge(factor_df, target_df, on=['trade_date', 'code']).dropna()
 
     target_df, factor_df = df[['trade_date', 'code', 'dx']], df[
-        ['trade_date', 'code', 'isOpen'] + transformer.names]
+        ['trade_date', 'code'] + transformer.names]
 
     target_df, dates, date_label, risk_exp, x_values, y_values, _, _, codes = \
         _merge_df(engine, transformer.names, factor_df, target_df, universe, dates, risk_model, neutralized_risk)

@@ -166,7 +166,7 @@ class Strategy(object):
 
         if self.dask_client is None:
             models = {}
-            for ref_date, _ in self.total_data_groups:
+            for ref_date, _ in total_data_groups:
                 models[ref_date] = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
         else:
             def worker(parameters):
@@ -334,8 +334,8 @@ if __name__ == '__main__':
                          universe=universe,
                          batch=1,
                          neutralized_risk=neutralized_risk,
-                         pre_process=None,  # [winsorize_normal, standardize],
-                         post_process=None,  # [standardize],
+                         pre_process=None,
+                         post_process=None,
                          warm_start=1)
 
     industries = industry_list('sw_adj', 1)
