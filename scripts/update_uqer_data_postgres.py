@@ -5,23 +5,32 @@ Created on 2017-5-20
 @author: cheng.li
 """
 
+import os
+import sys
+import arrow
 import datetime as dt
 import uqer
 import sqlalchemy
-from sqlalchemy import delete
+import numpy as np
 import pandas as pd
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.email_operator import EmailOperator
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.models import DAG
 from uqer import DataAPI as api
 from alphamind.utilities import alpha_logger
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, MetaData, delete
 from PyFin.api import advanceDateByCalendar
 from PyFin.api import isBizDay
+from alphamind.api import SqlEngine
 from alphamind.data.dbmodel.models import *
+from alphamind.api import Universe as UniversProxy
+from alphamind.api import industry_styles
+from alphamind.api import risk_styles
 
 uqer.DataAPI.api_base.timeout = 300
 
-start_date = dt.datetime(2010, 1, 1)
+start_date = dt.datetime(2018, 5, 4)
 dag_name = 'update_uqer_data_postgres'
 
 default_args = {
@@ -33,11 +42,12 @@ default_args = {
 dag = DAG(
     dag_id=dag_name,
     default_args=default_args,
-    schedule_interval='0 6 * * 1,2,3,4,5'
+    schedule_interval='0 1 * * 1,2,3,4,5'
 )
 
-_ = uqer.Client(token='')
-engine = sqlalchemy.create_engine('')
+_ = uqer.Client(token=os.environ['DATAYES_TOKEN'])
+engine = sqlalchemy.create_engine(os.environ['DB_URI'])
+alpha_engine = SqlEngine(os.environ['DB_URI'])
 
 
 def process_date(ds):
@@ -69,41 +79,6 @@ def data_info_log(df, table):
         msg = "No records will be inserted in {0}".format(table)
         alpha_logger.warning(msg)
         raise ValueError(msg)
-
-
-def update_uqer_index_market(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    df = api.MktIdxdGet(tradeDate=ref_date)
-    df = df[df.exchangeCD.isin(['XSHE', 'XSHG', 'ZICN'])]
-    df = df[df.ticker <= '999999']
-    df.rename(columns={'tradeDate': 'trade_date',
-                       'ticker': 'indexCode',
-                       'CHGPct': 'chgPct',
-                       'secShortName': 'indexShortName'}, inplace=True)
-    df = df[['trade_date',
-             'indexCode',
-             'preCloseIndex',
-             'openIndex',
-             'highestIndex',
-             'lowestIndex',
-             'closeIndex',
-             'turnoverVol',
-             'turnoverValue',
-             'chgPct']]
-
-    df['indexCode'] = df.indexCode.astype(int)
-
-    query = delete(IndexMarket).where(IndexMarket.trade_date == this_date)
-    engine.execute(query)
-
-    data_info_log(df, Market)
-    format_data(df, format='%Y-%m-%d')
-    df.to_sql(IndexMarket.__table__.name, engine, index=False, if_exists='append')
 
 
 def update_uqer_factors(ds, **kwargs):
@@ -146,6 +121,41 @@ def update_uqer_market(ds, **kwargs):
     df.to_sql(Market.__table__.name, engine, index=False, if_exists='append')
 
 
+def update_uqer_index_market(ds, **kwargs):
+    ref_date, this_date = process_date(ds)
+    flag = check_holiday(this_date)
+
+    if not flag:
+        return
+
+    df = api.MktIdxdGet(tradeDate=ref_date)
+    df = df[df.exchangeCD.isin(['XSHE', 'XSHG', 'ZICN'])]
+    df = df[df.ticker <= '999999']
+    df.rename(columns={'tradeDate': 'trade_date',
+                       'ticker': 'indexCode',
+                       'CHGPct': 'chgPct',
+                       'secShortName': 'indexShortName'}, inplace=True)
+    df = df[['trade_date',
+             'indexCode',
+             'preCloseIndex',
+             'openIndex',
+             'highestIndex',
+             'lowestIndex',
+             'closeIndex',
+             'turnoverVol',
+             'turnoverValue',
+             'chgPct']]
+
+    df['indexCode'] = df.indexCode.astype(int)
+
+    query = delete(IndexMarket).where(IndexMarket.trade_date == this_date)
+    engine.execute(query)
+
+    data_info_log(df, Market)
+    format_data(df, format='%Y-%m-%d')
+    df.to_sql(IndexMarket.__table__.name, engine, index=False, if_exists='append')
+
+
 def update_uqer_halt_list(ds, **kwargs):
     ref_date, this_date = process_date(ds)
     flag = check_holiday(this_date)
@@ -168,7 +178,7 @@ def update_uqer_halt_list(ds, **kwargs):
     df.to_sql(HaltList.__table__.name, engine, index=False, if_exists='append')
 
 
-def update_uqer_universe_hs300(ds, **kwargs):
+def update_universe(ds, **kwargs):
     ref_date, this_date = process_date(ds)
     flag = check_holiday(this_date)
 
@@ -176,227 +186,77 @@ def update_uqer_universe_hs300(ds, **kwargs):
         return
 
     query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'hs300'
-        )
+        Universe.trade_date == this_date,
     )
     engine.execute(query)
 
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
+    # indexed universe
+    universe_map = {'hs300': 300,
+                    'sh50': 16,
+                    'zz500': 905,
+                    'zz800': 906,
+                    'zz1000': 852,
+                    'zxb': 399005,
+                    'cyb': 399006}
+
+    total_df = None
+    for u in universe_map:
+        query = select([IndexComponent.code]).where(
+            and_(
+                IndexComponent.trade_date == this_date,
+                IndexComponent.indexCode == universe_map[u]
+            )
+        )
+
+        df = pd.read_sql(query, engine)
+        df[u] = 1
+        if total_df is None:
+            total_df = df
+        else:
+            total_df = pd.merge(total_df, df, on=['code'], how='outer')
+
+    # ashare
+    query = select([SecurityMaster.code]).where(
         and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 300
+            SecurityMaster.listDate <= this_date,
+            or_(
+                SecurityMaster.listStatusCD == 'L',
+                SecurityMaster.delistDate > this_date
+            )
+        )
+    )
+
+    df = pd.read_sql(query, engine)
+    df['ashare'] = 1
+    total_df = pd.merge(total_df, df, on=['code'], how='outer')
+
+    # ashare_ex
+    ex_date = advanceDateByCalendar('china.sse', this_date, '-3m')
+
+    query = select([SecurityMaster.code]).where(
+        and_(
+            SecurityMaster.listDate <= ex_date,
+            or_(
+                SecurityMaster.listStatusCD == "L",
+                SecurityMaster.delistDate > this_date
+            )
         )
     )
     df = pd.read_sql(query, engine)
+    df['ashare_ex'] = 1
+    total_df = pd.merge(total_df, df, on=['code'], how='outer')
 
-    if df.empty:
-        return
+    # industry universe
+    codes = total_df.code.tolist()
+    risk_models = alpha_engine.fetch_risk_model(ref_date, codes)[1]
+    df = risk_models[['code'] + industry_styles]
 
-    df['universe'] = 'hs300'
+    df.columns = [i.lower() for i in df.columns]
+    total_df = pd.merge(total_df, df, on=['code'], how='outer')
 
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
-def update_uqer_universe_sh50(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'sh50'
-        )
-    )
-    engine.execute(query)
-
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
-        and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 16
-        )
-    )
-    df = pd.read_sql(query, engine)
-
-    if df.empty:
-        return
-
-    df['universe'] = 'sh50'
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
-def update_uqer_universe_zz500(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'zz500'
-        )
-    )
-    engine.execute(query)
-
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
-        and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 905
-        )
-    )
-    df = pd.read_sql(query, engine)
-
-    if df.empty:
-        return
-
-    df['universe'] = 'zz500'
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
-def update_uqer_universe_zz800(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'zz800'
-        )
-    )
-    engine.execute(query)
-
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
-        and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 906
-        )
-    )
-    df = pd.read_sql(query, engine)
-
-    if df.empty:
-        return
-
-    df['universe'] = 'zz800'
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
-def update_uqer_universe_zz1000(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'zz1000'
-        )
-    )
-    engine.execute(query)
-
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
-        and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 852
-        )
-    )
-    df = pd.read_sql(query, engine)
-
-    if df.empty:
-        return
-
-    df['universe'] = 'zz1000'
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
-def update_uqer_universe_zxb(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'zxb'
-        )
-    )
-    engine.execute(query)
-
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
-        and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 399005
-        )
-    )
-    df = pd.read_sql(query, engine)
-
-    if df.empty:
-        return
-
-    df['universe'] = 'zxb'
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
-
-
-def update_uqer_universe_cyb(ds, **kwargs):
-    ref_date, this_date = process_date(ds)
-    flag = check_holiday(this_date)
-
-    if not flag:
-        return
-
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'cyb'
-        )
-    )
-    engine.execute(query)
-
-    query = select([IndexComponent.trade_date, IndexComponent.code]).where(
-        and_(
-            IndexComponent.trade_date == this_date,
-            IndexComponent.indexCode == 399006
-        )
-    )
-    df = pd.read_sql(query, engine)
-
-    if df.empty:
-        return
-
-    df['universe'] = 'cyb'
-
-    data_info_log(df, Universe)
-    format_data(df)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
+    total_df['trade_date'] = this_date
+    total_df.fillna(0, inplace=True)
+    total_df.to_sql('universe', engine, if_exists='append', index=False)
 
 
 def update_uqer_universe_security_master(ds, **kwargs):
@@ -406,7 +266,7 @@ def update_uqer_universe_security_master(ds, **kwargs):
     if not flag:
         return
 
-    df = api.EquGet(equTypeCD='A')
+    df = api.EquGet(equTypeCD='A').drop_duplicates()
 
     if df.empty:
         return
@@ -427,80 +287,147 @@ def update_uqer_universe_security_master(ds, **kwargs):
     df.to_sql(SecurityMaster.__table__.name, engine, index=False, if_exists='append')
 
 
-def update_uqer_universe_ashare(ds, **kwargs):
+def update_sw1_adj_industry(ds, **kwargs):
     ref_date, this_date = process_date(ds)
     flag = check_holiday(this_date)
 
     if not flag:
         return
 
-    query = delete(Universe).where(
+    industry = '申万行业分类'
+    query = select([Industry]).where(
         and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'ashare'
-        )
-    )
-    engine.execute(query)
-
-    query = select([SecurityMaster.code]).where(
-        and_(
-            SecurityMaster.listDate <= this_date,
-            or_(
-                SecurityMaster.listStatusCD == 'L',
-                SecurityMaster.delistDate > this_date
-            )
+            Industry.trade_date == ref_date,
+            Industry.industry == industry
         )
     )
 
     df = pd.read_sql(query, engine)
+    df['industry'] = '申万行业分类修订'
+    df['industryID'] = 10303330102
+    df['industrySymbol'] = '440102'
 
-    if df.empty:
-        return
+    ids = df[df.industryName2 == '证券'].index
+    df.loc[ids, 'industryName1'] = df.loc[ids, 'industryName2']
+    df.loc[ids, 'industryID1'] = df.loc[ids, 'industryID2']
 
-    df['universe'] = 'ashare'
-    df['trade_date'] = this_date
+    ids = df[df.industryName2 == '银行'].index
+    df.loc[ids, 'industryName1'] = df.loc[ids, 'industryName2']
+    df.loc[ids, 'industryID1'] = df.loc[ids, 'industryID2']
 
-    data_info_log(df, Universe)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
+    ids = df[df.industryName2 == '保险'].index
+    df.loc[ids, 'industryName1'] = df.loc[ids, 'industryName2']
+    df.loc[ids, 'industryID1'] = df.loc[ids, 'industryID2']
+
+    ids = df[df.industryName2 == '多元金融'].index
+    df.loc[ids, 'industryName1'] = df.loc[ids, 'industryName2']
+    df.loc[ids, 'industryID1'] = df.loc[ids, 'industryID2']
+
+    query = delete(Industry).where(
+        and_(
+            Industry.trade_date == ref_date,
+            Industry.industry == industry + "修订"
+        )
+    )
+
+    engine.execute(query)
+    df.to_sql(Industry.__table__.name, engine, if_exists='append', index=False)
 
 
-def update_uqer_universe_ashare_ex(ds, **kwargs):
+def update_dx_industry(ds, **kwargs):
     ref_date, this_date = process_date(ds)
     flag = check_holiday(this_date)
 
     if not flag:
         return
 
-    query = delete(Universe).where(
-        and_(
-            Universe.trade_date == this_date,
-            Universe.universe == 'ashare_ex'
-        )
-    )
-    engine.execute(query)
+    barra_sector_dict = {
+        'Energy':
+            [],
+        'Materials':
+            ['建筑建材', '化工', '有色金属', '钢铁', '建筑材料'],
+        'Industrials':
+            ['采掘', '机械设备', '综合', '建筑装饰', '电子', '交通运输', '轻工制造', '商业贸易', '农林牧渔', '电气设备', '国防军工', '纺织服装', '交运设备'],
+        'ConsumerDiscretionary':
+            ['休闲服务', '汽车', '传媒'],
+        'ConsumerStaples':
+            ['食品饮料', '家用电器'],
+        'HealthCare':
+            ['医药生物'],
+        'Financials':
+            ['银行', '非银金融', '金融服务'],
+        'IT':
+            ['计算机', '通信', '信息设备', '信息服务'],
+        'Utilities':
+            ['公用事业'],
+        'RealEstate':
+            ['房地产'],
+    }
 
-    ex_date = advanceDateByCalendar('china.sse', this_date, '-3m')
+    # ref: https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard
+    barra_sector_id_dict = {
+        'Energy': 10,
+        'Materials': 15,
+        'Industrials': 20,
+        'ConsumerDiscretionary': 25,
+        'ConsumerStaples': 30,
+        'HealthCare': 35,
+        'Financials': 40,
+        'IT': 45,
+        'Utilities': 55,
+        'RealEstate': 60
+    }
 
-    query = select([SecurityMaster.code]).where(
+    # ref: Morningstar Global Equity Classification Structure
+    ms_supersector_dict = {
+        'Cyclical': ['Materials', 'Financials', 'RealEstate', 'ConsumerDiscretionary'],
+        'Defensive': ['ConsumerStaples', 'HealthCare', 'Utilities'],
+        'Sensitive': ['Energy', 'Industrials', 'IT']
+    }
+    ms_supersector_id_dict = {
+        'Cyclical': 1,
+        'Defensive': 2,
+        'Sensitive': 3
+    }
+
+    barra_sector_rev_dict = {}
+    for x in barra_sector_dict:
+        for y in barra_sector_dict[x]:
+            barra_sector_rev_dict[y] = x
+
+    ms_supersector_rev_dict = {}
+    for x in ms_supersector_dict:
+        for y in ms_supersector_dict[x]:
+            ms_supersector_rev_dict[y] = x
+
+    industry = '申万行业分类'
+    query = select([Industry]).where(
         and_(
-            SecurityMaster.listDate <= ex_date,
-            or_(
-                SecurityMaster.listStatusCD == "L",
-                SecurityMaster.delistDate > this_date
-            )
+            Industry.trade_date == ref_date,
+            Industry.industry == industry
         )
     )
 
     df = pd.read_sql(query, engine)
+    df['industry'] = '东兴行业分类'
+    df['industryID'] = 0
+    df['industrySymbol'] = '0'
+    df['industryID3'] = df['industryID1']
+    df['industryName3'] = df['industryName1']
+    df['industryName2'] = [barra_sector_rev_dict[x] for x in df['industryName3']]
+    df['industryName1'] = [ms_supersector_rev_dict[x] for x in df['industryName2']]
+    df['industryID1'] = [ms_supersector_id_dict[x] for x in df['industryName1']]
+    df['industryID2'] = [barra_sector_id_dict[x] for x in df['industryName2']]
 
-    if df.empty:
-        return
+    query = delete(Industry).where(
+        and_(
+            Industry.trade_date == ref_date,
+            Industry.industry == "东兴行业分类"
+        )
+    )
 
-    df['universe'] = 'ashare_ex'
-    df['trade_date'] = this_date
-
-    data_info_log(df, Universe)
-    df.to_sql(Universe.__table__.name, engine, index=False, if_exists='append')
+    engine.execute(query)
+    df.to_sql(Industry.__table__.name, engine, if_exists='append', index=False)
 
 
 def update_uqer_index_components(ds, **kwargs):
@@ -618,6 +545,33 @@ def update_uqer_index_components(ds, **kwargs):
     total_data.to_sql(IndexComponent.__table__.name, engine, index=False, if_exists='append')
 
 
+def update_dummy_index_components(ds, **kwargs):
+    ref_date, this_date = process_date(ds)
+    flag = check_holiday(this_date)
+
+    if not flag:
+        return
+
+    query = select([IndexComponent]).where(
+        and_(
+            IndexComponent.trade_date == '2018-05-04',
+            IndexComponent.indexCode.in_([900300, 900905])
+        )
+    )
+
+    df = pd.read_sql(query, con=engine)
+    df['trade_date'] = ref_date
+    query = delete(IndexComponent).where(
+        and_(
+            IndexComponent.trade_date == ref_date,
+            IndexComponent.indexCode.in_([900300, 900905])
+        )
+    )
+
+    engine.execute(query)
+    df.to_sql(IndexComponent.__table__.name, engine, index=False, if_exists='append')
+
+
 def update_uqer_risk_model(ds, **kwargs):
     ref_date, this_date = process_date(ds)
     flag = check_holiday(this_date)
@@ -629,6 +583,9 @@ def update_uqer_risk_model(ds, **kwargs):
     df.rename(columns={'tradeDate': 'trade_date', 'ticker': 'code'}, inplace=True)
     df.code = df.code.astype(int)
     del df['secID']
+    del df['exchangeCD']
+    del df['secShortName']
+    del df['updateTime']
     engine.execute(delete(RiskExposure).where(RiskExposure.trade_date == this_date))
     data_info_log(df, RiskExposure)
     format_data(df)
@@ -738,6 +695,37 @@ def update_uqer_industry_info(ds, **kwargs):
     df.to_sql(Industry.__table__.name, engine, index=False, if_exists='append')
 
 
+def update_category(ds, **kwargs):
+    ref_date, this_date = process_date(ds)
+    flag = check_holiday(this_date)
+
+    if not flag:
+        return
+
+    codes = alpha_engine.fetch_codes(ref_date, UniversProxy('ashare'))
+    industry_matrix1 = alpha_engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
+    industry_matrix2 = alpha_engine.fetch_industry_matrix(ref_date, codes, 'sw_adj', 1)
+
+    cols1 = sorted(industry_matrix1.columns[2:].tolist())
+    vals1 = (industry_matrix1[cols1].values * np.array(range(1, len(cols1)+1))).sum(axis=1)
+
+    cols2 = sorted(industry_matrix2.columns[2:].tolist())
+    vals2 = (industry_matrix2[cols2].values * np.array(range(1, len(cols2) + 1))).sum(axis=1)
+
+    df = pd.DataFrame()
+    df['code'] = industry_matrix1.code.tolist()
+    df['trade_date'] = ref_date
+    df['sw1'] = vals1
+    df['sw1_adj'] = vals2
+
+    query = delete(Categories).where(
+        Categories.trade_date == ref_date
+    )
+
+    engine.execute(query)
+    df.to_sql(Categories.__table__.name, con=engine, if_exists='append', index=False)
+
+
 def fetch_date(table, query_date, engine):
     query_date = query_date.replace('-', '')
     sql = "select * from {0} where Date = {1}".format(table, query_date)
@@ -754,12 +742,41 @@ def fetch_date(table, query_date, engine):
     return df
 
 
-index_market_task = PythonOperator(
-    task_id='update_uqer_index_market',
-    provide_context=True,
-    python_callable=update_uqer_index_market,
-    dag=dag
-)
+def update_factor_master(ds, **kwargs):
+    ref_date, this_date = process_date(ds)
+    flag = check_holiday(this_date)
+
+    if not flag:
+        return
+
+    tables = [Uqer, Gogoal, Experimental, RiskExposure]
+
+    meta = MetaData(bind=engine, reflect=True)
+
+    df = pd.DataFrame(columns=['factor', 'source', 'alias', 'updateTime', 'description'])
+
+    for t in tables:
+        source = t.__table__.name
+        table = meta.tables[source]
+        columns = table.columns.keys()
+        columns = list(set(columns).difference({'trade_date',
+                                                'code',
+                                                'secShortName',
+                                                'exchangeCD',
+                                                'updateTime',
+                                                'COUNTRY'}))
+        col_alias = [c + '_' + source for c in columns]
+
+        new_df = pd.DataFrame({'factor': columns,
+                               'source': [source] * len(columns),
+                               'alias': col_alias})
+        df = df.append(new_df)
+
+    query = delete(FactorMaster)
+    engine.execute(query)
+
+    df['updateTime'] = arrow.now().format('YYYY-MM-DD, HH:mm:ss')
+    df.to_sql(FactorMaster.__table__.name, engine, if_exists='append', index=False)
 
 
 uqer_task = PythonOperator(
@@ -776,6 +793,20 @@ market_task = PythonOperator(
     dag=dag
 )
 
+universe_task = PythonOperator(
+    task_id='update_universe',
+    provide_context=True,
+    python_callable=update_universe,
+    dag=dag
+)
+
+index_market_task = PythonOperator(
+    task_id='update_uqer_index_market',
+    provide_context=True,
+    python_callable=update_uqer_index_market,
+    dag=dag
+)
+
 industry_task = PythonOperator(
     task_id='update_uqer_industry_info',
     provide_context=True,
@@ -783,7 +814,32 @@ industry_task = PythonOperator(
     dag=dag
 )
 
+sw1_adj_industry_task = PythonOperator(
+    task_id='update_sw1_adj_industry',
+    provide_context=True,
+    python_callable=update_sw1_adj_industry,
+    dag=dag
+)
+
+dx_industry_task = PythonOperator(
+    task_id='update_dx_industry',
+    provide_context=True,
+    python_callable=update_dx_industry,
+    dag=dag
+)
+
 industry_task.set_upstream(market_task)
+sw1_adj_industry_task.set_upstream(industry_task)
+dx_industry_task.set_upstream(industry_task)
+
+categories_task = PythonOperator(
+    task_id='update_categories',
+    provide_context=True,
+    python_callable=update_category,
+    dag=dag
+)
+
+categories_task.set_upstream(sw1_adj_industry_task)
 
 index_task = PythonOperator(
     task_id='update_uqer_index_components',
@@ -792,63 +848,6 @@ index_task = PythonOperator(
     dag=dag
 )
 
-universe300_task = PythonOperator(
-    task_id='update_uqer_universe_hs300',
-    provide_context=True,
-    python_callable=update_uqer_universe_hs300,
-    dag=dag
-)
-
-universe500_task = PythonOperator(
-    task_id='update_uqer_universe_zz500',
-    provide_context=True,
-    python_callable=update_uqer_universe_zz500,
-    dag=dag
-)
-
-universe800_task = PythonOperator(
-    task_id='update_uqer_universe_zz800',
-    provide_context=True,
-    python_callable=update_uqer_universe_zz800,
-    dag=dag
-)
-
-universe1000_task = PythonOperator(
-    task_id='update_uqer_universe_zz1000',
-    provide_context=True,
-    python_callable=update_uqer_universe_zz1000,
-    dag=dag
-)
-
-universe50_task = PythonOperator(
-    task_id='update_uqer_universe_sh50',
-    provide_context=True,
-    python_callable=update_uqer_universe_sh50,
-    dag=dag
-)
-
-universe_zxb_task = PythonOperator(
-    task_id='update_uqer_universe_zxb',
-    provide_context=True,
-    python_callable=update_uqer_universe_zxb,
-    dag=dag
-)
-
-universe_cyb_task = PythonOperator(
-    task_id='update_uqer_universe_cyb',
-    provide_context=True,
-    python_callable=update_uqer_universe_cyb,
-    dag=dag
-)
-
-universe300_task.set_upstream(index_task)
-universe500_task.set_upstream(index_task)
-universe800_task.set_upstream(index_task)
-universe1000_task.set_upstream(index_task)
-universe50_task.set_upstream(index_task)
-universe_zxb_task.set_upstream(index_task)
-universe_cyb_task.set_upstream(index_task)
-
 security_master_task = PythonOperator(
     task_id='update_uqer_universe_security_master',
     provide_context=True,
@@ -856,24 +855,8 @@ security_master_task = PythonOperator(
     dag=dag
 )
 
-universe_ashare_task = PythonOperator(
-    task_id='update_uqer_universe_ashare',
-    provide_context=True,
-    python_callable=update_uqer_universe_ashare,
-    dag=dag
-)
-
-universe_ashare_ex_task = PythonOperator(
-    task_id='update_uqer_universe_ashare_ex',
-    provide_context=True,
-    python_callable=update_uqer_universe_ashare_ex,
-    dag=dag
-)
-
-
-universe_ashare_task.set_upstream(security_master_task)
-universe_ashare_ex_task.set_upstream(security_master_task)
-
+universe_task.set_upstream(security_master_task)
+universe_task.set_upstream(index_task)
 
 risk_model_task = PythonOperator(
     task_id='update_uqer_risk_model',
@@ -881,6 +864,8 @@ risk_model_task = PythonOperator(
     python_callable=update_uqer_risk_model,
     dag=dag
 )
+
+universe_task.set_upstream(risk_model_task)
 
 _ = PythonOperator(
     task_id='update_uqer_halt_list',
@@ -890,5 +875,16 @@ _ = PythonOperator(
 )
 
 
+factor_master_task = PythonOperator(
+    task_id='update_factor_master',
+    provide_context=True,
+    python_callable=update_factor_master,
+    dag=dag
+)
+
+
+factor_master_task.set_upstream(uqer_task)
+
+
 if __name__ == '__main__':
-    update_uqer_index_components(ds='2017-11-10')
+    update_universe(ds='2018-05-09')
