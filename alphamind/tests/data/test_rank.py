@@ -29,10 +29,14 @@ class TestRank(unittest.TestCase):
         np.testing.assert_array_less(0, arr_diff)
 
     def test_rank_with_groups(self):
-        data_rank = rank(self.x, groups=self.groups)
+        data = pd.DataFrame(data={'raw': self.x.tolist()}, index=self.groups)
+        data['rank'] = rank(data['raw'], groups=data.index)
+        groups = dict(list(data['rank'].groupby(level=0)))
+        ret = []
+        for index in range(10):
+            ret.append(groups[index].values)
+        ret = np.concatenate(ret).reshape(-1, 1)
 
-        df = pd.DataFrame(self.x, index=self.groups)
-        expected_rank = df.groupby(level=0).apply(lambda x: x.values.argsort(axis=0).argsort(axis=0))
-        print(expected_rank)
-
-
+        expected_rank = data['raw'].groupby(level=0).apply(lambda x: x.values.argsort(axis=0).argsort(axis=0))
+        expected_rank = np.concatenate(expected_rank).reshape(-1, 1)
+        np.testing.assert_array_equal(ret, expected_rank)
