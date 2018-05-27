@@ -10,6 +10,7 @@ cimport numpy as cnp
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 import numpy as np
+from PyFin.api import pyFinAssert
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
@@ -71,7 +72,11 @@ cdef extern from "tvoptimizer.hpp" namespace "pfopt":
                     double*,
                     double*,
                     double,
-                    double) except +
+                    double,
+                    int,
+                    double*,
+                    double*,
+                    double*) except +
         vector[double] xValue()
         double feval()
         int status()
@@ -81,6 +86,7 @@ cdef class CVOptimizer:
     cdef TVOptimizer* cobj
     cdef int n
     cdef int m
+    cdef int f
 
     def __cinit__(self,
                   double[:] expected_return,
@@ -91,20 +97,26 @@ cdef class CVOptimizer:
                   double[:] clbound=None,
                   double[:] cubound=None,
                   double target_low=0.0,
-                  double target_high=1.0):
+                  double target_high=1.0,
+                  cnp.ndarray[double, ndim=2] factor_cov_matrix=None,
+                  cnp.ndarray[double, ndim=2] factor_loading_matrix=None,
+                  double[:] idsync_risk=None):
 
         self.n = lbound.shape[0]
         self.m = 0
-        cdef double[:] cov = cov_matrix.flatten(order='C')
+        self.f = factor_cov_matrix.shape[0] if factor_cov_matrix is not None else 0
+        cdef double[:] cov = cov_matrix.flatten(order='C') if cov_matrix is not None else None
         cdef double[:] cons
+        cdef double[:] factor_cov = factor_cov_matrix.flatten(order='C') if factor_cov_matrix is not None else None
+        cdef double[:] factor_loading = factor_loading_matrix.flatten(order='C') if factor_loading_matrix is not None else None
 
         if cons_matrix is not None:
             self.m = cons_matrix.shape[0]
-            cons = cons_matrix.flatten(order='C');
+            cons = cons_matrix.flatten(order='C')
 
             self.cobj = new TVOptimizer(self.n,
                                         &expected_return[0],
-                                        &cov[0],
+                                        &cov[0] if cov is not None else NULL,
                                         &lbound[0],
                                         &ubound[0],
                                         self.m,
@@ -112,11 +124,15 @@ cdef class CVOptimizer:
                                         &clbound[0],
                                         &cubound[0],
                                         target_low,
-                                        target_high)
+                                        target_high,
+                                        self.f,
+                                        &factor_cov[0] if factor_cov is not None else NULL,
+                                        &factor_loading[0] if factor_loading is not None else NULL,
+                                        &idsync_risk[0] if idsync_risk is not None else NULL)
         else:
             self.cobj = new TVOptimizer(self.n,
                                         &expected_return[0],
-                                        &cov[0],
+                                        &cov[0] if cov is not None else NULL,
                                         &lbound[0],
                                         &ubound[0],
                                         0,
@@ -124,7 +140,11 @@ cdef class CVOptimizer:
                                         NULL,
                                         NULL,
                                         target_low,
-                                        target_high)
+                                        target_high,
+                                        self.f,
+                                        &factor_cov[0] if factor_cov is not None else NULL,
+                                        &factor_loading[0] if factor_loading is not None else NULL,
+                                        &idsync_risk[0] if idsync_risk is not None else NULL)
 
     def __dealloc__(self):
         del self.cobj
@@ -150,7 +170,11 @@ cdef extern from "mvoptimizer.hpp" namespace "pfopt":
                     double*,
                     double*,
                     double*,
-                    double) except +
+                    double,
+                    int,
+                    double*,
+                    double*,
+                    double*) except +
         vector[double] xValue()
         double feval()
         int status()
@@ -171,30 +195,36 @@ cdef extern from "qpalglib.hpp" namespace "pfopt":
 cdef class QPOptimizer:
 
     cdef MVOptimizer* cobj
-    cdef QPAlglib* cobj2
     cdef cnp.ndarray er
     cdef cnp.ndarray cov
     cdef double risk_aversion
     cdef int n
     cdef int m
+    cdef int f
 
     def __cinit__(self,
-                 double[:] expected_return,
-                 cnp.ndarray[double, ndim=2] cov_matrix,
-                 double[:] lbound,
-                 double[:] ubound,
-                 cnp.ndarray[double, ndim=2] cons_matrix=None,
-                 double[:] clbound=None,
-                 double[:] cubound=None,
-                 double risk_aversion=1.0):
+                  double[:] expected_return,
+                  cnp.ndarray[double, ndim=2] cov_matrix,
+                  double[:] lbound,
+                  double[:] ubound,
+                  cnp.ndarray[double, ndim=2] cons_matrix=None,
+                  double[:] clbound=None,
+                  double[:] cubound=None,
+                  double risk_aversion=1.0,
+                  cnp.ndarray[double, ndim=2] factor_cov_matrix=None,
+                  cnp.ndarray[double, ndim=2] factor_loading_matrix=None,
+                  double[:] idsync_risk=None):
 
         self.n = lbound.shape[0]
         self.m = 0
+        self.f = factor_cov_matrix.shape[0] if factor_cov_matrix is not None else 0
         self.er = np.array(expected_return)
         self.cov = np.array(cov_matrix)
         self.risk_aversion = risk_aversion
-        cdef double[:] cov = cov_matrix.flatten(order='C')
+        cdef double[:] cov = cov_matrix.flatten(order='C') if cov_matrix is not None else None
         cdef double[:] cons
+        cdef double[:] factor_cov = factor_cov_matrix.flatten(order='C') if factor_cov_matrix is not None else None
+        cdef double[:] factor_loading = factor_loading_matrix.flatten(order='C') if factor_loading_matrix is not None else None
 
         if cons_matrix is not None:
             self.m = cons_matrix.shape[0]
@@ -202,48 +232,49 @@ cdef class QPOptimizer:
 
             self.cobj = new MVOptimizer(self.n,
                                         &expected_return[0],
-                                        &cov[0],
+                                        &cov[0] if cov is not None else NULL,
                                         &lbound[0],
                                         &ubound[0],
                                         self.m,
                                         &cons[0],
                                         &clbound[0],
                                         &cubound[0],
-                                        risk_aversion)
+                                        risk_aversion,
+                                        self.f,
+                                        &factor_cov[0] if factor_cov is not None else NULL,
+                                        &factor_loading[0] if factor_loading is not None else NULL,
+                                        &idsync_risk[0] if idsync_risk is not None else NULL)
         else:
-            self.cobj2 = new QPAlglib(self.n,
-                                      &expected_return[0],
-                                      &cov[0],
-                                      &lbound[0],
-                                      &ubound[0],
-                                      risk_aversion)
+            # self.cobj2 = new QPAlglib(self.n,
+            #                           &expected_return[0],
+            #                           &cov[0] if cov is not None else NULL,
+            #                           &lbound[0],
+            #                           &ubound[0],
+            #                           risk_aversion)
+
+            self.cobj = new MVOptimizer(self.n,
+                                        &expected_return[0],
+                                        &cov[0] if cov is not None else NULL,
+                                        &lbound[0],
+                                        &ubound[0],
+                                        self.m,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        risk_aversion,
+                                        self.f,
+                                        &factor_cov[0] if factor_cov is not None else NULL,
+                                        &factor_loading[0] if factor_loading is not None else NULL,
+                                        &idsync_risk[0] if idsync_risk is not None else NULL)
 
     def __dealloc__(self):
-        if self.cobj:
-            del self.cobj
-        else:
-            del self.cobj2
+        del self.cobj
 
     def feval(self):
-        if self.cobj:
-            return self.cobj.feval()
-        else:
-            x = np.array(self.cobj2.xValue())
-            return 0.5 * self.risk_aversion * x @ self.cov @ x - self.er @ x
+        return self.cobj.feval()
 
     def x_value(self):
-        if self.cobj:
-            return np.array(self.cobj.xValue())
-        else:
-            return np.array(self.cobj2.xValue())
+        return np.array(self.cobj.xValue())
 
     def status(self):
-        if self.cobj:
-            return self.cobj.status()
-        else:
-            status = self.cobj2.status()
-
-            if 1 <= status <= 4:
-                return 0
-            else:
-                return status
+        return self.cobj.status()
