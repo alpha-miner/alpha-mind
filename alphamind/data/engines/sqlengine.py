@@ -371,7 +371,7 @@ class SqlEngine(object):
         res['chgPct'] = df.chgPct
         res = res.loc[ref_date]
         res.index = list(range(len(res)))
-        return res.drop_duplicates(['trade_date', 'code'])
+        return res
 
     def fetch_factor_range(self,
                            universe: Universe,

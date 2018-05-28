@@ -54,6 +54,36 @@ class TestOptimizers(unittest.TestCase):
                                              [0.1996, 0.3004, 0.5000],
                                              4)
 
+    def test_qpoptimizer_with_factor_model(self):
+        objective = np.array([0.1, 0.2, 0.3])
+        lbound = np.array([0.0, 0.0, 0.0])
+        ubound = np.array([1.0, 1.0, 1.0])
+
+        factor_var = np.array([[0.5, -0.3], [-0.3, 0.7]])
+        factor_load = np.array([[0.8, 0.2], [0.5, 0.5], [0.2, 0.8]])
+        idsync = np.array([0.1, 0.3, 0.2])
+
+        cons = np.array([[1., 1., 1.]])
+        clbound = np.array([1.])
+        cubound = np.array([1.])
+
+        optimizer = QPOptimizer(objective,
+                                None,
+                                lbound,
+                                ubound,
+                                cons,
+                                clbound,
+                                cubound,
+                                1.,
+                                factor_var,
+                                factor_load,
+                                idsync)
+
+        # check against cvxpy result
+        np.testing.assert_array_almost_equal(optimizer.x_value(),
+                                             [0.2866857, 0.21416417, 0.49915014],
+                                             4)
+
     def test_qpoptimizer_with_identity_matrix(self):
         objective = np.array([-0.02, 0.01, 0.03])
         cov = np.diag([1., 1., 1.])
@@ -120,6 +150,38 @@ class TestOptimizers(unittest.TestCase):
         # check against known good result
         np.testing.assert_array_almost_equal(optimizer.x_value(),
                                              [-0.3, -0.10919033, 0.40919033],
+                                             4)
+
+    def test_cvoptimizer_with_factor_model(self):
+        objective = np.array([0.1, 0.2, 0.3])
+        lbound = np.array([0.0, 0.0, 0.0])
+        ubound = np.array([1.0, 1.0, 1.0])
+
+        factor_var = np.array([[0.5, -0.3], [-0.3, 0.7]])
+        factor_load = np.array([[0.8, 0.2], [0.5, 0.5], [0.2, 0.8]])
+        idsync = np.array([0.1, 0.3, 0.2])
+
+        cons = np.array([[1., 1., 1.]])
+        clbound = np.array([1.])
+        cubound = np.array([1.])
+        target_vol = 0.5
+
+        optimizer = CVOptimizer(objective,
+                                None,
+                                lbound,
+                                ubound,
+                                cons,
+                                clbound,
+                                cubound,
+                                0.,
+                                target_vol,
+                                factor_var,
+                                factor_load,
+                                idsync)
+
+        # check against cvxpy result
+        np.testing.assert_array_almost_equal(optimizer.x_value(),
+                                             [0.26595552, 0.21675092, 0.51729356],
                                              4)
 
     def test_cvoptimizer_with_cons_and_ieq(self):

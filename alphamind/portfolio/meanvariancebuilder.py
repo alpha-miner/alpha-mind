@@ -51,7 +51,10 @@ def mean_variance_builder(er: np.ndarray,
                           ubound: Union[np.ndarray, float],
                           risk_exposure: Optional[np.ndarray],
                           risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                          lam: float=1.) -> Tuple[str, float, np.ndarray]:
+                          lam: float=1.,
+                          factor_cov: np.ndarray=None,
+                          factor_loading: np.ndarray=None,
+                          idsync: np.ndarray=None) -> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     optimizer = QPOptimizer(er,
@@ -61,7 +64,10 @@ def mean_variance_builder(er: np.ndarray,
                             cons_mat,
                             clbound,
                             cubound,
-                            lam)
+                            lam,
+                            factor_cov,
+                            factor_loading,
+                            idsync)
 
     return _create_result(optimizer, bm)
 
@@ -74,7 +80,10 @@ def target_vol_builder(er: np.ndarray,
                        risk_exposure: Optional[np.ndarray],
                        risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
                        vol_low: float = 0.,
-                       vol_high: float = 1.)-> Tuple[str, float, np.ndarray]:
+                       vol_high: float = 1.,
+                       factor_cov: np.ndarray = None,
+                       factor_loading: np.ndarray = None,
+                       idsync: np.ndarray = None)-> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     optimizer = CVOptimizer(er,
@@ -85,7 +94,10 @@ def target_vol_builder(er: np.ndarray,
                             clbound,
                             cubound,
                             vol_low,
-                            vol_high)
+                            vol_high,
+                            factor_cov,
+                            factor_loading,
+                            idsync)
 
     return _create_result(optimizer, bm)
 
