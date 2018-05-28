@@ -60,7 +60,7 @@ class BaseUniverse(metaclass=abc.ABCMeta):
 class Universe(BaseUniverse):
 
     def __init__(self, u_name: str):
-        self.u_name = u_name
+        self.u_name = u_name.lower()
 
     def condition(self):
         return getattr(UniverseTable, self.u_name) == 1
