@@ -15,6 +15,7 @@ from alphamind.model.modelbase import ModelBase
 from alphamind.model.data_preparing import fetch_train_phase
 from alphamind.model.data_preparing import fetch_predict_phase
 from alphamind.data.engines.universe import Universe
+from alphamind.data.engines.universe import load_universe
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.rank import rank
@@ -85,7 +86,7 @@ class DataMeta(object):
     @classmethod
     def load(cls, data_desc: dict):
         freq = data_desc['freq']
-        universe = Universe.load(data_desc['universe'])
+        universe =load_universe(data_desc['universe'])
         batch = data_desc['batch']
         neutralized_risk = data_desc['neutralized_risk']
         risk_model = data_desc['risk_model']
