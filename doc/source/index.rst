@@ -10,7 +10,7 @@ alpha - mind
    :maxdepth: 2
    :caption: Contents:
 
-
+   introduction.rst
 
 索引
 ==================
