@@ -11,6 +11,9 @@ from typing import Tuple
 from typing import Optional
 from alphamind.cython.optimizers import QPOptimizer
 from alphamind.cython.optimizers import CVOptimizer
+from alphamind.portfolio.riskmodel import RiskModel
+from alphamind.portfolio.riskmodel import FullRiskModel
+from alphamind.portfolio.riskmodel import FactorRiskModel
 
 
 def _create_bounds(lbound,
@@ -45,59 +48,87 @@ def _create_result(optimizer, bm):
 
 
 def mean_variance_builder(er: np.ndarray,
-                          cov: np.ndarray,
+                          risk_model: RiskModel,
                           bm: np.ndarray,
                           lbound: Union[np.ndarray, float],
                           ubound: Union[np.ndarray, float],
                           risk_exposure: Optional[np.ndarray],
                           risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                          lam: float=1.,
-                          factor_cov: np.ndarray=None,
-                          factor_loading: np.ndarray=None,
-                          idsync: np.ndarray=None) -> Tuple[str, float, np.ndarray]:
+                          lam: float=1.) -> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
-    optimizer = QPOptimizer(er,
-                            cov,
-                            lbound,
-                            ubound,
-                            cons_mat,
-                            clbound,
-                            cubound,
-                            lam,
-                            factor_cov,
-                            factor_loading,
-                            idsync)
+    if isinstance(risk_model, FullRiskModel):
+        cov = risk_model.get_cov()
+        optimizer = QPOptimizer(er,
+                                cov,
+                                lbound,
+                                ubound,
+                                cons_mat,
+                                clbound,
+                                cubound,
+                                lam)
+    elif isinstance(risk_model, FactorRiskModel):
+        cov = None
+        factor_cov = risk_model.get_factor_cov()
+        factor_loading = risk_model.get_risk_exp()
+        idsync = risk_model.get_idsync()
+        optimizer = QPOptimizer(er,
+                                cov,
+                                lbound,
+                                ubound,
+                                cons_mat,
+                                clbound,
+                                cubound,
+                                lam,
+                                factor_cov,
+                                factor_loading,
+                                idsync)
+    else:
+        raise ValueError("{0} is not recognized as valid risk model".format(risk_model))
 
     return _create_result(optimizer, bm)
 
 
 def target_vol_builder(er: np.ndarray,
-                       cov: np.ndarray,
+                       risk_model: RiskModel,
                        bm: np.ndarray,
                        lbound: Union[np.ndarray, float],
                        ubound: Union[np.ndarray, float],
                        risk_exposure: Optional[np.ndarray],
                        risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                       vol_low: float = 0.,
-                       vol_high: float = 1.,
-                       factor_cov: np.ndarray = None,
-                       factor_loading: np.ndarray = None,
-                       idsync: np.ndarray = None)-> Tuple[str, float, np.ndarray]:
+                       vol_target: float = 1.)-> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
-    optimizer = CVOptimizer(er,
-                            cov,
-                            lbound,
-                            ubound,
-                            cons_mat,
-                            clbound,
-                            cubound,
-                            vol_low,
-                            vol_high,
-                            factor_cov,
-                            factor_loading,
-                            idsync)
+    if isinstance(risk_model, FullRiskModel):
+        cov = risk_model.get_cov()
+        optimizer = CVOptimizer(er,
+                                cov,
+                                lbound,
+                                ubound,
+                                cons_mat,
+                                clbound,
+                                cubound,
+                                0.,
+                                vol_target)
+    elif isinstance(risk_model, FactorRiskModel):
+        cov = None
+        factor_cov = risk_model.get_factor_cov()
+        factor_loading = risk_model.get_risk_exp()
+        idsync = risk_model.get_idsync()
+        optimizer = CVOptimizer(er,
+                                cov,
+                                lbound,
+                                ubound,
+                                cons_mat,
+                                clbound,
+                                cubound,
+                                0.,
+                                vol_target,
+                                factor_cov,
+                                factor_loading,
+                                idsync)
+    else:
+        raise ValueError("{0} is not recognized as valid risk model".format(risk_model))
 
     return _create_result(optimizer, bm)
 
