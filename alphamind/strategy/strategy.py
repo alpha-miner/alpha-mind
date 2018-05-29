@@ -87,10 +87,11 @@ class Strategy(object):
                                                             benchmark=self.benchmark)
         alpha_logger.info("benchmark data loading finished ...")
 
-        total_risk_cov, total_risk_exposure = self.engine.fetch_risk_model_range(
+        self.risk_models = self.engine.fetch_risk_model_range(
             self.universe,
             dates=self.dates,
-            risk_model=self.data_meta.risk_model
+            risk_model=self.data_meta.risk_model,
+            model_type='factor'
         )
         alpha_logger.info("risk_model data loading finished ...")
 
@@ -104,7 +105,6 @@ class Strategy(object):
         total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
         total_data.fillna({'weight': 0.}, inplace=True)
         total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
-        total_data = pd.merge(total_data, total_risk_exposure, on=['trade_date', 'code'])
 
         is_in_benchmark = (total_data.weight > 0.).astype(float).values.reshape((-1, 1))
         total_data.loc[:, 'benchmark'] = is_in_benchmark
@@ -115,7 +115,6 @@ class Strategy(object):
                                                                     horizon=self.horizon,
                                                                     offset=1).set_index('trade_date')
         self.total_data = total_data
-        self.total_risk_cov = total_risk_cov
 
     def _create_lu_bounds(self, running_setting, codes, benchmark_w):
 
@@ -178,6 +177,7 @@ class Strategy(object):
             models = dict(results)
 
         for ref_date, this_data in total_data_groups:
+            risk_model = self.risk_models[ref_date]
             new_model = models[ref_date]
             codes = this_data.code.values.tolist()
 
@@ -190,12 +190,6 @@ class Strategy(object):
                 remained_pos.fillna(0., inplace=True)
                 current_position = remained_pos.weight.values
 
-            if running_setting.rebalance_method == 'tv':
-                risk_cov = self.total_risk_cov[self.total_risk_cov.trade_date == ref_date]
-                sec_cov = self._generate_sec_cov(this_data, risk_cov)
-            else:
-                sec_cov = None
-
             benchmark_w = this_data.weight.values
             constraints = LinearConstraints(running_setting.bounds,
                                             this_data,
@@ -203,22 +197,14 @@ class Strategy(object):
 
             lbound, ubound = self._create_lu_bounds(running_setting, codes, benchmark_w)
 
-            features = new_model.features
-            dfs = []
-            for name in features:
-                data_cleaned = this_data.dropna(subset=[name])
-                raw_factors = data_cleaned[[name]].values
-                new_factors = factor_processing(raw_factors,
-                                                pre_process=self.data_meta.pre_process,
-                                                risk_factors=data_cleaned[
-                                                    self.data_meta.neutralized_risk].values.astype(
-                                                    float) if self.data_meta.neutralized_risk else None,
-                                                post_process=self.data_meta.post_process)
-                df = pd.DataFrame(new_factors, columns=[name], index=data_cleaned.code)
-                dfs.append(df)
-
-            new_factors = pd.concat(dfs, axis=1)
-            new_factors = new_factors.loc[codes].fillna(new_factors.median())
+            this_data.fillna(0, inplace=True)
+            new_factors = factor_processing(this_data[new_model.features].values,
+                                            pre_process=self.data_meta.pre_process,
+                                            risk_factors=this_data[
+                                                self.data_meta.neutralized_risk].values.astype(
+                                                float) if self.data_meta.neutralized_risk else None,
+                                            post_process=self.data_meta.post_process)
+            new_factors = pd.DataFrame(new_factors, columns=new_model.features, index=codes)
             er = new_model.predict(new_factors).astype(float)
 
             alpha_logger.info('{0} re-balance: {1} codes'.format(ref_date, len(er)))
@@ -229,7 +215,7 @@ class Strategy(object):
                                              benchmark_w,
                                              lbound,
                                              ubound,
-                                             sec_cov=sec_cov,
+                                             risk_model=risk_model.get_risk_profile(codes),
                                              current_position=current_position)
 
             target_pos['code'] = codes
@@ -260,15 +246,7 @@ class Strategy(object):
 
         return ret_df, positions
 
-    @staticmethod
-    def _generate_sec_cov(current_data, risk_cov):
-        risk_exposure = current_data[all_styles].values
-        risk_cov = risk_cov[all_styles].values
-        special_risk = current_data['srisk'].values
-        sec_cov = risk_exposure @ risk_cov @ risk_exposure.T / 10000 + np.diag(special_risk ** 2) / 10000
-        return sec_cov
-
-    def _calculate_pos(self, running_setting, er, data, constraints, benchmark_w, lbound, ubound, sec_cov,
+    def _calculate_pos(self, running_setting, er, data, constraints, benchmark_w, lbound, ubound, risk_model,
                        current_position):
         more_opts = running_setting.more_opts
         target_pos, _ = er_portfolio_analysis(er,
@@ -282,7 +260,7 @@ class Strategy(object):
                                               ubound=ubound,
                                               current_position=current_position,
                                               target_vol=more_opts.get('target_vol'),
-                                              cov=sec_cov,
+                                              risk_model=risk_model,
                                               turn_over_target=more_opts.get('turn_over_target'))
         return target_pos
 
@@ -291,7 +269,6 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     from dask.distributed import Client
     from PyFin.api import CSQuantiles
-    from PyFin.api import CSMeanAdjusted
     from PyFin.api import LAST
     from alphamind.api import Universe
     from alphamind.api import ConstLinearModel
@@ -308,7 +285,7 @@ if __name__ == '__main__':
     mpl.rcParams['font.sans-serif'] = ['SimHei']
     mpl.rcParams['axes.unicode_minus'] = False
 
-    start_date = '2017-01-01'
+    start_date = '2010-05-01'
     end_date = '2018-05-17'
     freq = '10b'
     neutralized_risk = None
