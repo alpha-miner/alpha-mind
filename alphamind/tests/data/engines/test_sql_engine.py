@@ -424,7 +424,6 @@ class TestSqlEngine(unittest.TestCase):
         df3 = self.engine.fetch_factor(ref_date, raw_factor, codes)
 
         ind_matrix = self.engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
-
         cols = sorted(ind_matrix.columns[2:].tolist())
 
         series = (ind_matrix[cols] * np.array(range(1, len(cols)+1))).sum(axis=1)

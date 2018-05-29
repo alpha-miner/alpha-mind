@@ -25,5 +25,20 @@ class TestUniverse(unittest.TestCase):
         universe = Universe('zz500')
         univ_desc = universe.save()
         loaded_universe = load_universe(univ_desc)
+        self.assertEqual(universe, loaded_universe)
 
+    def test_universe_arithmic(self):
+        universe = Universe('zz500') + Universe('hs300')
+        univ_desc = universe.save()
+        loaded_universe = load_universe(univ_desc)
+        self.assertEqual(universe, loaded_universe)
+
+        universe = Universe('zz500') - Universe('hs300')
+        univ_desc = universe.save()
+        loaded_universe = load_universe(univ_desc)
+        self.assertEqual(universe, loaded_universe)
+
+        universe = Universe('zz500') & Universe('hs300')
+        univ_desc = universe.save()
+        loaded_universe = load_universe(univ_desc)
         self.assertEqual(universe, loaded_universe)
