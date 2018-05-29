@@ -8,7 +8,6 @@ Created on 2017-6-27
 import unittest
 import numpy as np
 import pandas as pd
-from alphamind.portfolio.riskmodel import FullRiskModel
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
 from alphamind.portfolio.meanvariancebuilder import target_vol_builder
 
@@ -31,7 +30,7 @@ class TestMeanVarianceBuild(unittest.TestCase):
                                   [1., 0., 1.]]).T
         risk_target = (np.array([bm.sum(), 0.3]), np.array([bm.sum(), 0.7]))
 
-        model = FullRiskModel(pd.DataFrame(cov))
+        model = dict(cov=cov, factor_cov=None, factor_loading=None, idsync=None)
         status, _, x = mean_variance_builder(er, model, bm, lbound, ubound, risk_exposure, risk_target)
 
         self.assertTrue(status == 'optimal')
@@ -58,7 +57,7 @@ class TestMeanVarianceBuild(unittest.TestCase):
                                   [1., 0., 1.]]).T
         risk_target = (np.array([bm.sum(), 0.3]), np.array([bm.sum(), 0.7]))
 
-        model = FullRiskModel(pd.DataFrame(cov))
+        model = dict(cov=cov, factor_cov=None, factor_loading=None, idsync=None)
         status, _, x = mean_variance_builder(er, model, bm, lbound, ubound, risk_exposure, risk_target, lam=100)
 
         self.assertTrue(status == 'optimal')
@@ -82,7 +81,7 @@ class TestMeanVarianceBuild(unittest.TestCase):
 
         risk_exposure = np.array([[1., 1., 1.]]).T
         risk_target = (np.array([bm.sum()]), np.array([bm.sum()]))
-        model = FullRiskModel(pd.DataFrame(cov))
+        model = dict(cov=cov, factor_cov=None, factor_loading=None, idsync=None)
         status, _, x = target_vol_builder(er, model, bm, lbound, ubound, risk_exposure, risk_target, 0.1)
         self.assertTrue(status == 'optimal')
         self.assertTrue(np.all(x <= ubound + 1.e-6))

@@ -11,7 +11,9 @@ import pandas as pd
 
 
 class RiskModel(metaclass=abc.ABCMeta):
-    pass
+
+    def get_risk_profile(self):
+        pass
 
 
 class FullRiskModel(RiskModel):
@@ -25,6 +27,14 @@ class FullRiskModel(RiskModel):
             return self.sec_cov.loc[codes, codes].values
         else:
             return self.sec_cov.values
+
+    def get_risk_profile(self, codes: List[int]=None):
+        return dict(
+            cov=self.get_cov(codes),
+            factor_cov=None,
+            factor_loading=None,
+            idsync=None
+        )
 
 
 class FactorRiskModel(RiskModel):
@@ -55,3 +65,11 @@ class FactorRiskModel(RiskModel):
             return self.idsync[codes].values
         else:
             return self.idsync.values
+
+    def get_risk_profile(self, codes: List[int]=None):
+        return dict(
+            cov=None,
+            factor_cov=self.get_factor_cov(),
+            factor_loading=self.get_risk_exp(codes),
+            idsync=self.get_idsync(codes)
+        )
