@@ -615,7 +615,7 @@ class SqlEngine(object):
 
     def fetch_industry(self,
                        ref_date: str,
-                       codes: Iterable[int],
+                       codes: Iterable[int] = None,
                        category: str = 'sw',
                        level: int = 1):
 
@@ -623,21 +623,26 @@ class SqlEngine(object):
         code_name = 'industryID' + str(level)
         category_name = 'industryName' + str(level)
 
-        query = select([Industry.code,
-                        getattr(Industry, code_name).label('industry_code'),
-                        getattr(Industry, category_name).label('industry')]).where(
-            and_(
+        cond = and_(
                 Industry.trade_date == ref_date,
                 Industry.code.in_(codes),
                 Industry.industry == industry_category_name
+            ) if codes else and_(
+                Industry.trade_date == ref_date,
+                Industry.industry == industry_category_name
             )
+
+        query = select([Industry.code,
+                        getattr(Industry, code_name).label('industry_code'),
+                        getattr(Industry, category_name).label('industry')]).where(
+            cond
         ).distinct()
 
         return pd.read_sql(query, self.engine).dropna().drop_duplicates(['code'])
 
     def fetch_industry_matrix(self,
                               ref_date: str,
-                              codes: Iterable[int],
+                              codes: Iterable[int] = None,
                               category: str = 'sw',
                               level: int = 1):
         df = self.fetch_industry(ref_date, codes, category, level)
