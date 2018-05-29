@@ -112,7 +112,7 @@ def er_portfolio_analysis(er: np.ndarray,
         weights = long_short_builder(er).flatten()
     elif method == 'mv' or method == 'mean_variance':
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
-        cov = kwargs['cov']
+        risk_model = kwargs['risk_model']
 
         if 'lam' in kwargs:
             lam = kwargs['lam']
@@ -120,7 +120,7 @@ def er_portfolio_analysis(er: np.ndarray,
             lam = 1.
 
         status, _, weights = mean_variance_builder(er,
-                                                   cov=cov,
+                                                   risk_model=risk_model,
                                                    bm=benchmark,
                                                    lbound=lbound,
                                                    ubound=ubound,
@@ -132,7 +132,7 @@ def er_portfolio_analysis(er: np.ndarray,
 
     elif method == 'tv' or method == 'target_vol':
         lbound, ubound, cons_exp, risk_lbound, risk_ubound = create_constraints(benchmark, **kwargs)
-        cov = kwargs['cov']
+        risk_model = kwargs['risk_model']
 
         if 'target_vol' in kwargs:
             target_vol = kwargs['target_vol']
@@ -140,14 +140,13 @@ def er_portfolio_analysis(er: np.ndarray,
             target_vol = 1.
 
         status, _, weights = target_vol_builder(er,
-                                                cov=cov,
+                                                risk_model=risk_model,
                                                 bm=benchmark,
                                                 lbound=lbound,
                                                 ubound=ubound,
                                                 risk_exposure=cons_exp,
                                                 risk_target=(risk_lbound, risk_ubound),
-                                                vol_low=0,
-                                                vol_high=target_vol)
+                                                vol_target=target_vol)
     else:
         raise ValueError("Unknown building type ({0})".format(method))
 
