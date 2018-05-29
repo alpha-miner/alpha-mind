@@ -87,7 +87,7 @@ class Strategy(object):
                                                             benchmark=self.benchmark)
         alpha_logger.info("benchmark data loading finished ...")
 
-        self.risk_models = self.engine.fetch_risk_model_range(
+        self.risk_models, _, total_risk_exp = self.engine.fetch_risk_model_range(
             self.universe,
             dates=self.dates,
             risk_model=self.data_meta.risk_model,
@@ -105,6 +105,7 @@ class Strategy(object):
         total_data = pd.merge(total_data, total_benchmark, on=['trade_date', 'code'], how='left')
         total_data.fillna({'weight': 0.}, inplace=True)
         total_data = pd.merge(total_data, total_returns, on=['trade_date', 'code'])
+        total_data = pd.merge(total_data, total_risk_exp, on=['trade_date', 'code'])
 
         is_in_benchmark = (total_data.weight > 0.).astype(float).values.reshape((-1, 1))
         total_data.loc[:, 'benchmark'] = is_in_benchmark
