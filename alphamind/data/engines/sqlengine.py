@@ -562,12 +562,12 @@ class SqlEngine(object):
             return risk_cov, risk_exp
         elif model_type == 'factor':
             factor_names = risk_cov.Factor.tolist()
-            risk_cov.set_index('Factor', inplace=True)
-            factor_cov = risk_cov.loc[factor_names, factor_names] / 10000.
-            risk_exp.set_index('code', inplace=True)
-            factor_loading = risk_exp.loc[:, factor_names]
-            idsync = risk_exp['srisk'] * risk_exp['srisk'] / 10000
-            return FactorRiskModel(factor_cov, factor_loading, idsync)
+            new_risk_cov.set_index('Factor')
+            factor_cov = new_risk_cov.loc[factor_names, factor_names] / 10000.
+            new_risk_exp = risk_exp.set_index('code')
+            factor_loading = new_risk_exp.loc[:, factor_names]
+            idsync = new_risk_exp['srisk'] * new_risk_exp['srisk'] / 10000
+            return FactorRiskModel(factor_cov, factor_loading, idsync), risk_cov, risk_exp
 
     def fetch_risk_model_range(self,
                                universe: Universe,
@@ -621,11 +621,11 @@ class SqlEngine(object):
         if not model_type:
             return risk_cov, risk_exp
         elif model_type == 'factor':
-            risk_cov.set_index('Factor', inplace=True)
-            risk_exp.set_index('code', inplace=True)
+            new_risk_cov = risk_cov.set_index('Factor')
+            new_risk_exp = risk_exp.set_index('code')
 
-            risk_cov_groups = risk_cov.groupby('trade_date')
-            risk_exp_groups = risk_exp.groupby('trade_date')
+            risk_cov_groups = new_risk_cov.groupby('trade_date')
+            risk_exp_groups = new_risk_exp.groupby('trade_date')
 
             models = dict()
             for ref_date, cov_g in risk_cov_groups:
@@ -635,7 +635,7 @@ class SqlEngine(object):
                 factor_loading = exp_g.loc[:, factor_names]
                 idsync = exp_g['srisk'] * exp_g['srisk'] / 10000
                 models[ref_date] = FactorRiskModel(factor_cov, factor_loading, idsync)
-        return pd.Series(models)
+        return pd.Series(models), risk_cov, risk_exp
 
     def fetch_industry(self,
                        ref_date: str,
