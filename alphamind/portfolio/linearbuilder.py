@@ -18,7 +18,7 @@ def linear_builder(er: np.ndarray,
                    risk_target: Tuple[np.ndarray, np.ndarray],
                    turn_over_target: float = None,
                    current_position: np.ndarray = None,
-                   method: str='simplex') -> Tuple[str, np.ndarray, np.ndarray]:
+                   method: str='ecos') -> Tuple[str, np.ndarray, np.ndarray]:
     er = er.flatten()
     n, m = risk_constraints.shape
 
@@ -46,50 +46,74 @@ def linear_builder(er: np.ndarray,
 
         return status, opt.feval(), opt.x_value()
     else:
-        # we need to expand bounded condition and constraint matrix to handle L1 bound
-        w_l_bound = np.minimum(np.maximum(np.abs(current_position - lbound),
-                                          np.abs(current_position - ubound)),
-                               turn_over_target).reshape((-1, 1))
+        if method in ("simplex", "interior"):
+            # we need to expand bounded condition and constraint matrix to handle L1 bound
+            w_u_bound = np.minimum(np.maximum(np.abs(current_position - lbound),
+                                              np.abs(current_position - ubound)),
+                                   turn_over_target).reshape((-1, 1))
 
-        current_position = current_position.reshape((-1, 1))
+            current_position = current_position.reshape((-1, 1))
 
-        lbound = np.concatenate((lbound, np.zeros(n)), axis=0)
-        ubound = np.concatenate((ubound, w_l_bound.flatten()), axis=0)
+            lbound = np.concatenate((lbound, np.zeros(n)), axis=0)
+            ubound = np.concatenate((ubound, w_u_bound.flatten()), axis=0)
 
-        risk_lbound = np.concatenate((risk_lbound, [[0.]]), axis=0)
-        risk_ubound = np.concatenate((risk_ubound, [[turn_over_target]]), axis=0)
+            risk_lbound = np.concatenate((risk_lbound, [[0.]]), axis=0)
+            risk_ubound = np.concatenate((risk_ubound, [[turn_over_target]]), axis=0)
 
-        risk_constraints = np.concatenate((risk_constraints.T, np.zeros((m, n))), axis=1)
-        er = np.concatenate((er, np.zeros(n)), axis=0)
+            risk_constraints = np.concatenate((risk_constraints.T, np.zeros((m, n))), axis=1)
+            er = np.concatenate((er, np.zeros(n)), axis=0)
 
-        turn_over_row = np.zeros(2 * n)
-        turn_over_row[n:] = 1.
-        risk_constraints = np.concatenate((risk_constraints, [turn_over_row]), axis=0)
+            turn_over_row = np.zeros(2 * n)
+            turn_over_row[n:] = 1.
+            risk_constraints = np.concatenate((risk_constraints, [turn_over_row]), axis=0)
 
-        turn_over_matrix = np.zeros((2 * n, 2 * n))
-        for i in range(n):
-            turn_over_matrix[i, i] = 1.
-            turn_over_matrix[i, i + n] = -1.
-            turn_over_matrix[i + n, i] = 1.
-            turn_over_matrix[i + n, i + n] = 1.
+            turn_over_matrix = np.zeros((2 * n, 2 * n))
+            for i in range(n):
+                turn_over_matrix[i, i] = 1.
+                turn_over_matrix[i, i + n] = -1.
+                turn_over_matrix[i + n, i] = 1.
+                turn_over_matrix[i + n, i + n] = 1.
 
-        risk_constraints = np.concatenate((risk_constraints, turn_over_matrix), axis=0)
+            risk_constraints = np.concatenate((risk_constraints, turn_over_matrix), axis=0)
 
-        risk_lbound = np.concatenate((risk_lbound, current_position), axis=0)
-        risk_lbound = np.concatenate((risk_lbound, current_position), axis=0)
+            risk_lbound = np.concatenate((risk_lbound, -np.inf * np.ones((n, 1))), axis=0)
+            risk_lbound = np.concatenate((risk_lbound, current_position), axis=0)
 
-        risk_ubound = np.concatenate((risk_ubound, current_position), axis=0)
-        risk_ubound = np.concatenate((risk_ubound, 2. * w_l_bound), axis=0)
+            risk_ubound = np.concatenate((risk_ubound, current_position), axis=0)
+            risk_ubound = np.concatenate((risk_ubound, np.inf * np.ones((n, 1))), axis=0)
 
-        cons_matrix = np.concatenate((risk_constraints, risk_lbound, risk_ubound), axis=1)
-        opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
+            cons_matrix = np.concatenate((risk_constraints, risk_lbound, risk_ubound), axis=1)
+            opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
 
-        status = opt.status()
+            status = opt.status()
 
-        if status == 0:
-            status = 'optimal'
+            if status == 0:
+                status = 'optimal'
 
-        return status, opt.feval(), opt.x_value()[:n]
+            return status, opt.feval(), opt.x_value()[:n]
+        elif method.lower() == 'ecos':
+            from cvxpy import Problem
+            from cvxpy import Variable
+            from cvxpy import multiply
+            from cvxpy import pnorm
+            from cvxpy import Minimize
+
+            w = Variable(n)
+            current_risk_exposure = risk_constraints.T @ w
+
+            constraints = [w >= lbound,
+                           w <= ubound,
+                           current_risk_exposure >= risk_lbound.flatten(),
+                           current_risk_exposure <= risk_ubound.flatten(),
+                           pnorm(w - current_position, 1) <= turn_over_target]
+
+            objective = Minimize(-w.T * er)
+            prob = Problem(objective, constraints)
+            prob.solve(solver='ECOS')
+
+            return prob.status, prob.value, w.value.flatten()
+        else:
+            raise ValueError("{0} is not recognized".format(method))
 
 
 if __name__ == '__main__':
@@ -111,7 +135,8 @@ if __name__ == '__main__':
                                               cons,
                                               (risk_lbound, risk_ubound),
                                               turn_over_target,
-                                              current_pos)
+                                              current_pos,
+                                              method='ecos')
 
     print(status)
     print(fvalue)

@@ -110,6 +110,36 @@ class TestLinearBuild(unittest.TestCase):
         calc_risk = (w - bm) @ self.risk_exp / np.abs(bm @ self.risk_exp)
         self.assertTrue(np.all(np.abs(calc_risk) <= 1.0001e-2))
 
+    def test_linear_build_with_to_constraint_with_ecos(self):
+        bm = self.bm / self.bm.sum()
+        eplson = 1e-6
+        turn_over_target = 0.1
+
+        risk_lbound = bm @ self.risk_exp
+        risk_ubound = bm @ self.risk_exp
+
+        risk_tolerance = 0.01 * np.abs(risk_lbound[:-1])
+
+        risk_lbound[:-1] = risk_lbound[:-1] - risk_tolerance
+        risk_ubound[:-1] = risk_ubound[:-1] + risk_tolerance
+
+        status, _, w = linear_builder(self.er,
+                                      0.,
+                                      0.01,
+                                      self.risk_exp,
+                                      risk_target=(risk_lbound, risk_ubound),
+                                      turn_over_target=turn_over_target,
+                                      current_position=self.current_pos,
+                                      method='ecos')
+        self.assertEqual(status, 'optimal')
+        self.assertAlmostEqual(np.sum(w), 1.)
+        self.assertTrue(np.all(w <= 0.01 + eplson))
+        self.assertTrue(np.all(w >= -eplson))
+        self.assertAlmostEqual(np.abs(w - self.current_pos).sum(), turn_over_target)
+
+        calc_risk = (w - bm) @ self.risk_exp / np.abs(bm @ self.risk_exp)
+        self.assertTrue(np.all(np.abs(calc_risk) <= 1.0001e-2))
+
 
 if __name__ == '__main__':
     unittest.main()
