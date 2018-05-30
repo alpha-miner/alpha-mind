@@ -35,6 +35,7 @@ if __name__ == '__main__':
     from alphamind.tests.portfolio.test_percentbuild import TestPercentBuild
     from alphamind.tests.portfolio.test_linearbuild import TestLinearBuild
     from alphamind.tests.portfolio.test_meanvariancebuild import TestMeanVarianceBuild
+    from alphamind.tests.portfolio.test_riskmodel import TestRiskModel
     from alphamind.tests.settlement.test_simplesettle import TestSimpleSettle
     from alphamind.tests.analysis.test_riskanalysis import TestRiskAnalysis
     from alphamind.tests.analysis.test_perfanalysis import TestPerformanceAnalysis
@@ -64,6 +65,7 @@ if __name__ == '__main__':
                          TestPercentBuild,
                          TestLinearBuild,
                          TestMeanVarianceBuild,
+                         TestRiskModel,
                          TestSimpleSettle,
                          TestRiskAnalysis,
                          TestPerformanceAnalysis,

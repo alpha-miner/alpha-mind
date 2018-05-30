@@ -44,6 +44,7 @@ from alphamind.data.engines.utilities import _map_risk_model_table
 from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.engines.utilities import industry_list
 from alphamind.data.processing import factor_processing
+from alphamind.portfolio.riskmodel import FactorRiskModel
 from PyFin.api import advanceDateByCalendar
 
 
@@ -525,7 +526,8 @@ class SqlEngine(object):
                          ref_date: str,
                          codes: Iterable[int],
                          risk_model: str = 'short',
-                         excluded: Iterable[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                         excluded: Iterable[str] = None,
+                         model_type: str = None) -> Union[FactorRiskModel, Tuple[pd.DataFrame, pd.DataFrame]]:
         risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
 
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
@@ -552,11 +554,20 @@ class SqlEngine(object):
             .select_from(big_table).where(
             and_(RiskExposure.trade_date == ref_date,
                  RiskExposure.code.in_(codes)
-                 )).distinct()
+                 ))
 
         risk_exp = pd.read_sql(query, self.engine).dropna()
 
-        return risk_cov, risk_exp.drop_duplicates(['code'])
+        if not model_type:
+            return risk_cov, risk_exp
+        elif model_type == 'factor':
+            factor_names = risk_cov.Factor.tolist()
+            new_risk_cov.set_index('Factor')
+            factor_cov = new_risk_cov.loc[factor_names, factor_names] / 10000.
+            new_risk_exp = risk_exp.set_index('code')
+            factor_loading = new_risk_exp.loc[:, factor_names]
+            idsync = new_risk_exp['srisk'] * new_risk_exp['srisk'] / 10000
+            return FactorRiskModel(factor_cov, factor_loading, idsync), risk_cov, risk_exp
 
     def fetch_risk_model_range(self,
                                universe: Universe,
@@ -564,12 +575,11 @@ class SqlEngine(object):
                                end_date: str = None,
                                dates: Iterable[str] = None,
                                risk_model: str = 'short',
-                               excluded: Iterable[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                               excluded: Iterable[str] = None,
+                               model_type: str = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
         risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
-
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
-
         cond = risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(start_date,
                                                                                                     end_date)
         query = select([risk_cov_table.trade_date,
@@ -578,16 +588,13 @@ class SqlEngine(object):
                        + cov_risk_cols).where(
             cond
         )
-
         risk_cov = pd.read_sql(query, self.engine).sort_values(['trade_date', 'FactorID'])
 
         if not excluded:
             excluded = []
 
         risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
-
         cond = universe._query_statements(start_date, end_date, dates)
-
         big_table = join(RiskExposure, UniverseTable,
                          and_(
                              RiskExposure.trade_date == UniverseTable.trade_date,
@@ -611,7 +618,24 @@ class SqlEngine(object):
 
         risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).dropna()
 
-        return risk_cov, risk_exp
+        if not model_type:
+            return risk_cov, risk_exp
+        elif model_type == 'factor':
+            new_risk_cov = risk_cov.set_index('Factor')
+            new_risk_exp = risk_exp.set_index('code')
+
+            risk_cov_groups = new_risk_cov.groupby('trade_date')
+            risk_exp_groups = new_risk_exp.groupby('trade_date')
+
+            models = dict()
+            for ref_date, cov_g in risk_cov_groups:
+                exp_g = risk_exp_groups.get_group(ref_date)
+                factor_names = cov_g.index.tolist()
+                factor_cov = cov_g.loc[factor_names, factor_names] / 10000.
+                factor_loading = exp_g.loc[:, factor_names]
+                idsync = exp_g['srisk'] * exp_g['srisk'] / 10000
+                models[ref_date] = FactorRiskModel(factor_cov, factor_loading, idsync)
+        return pd.Series(models), risk_cov, risk_exp
 
     def fetch_industry(self,
                        ref_date: str,
@@ -1023,11 +1047,9 @@ if __name__ == '__main__':
     from PyFin.api import *
     engine = SqlEngine()
     ref_date = '2017-05-03'
-    universe = Universe('custon', ['zz800'])
+    universe = Universe('zz800')
+    dates = bizDatesList('china.sse', '2018-05-01', '2018-05-10')
+    dates = [d.strftime('%Y-%m-%d') for d in dates]
 
-    codes = engine.fetch_codes(ref_date, universe)
-    # df = engine.fetch_trade_status(ref_date, codes, offset=1)
-
-    dates = ['2017-05-02', '2017-05-03', '2017-05-04']
-    df = engine.fetch_trade_status_range(universe, dates=dates, offset=1)
-    print(df)
+    res = engine.fetch_risk_model_range(universe, dates=dates, model_type='factor')
+    print(res)

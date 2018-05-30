@@ -9,6 +9,7 @@ import numpy as np
 from typing import Union
 from typing import Tuple
 from typing import Optional
+from typing import Dict
 from alphamind.cython.optimizers import QPOptimizer
 from alphamind.cython.optimizers import CVOptimizer
 
@@ -45,59 +46,52 @@ def _create_result(optimizer, bm):
 
 
 def mean_variance_builder(er: np.ndarray,
-                          cov: np.ndarray,
+                          risk_model: Dict[str, Union[None, np.ndarray]],
                           bm: np.ndarray,
                           lbound: Union[np.ndarray, float],
                           ubound: Union[np.ndarray, float],
                           risk_exposure: Optional[np.ndarray],
                           risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                          lam: float=1.,
-                          factor_cov: np.ndarray=None,
-                          factor_loading: np.ndarray=None,
-                          idsync: np.ndarray=None) -> Tuple[str, float, np.ndarray]:
+                          lam: float=1.) -> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     optimizer = QPOptimizer(er,
-                            cov,
+                            risk_model['cov'],
                             lbound,
                             ubound,
                             cons_mat,
                             clbound,
                             cubound,
                             lam,
-                            factor_cov,
-                            factor_loading,
-                            idsync)
+                            risk_model['factor_cov'],
+                            risk_model['factor_loading'],
+                            risk_model['idsync'])
 
     return _create_result(optimizer, bm)
 
 
 def target_vol_builder(er: np.ndarray,
-                       cov: np.ndarray,
+                       risk_model: Dict[str, Union[None, np.ndarray]],
                        bm: np.ndarray,
                        lbound: Union[np.ndarray, float],
                        ubound: Union[np.ndarray, float],
                        risk_exposure: Optional[np.ndarray],
                        risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                       vol_low: float = 0.,
-                       vol_high: float = 1.,
-                       factor_cov: np.ndarray = None,
-                       factor_loading: np.ndarray = None,
-                       idsync: np.ndarray = None)-> Tuple[str, float, np.ndarray]:
+                       vol_target: float = 1.)-> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     optimizer = CVOptimizer(er,
-                            cov,
+                            risk_model['cov'],
                             lbound,
                             ubound,
                             cons_mat,
                             clbound,
                             cubound,
-                            vol_low,
-                            vol_high,
-                            factor_cov,
-                            factor_loading,
-                            idsync)
+                            0.,
+                            vol_target,
+                            risk_model['factor_cov'],
+                            risk_model['factor_loading'],
+                            risk_model['idsync'])
 
     return _create_result(optimizer, bm)
 
