@@ -46,11 +46,15 @@ def linear_builder(er: np.ndarray,
 
         return status, opt.feval(), opt.x_value()
     else:
+        # we need to expand bounded condition and constraint matrix to handle L1 bound
+        w_l_bound = np.minimum(np.maximum(np.abs(current_position - lbound),
+                                          np.abs(current_position - ubound)),
+                               turn_over_target).reshape((-1, 1))
+
         current_position = current_position.reshape((-1, 1))
 
-        # we need to expand bounded condition and constraint matrix to handle L1 bound
         lbound = np.concatenate((lbound, np.zeros(n)), axis=0)
-        ubound = np.concatenate((ubound, np.inf * np.ones(n)), axis=0)
+        ubound = np.concatenate((ubound, w_l_bound.flatten()), axis=0)
 
         risk_lbound = np.concatenate((risk_lbound, [[0.]]), axis=0)
         risk_ubound = np.concatenate((risk_ubound, [[turn_over_target]]), axis=0)
@@ -71,11 +75,11 @@ def linear_builder(er: np.ndarray,
 
         risk_constraints = np.concatenate((risk_constraints, turn_over_matrix), axis=0)
 
-        risk_lbound = np.concatenate((risk_lbound, -np.inf * np.ones((n, 1))), axis=0)
+        risk_lbound = np.concatenate((risk_lbound, current_position), axis=0)
         risk_lbound = np.concatenate((risk_lbound, current_position), axis=0)
 
         risk_ubound = np.concatenate((risk_ubound, current_position), axis=0)
-        risk_ubound = np.concatenate((risk_ubound, np.inf * np.ones((n, 1))), axis=0)
+        risk_ubound = np.concatenate((risk_ubound, 2. * w_l_bound), axis=0)
 
         cons_matrix = np.concatenate((risk_constraints, risk_lbound, risk_ubound), axis=1)
         opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
