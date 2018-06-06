@@ -202,7 +202,8 @@ class SqlEngine(object):
                         offset: int = 0,
                         neutralized_risks: list = None,
                         pre_process=None,
-                        post_process=None) -> pd.DataFrame:
+                        post_process=None,
+                        benchmark: int=None) -> pd.DataFrame:
         start_date = ref_date
 
         if not expiry_date:
@@ -223,6 +224,18 @@ class SqlEngine(object):
         df = pd.read_sql(query, self.session.bind).dropna()
         df = df[df.trade_date == ref_date]
 
+        if benchmark:
+            stats = self._create_stats(IndexMarket, horizon, offset, code_attr='indexCode')
+            query = select([IndexMarket.trade_date, stats]).where(
+                and_(
+                    IndexMarket.trade_date.between(start_date, end_date),
+                    IndexMarket.indexCode == benchmark
+                )
+            )
+            df2 = pd.read_sql(query, self.session.bind).dropna()
+            ind_ret = df2[df2.trade_date == ref_date]['dx'].values[0]
+            df['dx'] = df['dx'] - ind_ret
+
         if neutralized_risks:
             _, risk_exp = self.fetch_risk_model(ref_date, codes)
             df = pd.merge(df, risk_exp, on='code').dropna()
@@ -231,7 +244,7 @@ class SqlEngine(object):
                                            risk_factors=df[neutralized_risks].values,
                                            post_process=post_process)
 
-        return df[['code', 'dx']].drop_duplicates(['code'])
+        return df[['code', 'dx']]
 
     def fetch_dx_return_range(self,
                               universe,
@@ -239,7 +252,8 @@ class SqlEngine(object):
                               end_date: str = None,
                               dates: Iterable[str] = None,
                               horizon: int = 0,
-                              offset: int = 0) -> pd.DataFrame:
+                              offset: int = 0,
+                              benchmark: int=None) -> pd.DataFrame:
 
         if dates:
             start_date = dates[0]
@@ -266,8 +280,20 @@ class SqlEngine(object):
                  cond)
         )
 
-        df = pd.read_sql(query, self.session.bind).dropna()
-        return df.sort_values(['trade_date', 'code'])
+        df = pd.read_sql(query, self.session.bind).dropna().set_index('trade_date')
+
+        if benchmark:
+            stats = self._create_stats(IndexMarket, horizon, offset, code_attr='indexCode')
+            query = select([IndexMarket.trade_date, stats]).where(
+                and_(
+                    IndexMarket.trade_date.between(start_date, end_date),
+                    IndexMarket.indexCode == benchmark
+                )
+            )
+            df2 = pd.read_sql(query, self.session.bind).dropna().set_index('trade_date')
+            df['dx'] = df['dx'].values - df2.loc[df.index]['dx'].values
+
+        return df.reset_index().sort_values(['trade_date', 'code'])
 
     def fetch_dx_return_index(self,
                               ref_date: str,
@@ -1049,7 +1075,7 @@ if __name__ == '__main__':
     ref_date = '2017-05-03'
     universe = Universe('zz800')
     dates = bizDatesList('china.sse', '2018-05-01', '2018-05-10')
-    dates = [d.strftime('%Y-%m-%d') for d in dates]
+    codes = engine.fetch_codes(ref_date, universe)
 
-    res = engine.fetch_risk_model_range(universe, dates=dates, model_type='factor')
+    res = engine.fetch_dx_return_range(universe, dates=dates, horizon=4, benchmark=300)
     print(res)
