@@ -109,7 +109,7 @@ def linear_builder(er: np.ndarray,
 
             objective = Minimize(-w.T * er)
             prob = Problem(objective, constraints)
-            prob.solve(solver='ECOS')
+            prob.solve(solver='ECOS', feastol=1e-10, abstol=1e-10, reltol=1e-10)
 
             return prob.status, prob.value, w.value.flatten()
         else:
