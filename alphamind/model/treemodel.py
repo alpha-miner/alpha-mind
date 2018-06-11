@@ -113,7 +113,7 @@ class XGBRegressor(ModelBase):
     def load(cls, model_desc: dict):
         obj_layout = super().load(model_desc)
 
-        if LooseVersion(sklearn_version) < LooseVersion(model_desc['xgbboot_version']):
+        if LooseVersion(xgbboot_version) < LooseVersion(model_desc['xgbboot_version']):
             alpha_logger.warning('Current xgboost version {0} is lower than the model version {1}. '
                                  'Loaded model may work incorrectly.'.format(xgbboot_version,
                                                                              model_desc['xgbboot_version']))
@@ -150,7 +150,7 @@ class XGBClassifier(ModelBase):
     def load(cls, model_desc: dict):
         obj_layout = super().load(model_desc)
 
-        if LooseVersion(sklearn_version) < LooseVersion(model_desc['xgbboot_version']):
+        if LooseVersion(xgbboot_version) < LooseVersion(model_desc['xgbboot_version']):
             alpha_logger.warning('Current xgboost version {0} is lower than the model version {1}. '
                                  'Loaded model may work incorrectly.'.format(xgbboot_version,
                                                                              model_desc['xgbboot_version']))
@@ -235,7 +235,7 @@ class XGBTrainer(ModelBase):
     def load(cls, model_desc: dict):
         obj_layout = super().load(model_desc)
 
-        if LooseVersion(sklearn_version) < LooseVersion(model_desc['xgbboot_version']):
+        if LooseVersion(xgbboot_version) < LooseVersion(model_desc['xgbboot_version']):
             alpha_logger.warning('Current xgboost version {0} is lower than the model version {1}. '
                                  'Loaded model may work incorrectly.'.format(xgbboot_version,
                                                                              model_desc['xgbboot_version']))
