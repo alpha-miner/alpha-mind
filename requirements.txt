@@ -1,6 +1,8 @@
 arrow >= 0.10.0
 cython >= 0.25.2
+cvxpy >= 1.0.3
 deprecated >= 1.1.0
+ecos >= 2.0.4
 numpy >= 1.12.1
 pandas >= 0.19.2
 scikit-learn >= 0.18.1

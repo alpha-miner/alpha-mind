@@ -23,6 +23,7 @@ cd ../..
 cd alphamind/pfopt
 
 export BUILD_TEST=OFF
+export REDIRECT=$1
 ./build_linux.sh
 
 if [ $? -ne 0 ] ; then
