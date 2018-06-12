@@ -12,6 +12,7 @@ from typing import Optional
 from typing import Dict
 from alphamind.cython.optimizers import QPOptimizer
 from alphamind.cython.optimizers import CVOptimizer
+from alphamind.exceptions.exceptions import PortfolioBuilderException
 
 
 def _create_bounds(lbound,
@@ -38,11 +39,9 @@ def _create_bounds(lbound,
 
 def _create_result(optimizer, bm):
     if optimizer.status() == 0 or optimizer.status() == 1:
-        status = 'optimal'
+        return 'optimal', optimizer.feval(), optimizer.x_value() + bm
     else:
-        status = optimizer.status()
-
-    return status, optimizer.feval(), optimizer.x_value() + bm
+        raise PortfolioBuilderException(optimizer.status())
 
 
 def mean_variance_builder(er: np.ndarray,
