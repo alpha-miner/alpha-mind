@@ -70,6 +70,9 @@ class Strategy(object):
         self.horizon = map_freq(freq)
         self.engine = SqlEngine(self.data_meta.data_source)
         self.dask_client = dask_client
+        self.total_data = None
+        self.index_return = None
+        self.risk_models = None
 
     def prepare_backtest_data(self):
         total_factors = self.engine.fetch_factor_range(self.universe,
