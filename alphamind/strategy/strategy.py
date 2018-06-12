@@ -120,7 +120,8 @@ class Strategy(object):
                                                                     offset=1).set_index('trade_date')
         self.total_data = total_data
 
-    def _create_lu_bounds(self, running_setting, codes, benchmark_w):
+    @staticmethod
+    def _create_lu_bounds(running_setting, codes, benchmark_w):
 
         codes = np.array(codes)
 
