@@ -39,34 +39,27 @@ def projection(x: np.ndarray, groups: np.ndarray=None, axis=1) -> np.ndarray:
 class Standardizer(object):
 
     def __init__(self, ddof: int=1):
-        self.ddof_ = ddof
-        self.mean_ = None
-        self.std_ = None
+        self.ddof = ddof
+        self.mean = None
+        self.std = None
+        self.labels = None
 
-    def fit(self, x: np.ndarray):
-        self.mean_ = simple_mean(x, axis=0)
-        self.std_ = simple_std(x, axis=0, ddof=self.ddof_)
+    def fit(self, x: np.ndarray, groups: np.ndarray=None):
+        if groups is not None:
+            group_index = group_mapping(groups)
+            self.mean = aggregate(group_index, x, 'mean')
+            self.std = aggregate(group_index, x, 'std', self.ddof)
+            self.labels = np.unique(groups)
+        else:
+            self.mean = simple_mean(x, axis=0)
+            self.std = simple_std(x, axis=0, ddof=self.ddof)
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.mean_) / np.maximum(self.std_, 1e-8)
+    def transform(self, x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+        if groups is not None:
+            index = array_index(self.labels, groups)
+            return (x - self.mean[index]) / np.maximum(self.std[index], 1e-8)
+        else:
+            return (x - self.mean) / np.maximum(self.std, 1e-8)
 
-
-class GroupedStandardizer(object):
-
-    def __init__(self, ddof: int=1):
-        self.labels_ = None
-        self.mean_ = None
-        self.std_ = None
-        self.ddof_ = ddof
-
-    def fit(self, x: np.ndarray):
-        raw_groups = x[:, 0].astype(int)
-        groups = group_mapping(raw_groups)
-        self.mean_ = aggregate(groups, x[:, 1:], 'mean')
-        self.std_ = aggregate(groups, x[:, 1:], 'std', self.ddof_)
-        self.labels_ = np.unique(raw_groups)
-
-    def transform(self, x: np.ndarray) -> np.ndarray:
-        groups = x[:, 0].astype(int)
-        index = array_index(self.labels_, groups)
-        return (x[:, 1:] - self.mean_[index]) / np.maximum(self.std_[index], 1e-8)
+    def __call__(self, x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+        return standardize(x, groups, self.ddof)
