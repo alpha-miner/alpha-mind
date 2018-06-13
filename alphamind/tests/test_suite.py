@@ -7,7 +7,7 @@ Created on 2017-4-25
 
 import os
 
-SKIP_ENGINE_TESTS = False
+SKIP_ENGINE_TESTS = True
 
 if not SKIP_ENGINE_TESTS:
     DATA_ENGINE_URI = os.environ['DB_URI']
