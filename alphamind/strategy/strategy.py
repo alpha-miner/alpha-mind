@@ -271,6 +271,7 @@ class Strategy(object):
 
 
 if __name__ == '__main__':
+    import os
     from matplotlib import pyplot as plt
     from dask.distributed import Client
     from PyFin.api import CSQuantiles
@@ -290,82 +291,133 @@ if __name__ == '__main__':
     mpl.rcParams['font.sans-serif'] = ['SimHei']
     mpl.rcParams['axes.unicode_minus'] = False
 
-    start_date = '2010-05-01'
-    end_date = '2018-05-17'
-    freq = '10b'
-    neutralized_risk = None
-    universe = Universe('zz800')
-    dask_client = Client('10.63.6.176:8786')
+    # Back test parameter settings
+    start_date = '2016-01-01'
+    end_date = '2018-06-11'
 
+    freq = '10b'
+    industry_name = 'sw_adj'
+    industry_level = 1
+    turn_over_target = 0.4
+    batch = 1
+    horizon = map_freq(freq)
+    weights_bandwidth = 0.02
+    universe = Universe('zz800')
+    data_source = os.environ['DB_URI']
+    benchmark_code = 300
+    method = 'risk_neutral'
+
+    # Model settings
     alpha_factors = {
-        'f1': CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'), groups='sw1_adj'),
-        'f2': CSQuantiles('con_pe', groups='sw1_adj')
+        'ep_q_cs': CSQuantiles(LAST('ep_q'), groups='sw1_adj'),
+        'roe_q_cs': CSQuantiles(LAST('roe_q'), groups='sw1_adj'),
+        'SGRO_cs': CSQuantiles(LAST('SGRO'), groups='sw1_adj'),
+        'GREV_cs': CSQuantiles(LAST('GREV'), groups='sw1_adj'),
+        'con_peg_rolling_cs': CSQuantiles(LAST('con_peg_rolling'), groups='sw1_adj'),
+        'con_pe_rolling_order_cs': CSQuantiles(LAST('con_pe_rolling_order'), groups='sw1_adj'),
+        'IVR_cs': CSQuantiles(LAST('IVR'), groups='sw1_adj'),
+        'ILLIQUIDITY_cs': CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'), groups='sw1_adj'),
+        'DividendPaidRatio_cs': CSQuantiles(LAST('DividendPaidRatio'), groups='sw1_adj'),
     }
 
-    weights = {'f1': 1., 'f2': 0.}
-
-    # alpha_model = XGBTrainer(objective='reg:linear',
-    #                          booster='gbtree',
-    #                          n_estimators=300,
-    #                          eval_sample=0.25,
-    #                          features=alpha_factors)
+    weights = dict(ep_q_cs=1.,
+                   roe_q_cs=1.,
+                   SGRO_cs=0.0,
+                   GREV_cs=0.0,
+                   con_peg_rolling_cs=-0.25,
+                   con_pe_rolling_order_cs=-0.25,
+                   IVR_cs=0.5,
+                   ILLIQUIDITY_cs=0.5,
+                   DividendPaidRatio_cs=0.5)
 
     alpha_model = ConstLinearModel(features=alpha_factors, weights=weights)
 
     data_meta = DataMeta(freq=freq,
                          universe=universe,
                          batch=1,
-                         neutralized_risk=neutralized_risk,
+                         neutralized_risk=None,
                          pre_process=None,
                          post_process=None,
-                         warm_start=1)
+                         data_source=data_source)
 
-    industries = industry_list('sw_adj', 1)
+    # Constraintes settings
 
-    total_risk_names = ['total', 'benchmark'] + industries
+    industry_names = industry_list(industry_name, industry_level)
+    constraint_risk = ['SIZE', 'BETA']
+    total_risk_names = constraint_risk + ['benchmark', 'total']
+    all_styles = risk_styles + industry_names + macro_styles
 
     b_type = []
     l_val = []
     u_val = []
 
+    previous_pos = pd.DataFrame()
+    rets = []
+    turn_overs = []
+    leverags = []
+
     for name in total_risk_names:
-        if name == 'total':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(.0)
-            u_val.append(.0)
-        elif name == 'benchmark':
+        if name == 'benchmark':
             b_type.append(BoundaryType.RELATIVE)
             l_val.append(0.8)
             u_val.append(1.0)
+        elif name == 'total':
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(.0)
+            u_val.append(.0)
+        elif name == 'EARNYILD':
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(0.00)
+            u_val.append(0.60)
+        elif name == 'GROWTH':
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(-0.05)
+            u_val.append(0.05)
+        elif name == 'MOMENTUM':
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(0.20)
+            u_val.append(0.20)
+        elif name == 'SIZE':
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(-0.05)
+            u_val.append(0.05)
+        elif name == 'LIQUIDTY':
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(-0.40)
+            u_val.append(-0.0)
+        elif benchmark_code == 905 and name not in ["计算机", "医药生物", "国防军工", "信息服务", "机械设备"] and name in industry_names:
+            b_type.append(BoundaryType.RELATIVE)
+            l_val.append(0.8)
+            u_val.append(1.0)
+        elif benchmark_code == 300 and name in ["银行", "保险", "证券", "多元金融"]:
+            b_type.append(BoundaryType.RELATIVE)
+            l_val.append(0.70)
+            u_val.append(0.90)
+        elif name in ["计算机", "医药生物", "国防军工", "信息服务", "机械设备"]:
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(0.0)
+            u_val.append(0.05)
         else:
-            b_type.append(BoundaryType.MAXABSREL)
-            l_val.append((0.00, 0.0))
-            u_val.append((0.00, 0.0))
+            b_type.append(BoundaryType.ABSOLUTE)
+            l_val.append(-0.002)
+            u_val.append(0.002)
 
     bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
 
-    running_setting = RunningSetting(lbound=None,
-                                     ubound=None,
-                                     weights_bandwidth=0.01,
-                                     rebalance_method='risk_neutral',
+    # Running settings
+    running_setting = RunningSetting(weights_bandwidth=weights_bandwidth,
+                                     rebalance_method=method,
                                      bounds=bounds,
-                                     target_vol=0.05,
-                                     turn_over_target=0.4)
+                                     turn_over_target=turn_over_target)
 
+    # Strategy
     strategy = Strategy(alpha_model,
                         data_meta,
                         universe=universe,
                         start_date=start_date,
                         end_date=end_date,
                         freq=freq,
-                        benchmark=906,
-                        dask_client=dask_client)
+                        benchmark=benchmark_code)
+
     strategy.prepare_backtest_data()
-
-    ret_df, positions = strategy.run(running_setting)
-    ret_df.rename(columns={'excess_return': '超额收益', 'turn_over': '换手率'}, inplace=True)
-    ret_df[['超额收益', '换手率']].cumsum().plot(secondary_y='换手率')
-    plt.title("原始ILLIQUIDITY因子")
-    plt.show()
-
-    positions.to_csv('d:/positions.csv', encoding='gbk')
+    ret_df, positions = strategy.run(running_setting=running_setting)
