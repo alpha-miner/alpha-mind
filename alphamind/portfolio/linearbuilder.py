@@ -8,6 +8,7 @@ Created on 2017-5-5
 import numpy as np
 from typing import Tuple
 from typing import Union
+from alphamind.exceptions.exceptions import PortfolioBuilderException
 from alphamind.cython.optimizers import LPOptimizer
 
 
@@ -37,14 +38,12 @@ def linear_builder(er: np.ndarray,
 
     if not turn_over_target or current_position is None:
         cons_matrix = np.concatenate((risk_constraints.T, risk_lbound, risk_ubound), axis=1)
-        opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
+        prob = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
 
-        status = opt.status()
-
-        if status == 0:
-            status = 'optimal'
-
-        return status, opt.feval(), opt.x_value()
+        if prob.status() == 0:
+            return 'optimal', prob.feval(), prob.x_value()
+        else:
+            raise PortfolioBuilderException(prob.status())
     else:
         if method in ("simplex", "interior"):
             # we need to expand bounded condition and constraint matrix to handle L1 bound
@@ -83,14 +82,12 @@ def linear_builder(er: np.ndarray,
             risk_ubound = np.concatenate((risk_ubound, np.inf * np.ones((n, 1))), axis=0)
 
             cons_matrix = np.concatenate((risk_constraints, risk_lbound, risk_ubound), axis=1)
-            opt = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
+            prob = LPOptimizer(cons_matrix, lbound, ubound, -er, method)
 
-            status = opt.status()
-
-            if status == 0:
-                status = 'optimal'
-
-            return status, opt.feval(), opt.x_value()[:n]
+            if prob.status() == 0:
+                return 'optimal', prob.feval(), prob.x_value()[:n]
+            else:
+                raise PortfolioBuilderException(prob.status())
         elif method.lower() == 'ecos':
             from cvxpy import Problem
             from cvxpy import Variable
@@ -111,7 +108,10 @@ def linear_builder(er: np.ndarray,
             prob = Problem(objective, constraints)
             prob.solve(solver='ECOS', feastol=1e-10, abstol=1e-10, reltol=1e-10)
 
-            return prob.status, prob.value, w.value.flatten()
+            if prob.status == 'optimal':
+                return prob.status, prob.value, w.value.flatten()
+            else:
+                raise PortfolioBuilderException(prob.status)
         else:
             raise ValueError("{0} is not recognized".format(method))
 

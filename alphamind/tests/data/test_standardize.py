@@ -12,7 +12,6 @@ from scipy.stats import zscore
 from alphamind.data.standardize import standardize
 from alphamind.data.standardize import projection
 from alphamind.data.standardize import Standardizer
-from alphamind.data.standardize import GroupedStandardizer
 
 
 class TestStandardize(unittest.TestCase):
@@ -55,17 +54,16 @@ class TestStandardize(unittest.TestCase):
 
         exp_zscore = standardize(self.x)
         np.testing.assert_array_almost_equal(calc_zscore, exp_zscore)
+        np.testing.assert_array_almost_equal(s(self.x), exp_zscore)
 
-    def test_groupedstandardizer(self):
-
-        x = np.concatenate([self.groups.reshape((-1, 1)), self.x], axis=1)
-
-        s = GroupedStandardizer()
-        s.fit(x)
-        calc_zscore = s.transform(x)
+    def test_grouped_standardizer(self):
+        s = Standardizer()
+        s.fit(self.x, self.groups)
+        calc_zscore = s.transform(self.x, self.groups)
 
         exp_zscore = standardize(self.x, self.groups)
         np.testing.assert_array_almost_equal(calc_zscore, exp_zscore)
+        np.testing.assert_array_almost_equal(s(self.x, self.groups), exp_zscore)
 
 
 if __name__ == '__main__':

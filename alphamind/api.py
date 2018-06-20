@@ -24,8 +24,10 @@ from alphamind.data.engines.sqlengine import risk_styles
 from alphamind.data.engines.sqlengine import industry_styles
 from alphamind.data.engines.sqlengine import macro_styles
 from alphamind.data.winsorize import winsorize_normal
+from alphamind.data.winsorize import NormalWinsorizer
 from alphamind.data.standardize import standardize
 from alphamind.data.standardize import projection
+from alphamind.data.standardize import Standardizer
 from alphamind.data.neutralize import neutralize
 from alphamind.data.rank import rank
 from alphamind.data.rank import percentile
@@ -77,7 +79,9 @@ __all__ = [
     'industry_styles',
     'macro_styles',
     'winsorize_normal',
+    'NormalWinsorizer',
     'standardize',
+    'Standardizer',
     'projection',
     'neutralize',
     'rank',

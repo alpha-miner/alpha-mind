@@ -9,6 +9,7 @@ import unittest
 import numpy as np
 import pandas as pd
 from alphamind.data.winsorize import winsorize_normal
+from alphamind.data.winsorize import NormalWinsorizer
 
 
 class TestWinsorize(unittest.TestCase):
@@ -51,6 +52,28 @@ class TestWinsorize(unittest.TestCase):
 
         exp_winsorized = pd.DataFrame(self.x).groupby(self.groups).transform(impl).values
         np.testing.assert_array_almost_equal(cal_winsorized, exp_winsorized)
+
+    def test_normal_winsorizer(self):
+        s = NormalWinsorizer(num_stds=self.num_stds)
+        s.fit(self.x)
+        calc_winsorized1 = s.transform(self.x)
+        calc_winsorized2 = s(self.x)
+
+        std_values = self.x.std(axis=0, ddof=1)
+        mean_value = self.x.mean(axis=0)
+
+        lower_bound = mean_value - self.num_stds * std_values
+        upper_bound = mean_value + self.num_stds * std_values
+
+        for i in range(np.size(calc_winsorized1, 1)):
+            col_data = self.x[:, i]
+            col_data[col_data > upper_bound[i]] = upper_bound[i]
+            col_data[col_data < lower_bound[i]] = lower_bound[i]
+
+            calculated_col = calc_winsorized1[:, i]
+            np.testing.assert_array_almost_equal(col_data, calculated_col)
+            calculated_col = calc_winsorized2[:, i]
+            np.testing.assert_array_almost_equal(col_data, calculated_col)
 
 
 if __name__ == "__main__":
