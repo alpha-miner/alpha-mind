@@ -245,13 +245,6 @@ cdef class QPOptimizer:
                                         &factor_loading[0] if factor_loading is not None else NULL,
                                         &idsync_risk[0] if idsync_risk is not None else NULL)
         else:
-            # self.cobj2 = new QPAlglib(self.n,
-            #                           &expected_return[0],
-            #                           &cov[0] if cov is not None else NULL,
-            #                           &lbound[0],
-            #                           &ubound[0],
-            #                           risk_aversion)
-
             self.cobj = new MVOptimizer(self.n,
                                         &expected_return[0],
                                         &cov[0] if cov is not None else NULL,
