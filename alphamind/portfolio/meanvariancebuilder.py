@@ -10,6 +10,7 @@ from typing import Union
 from typing import Tuple
 from typing import Optional
 from typing import Dict
+import cvxpy
 from alphamind.cython.optimizers import QPOptimizer
 from alphamind.cython.optimizers import CVOptimizer
 from alphamind.exceptions.exceptions import PortfolioBuilderException
@@ -54,19 +55,41 @@ def mean_variance_builder(er: np.ndarray,
                           lam: float=1.) -> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
-    optimizer = QPOptimizer(er,
-                            risk_model['cov'],
-                            lbound,
-                            ubound,
-                            cons_mat,
-                            clbound,
-                            cubound,
-                            lam,
-                            risk_model['factor_cov'],
-                            risk_model['factor_loading'],
-                            risk_model['idsync'])
+    if np.all(lbound == -np.inf) and np.all(ubound == np.inf) and cons_mat is None:
+        # using fast path cvxpy
+        n = len(er)
+        w = cvxpy.Variable(n)
+        cov = risk_model['cov']
+        special_risk = risk_model['idsync']
+        risk_cov = risk_model['factor_cov']
+        risk_exposure = risk_model['factor_loading']
+        if cov is None:
+            risk = cvxpy.sum_squares(cvxpy.multiply(cvxpy.sqrt(special_risk), w)) \
+                   + cvxpy.quad_form((w.T * risk_exposure).T, risk_cov)
+        else:
+            risk = cvxpy.quad_form(w, cov)
+        objective = cvxpy.Minimize(-w.T * er + 0.5 * lam * risk)
+        prob = cvxpy.Problem(objective)
+        prob.solve(solver='ECOS', feastol=1e-9, abstol=1e-9, reltol=1e-9)
 
-    return _create_result(optimizer, bm)
+        if prob.status == 'optimal' or prob.status == 'optimal_inaccurate':
+            return 'optimal', prob.value, np.array(w.value) + bm
+        else:
+            raise PortfolioBuilderException(prob.status)
+    else:
+        optimizer = QPOptimizer(er,
+                                risk_model['cov'],
+                                lbound,
+                                ubound,
+                                cons_mat,
+                                clbound,
+                                cubound,
+                                lam,
+                                risk_model['factor_cov'],
+                                risk_model['factor_loading'],
+                                risk_model['idsync'])
+
+        return _create_result(optimizer, bm)
 
 
 def target_vol_builder(er: np.ndarray,

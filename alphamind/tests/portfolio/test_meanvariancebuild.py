@@ -41,6 +41,22 @@ class TestMeanVarianceBuild(unittest.TestCase):
         self.assertTrue(np.all(x @ risk_exposure >= risk_target[0] - 1.e-6))
         np.testing.assert_array_almost_equal(x, [0.1, 0.4, 0.5])
 
+    def test_mean_variance_builder_without_constraints(self):
+        er = np.array([0.01, 0.02, 0.03])
+        cov = np.array([[0.02, 0.01, 0.02],
+                        [0.01, 0.02, 0.03],
+                        [0.02, 0.03, 0.02]])
+        ids_var = np.diag([0.01, 0.02, 0.03])
+        cov += ids_var
+
+        bm = np.array([0., 0., 0.])
+        lbound = np.array([-np.inf, -np.inf, -np.inf])
+        ubound = np.array([np.inf, np.inf, np.inf])
+
+        model = dict(cov=cov, factor_cov=None, factor_loading=None, idsync=None)
+        status, _, x = mean_variance_builder(er, model, bm, lbound, ubound, None, None, lam=1)
+        np.testing.assert_array_almost_equal(x, np.linalg.inv(cov) @ er)
+
     def test_mean_variance_builder_with_none_unity_lambda(self):
         er = np.array([0.01, 0.02, 0.03])
         cov = np.array([[0.02, 0.01, 0.02],

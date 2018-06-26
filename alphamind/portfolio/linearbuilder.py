@@ -92,7 +92,7 @@ def linear_builder(er: np.ndarray,
             from cvxpy import Problem
             from cvxpy import Variable
             from cvxpy import multiply
-            from cvxpy import pnorm
+            from cvxpy import norm1
             from cvxpy import Minimize
 
             w = Variable(n)
@@ -102,13 +102,13 @@ def linear_builder(er: np.ndarray,
                            w <= ubound,
                            current_risk_exposure >= risk_lbound.flatten(),
                            current_risk_exposure <= risk_ubound.flatten(),
-                           pnorm(w - current_position, 1) <= turn_over_target]
+                           norm1(w - current_position) <= turn_over_target]
 
             objective = Minimize(-w.T * er)
             prob = Problem(objective, constraints)
-            prob.solve(solver='ECOS', feastol=1e-10, abstol=1e-10, reltol=1e-10)
+            prob.solve(solver='ECOS', feastol=1e-9, abstol=1e-9, reltol=1e-9)
 
-            if prob.status == 'optimal':
+            if prob.status == 'optimal' or prob.status == 'optimal_inaccurate':
                 return prob.status, prob.value, w.value.flatten()
             else:
                 raise PortfolioBuilderException(prob.status)
