@@ -75,7 +75,8 @@ cdef extern from "tvoptimizer.hpp" namespace "pfopt":
                     int,
                     double*,
                     double*,
-                    double*) except +
+                    double*,
+                    string) except +
         vector[double] xValue()
         double feval()
         int status()
@@ -98,7 +99,8 @@ cdef class CVOptimizer:
                   double target_vol=1.0,
                   cnp.ndarray[double, ndim=2] factor_cov_matrix=None,
                   cnp.ndarray[double, ndim=2] factor_loading_matrix=None,
-                  double[:] idsync_risk=None):
+                  double[:] idsync_risk=None,
+                  str linear_solver="ma27"):
 
         self.n = lbound.shape[0]
         self.m = 0
@@ -125,7 +127,8 @@ cdef class CVOptimizer:
                                         self.f,
                                         &factor_cov[0] if factor_cov is not None else NULL,
                                         &factor_loading[0] if factor_loading is not None else NULL,
-                                        &idsync_risk[0] if idsync_risk is not None else NULL)
+                                        &idsync_risk[0] if idsync_risk is not None else NULL,
+                                        bytes(linear_solver, encoding='utf8'))
         else:
             self.cobj = new TVOptimizer(self.n,
                                         &expected_return[0],
@@ -140,7 +143,8 @@ cdef class CVOptimizer:
                                         self.f,
                                         &factor_cov[0] if factor_cov is not None else NULL,
                                         &factor_loading[0] if factor_loading is not None else NULL,
-                                        &idsync_risk[0] if idsync_risk is not None else NULL)
+                                        &idsync_risk[0] if idsync_risk is not None else NULL,
+                                        bytes(linear_solver, encoding='utf8'))
 
     def __dealloc__(self):
         del self.cobj
@@ -170,7 +174,8 @@ cdef extern from "mvoptimizer.hpp" namespace "pfopt":
                     int,
                     double*,
                     double*,
-                    double*) except +
+                    double*,
+                    string) except +
         vector[double] xValue()
         double feval()
         int status()
@@ -209,7 +214,8 @@ cdef class QPOptimizer:
                   double risk_aversion=1.0,
                   cnp.ndarray[double, ndim=2] factor_cov_matrix=None,
                   cnp.ndarray[double, ndim=2] factor_loading_matrix=None,
-                  double[:] idsync_risk=None):
+                  double[:] idsync_risk=None,
+                  str linear_solver='ma27'):
 
         self.n = lbound.shape[0]
         self.m = 0
@@ -239,7 +245,8 @@ cdef class QPOptimizer:
                                         self.f,
                                         &factor_cov[0] if factor_cov is not None else NULL,
                                         &factor_loading[0] if factor_loading is not None else NULL,
-                                        &idsync_risk[0] if idsync_risk is not None else NULL)
+                                        &idsync_risk[0] if idsync_risk is not None else NULL,
+                                        bytes(linear_solver, encoding='utf8'))
         else:
             self.cobj = new MVOptimizer(self.n,
                                         &expected_return[0],
@@ -254,7 +261,8 @@ cdef class QPOptimizer:
                                         self.f,
                                         &factor_cov[0] if factor_cov is not None else NULL,
                                         &factor_loading[0] if factor_loading is not None else NULL,
-                                        &idsync_risk[0] if idsync_risk is not None else NULL)
+                                        &idsync_risk[0] if idsync_risk is not None else NULL,
+                                        bytes(linear_solver, encoding='utf8'))
 
     def __dealloc__(self):
         del self.cobj

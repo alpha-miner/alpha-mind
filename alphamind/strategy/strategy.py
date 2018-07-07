@@ -319,26 +319,10 @@ if __name__ == '__main__':
     neutralized_risk = None
 
     alpha_factors = {
-        'ep_q_cs': CSQuantiles(LAST('ep_q'), groups='sw1_adj'),
-        'roe_q_cs': CSQuantiles(LAST('roe_q'), groups='sw1_adj'),
-        'OperatingRevenueGrowRate_cs': CSQuantiles(LAST('OperatingRevenueGrowRate'), groups='sw1_adj'),
-        'GREV_cs': CSQuantiles(LAST('GREV'), groups='sw1_adj'),
-        'con_peg_rolling_cs': CSQuantiles(LAST('con_peg_rolling'), groups='sw1_adj'),
-        'con_pe_rolling_order_cs': CSQuantiles(LAST('con_pe_rolling_order'), groups='sw1_adj'),
-        'IVR_cs': CSQuantiles(LAST('IVR'), groups='sw1_adj'),
-        'ILLIQUIDITY_cs': CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'), groups='sw1_adj'),
-        'DividendPaidRatio_cs': CSQuantiles(LAST('DividendPaidRatio'), groups='sw1_adj'),
+        'ep_q_cs': CSQuantiles(LAST('ep_q'), groups='sw1_adj')
     }
 
-    weights = dict(ep_q_cs=1.,
-                   roe_q_cs=1.,
-                   OperatingRevenueGrowRate_cs=1.,
-                   GREV_cs=0.5,
-                   con_peg_rolling_cs=-0.25,
-                   con_pe_rolling_order_cs=-0.5,
-                   IVR_cs=0.5,
-                   ILLIQUIDITY_cs=0.5,
-                   DividendPaidRatio_cs=0.5)
+    weights = dict(ep_q_cs=1.)
 
     alpha_model = ConstLinearModel(features=alpha_factors, weights=weights)
 
@@ -415,4 +399,4 @@ if __name__ == '__main__':
         return ret_df
 
 
-    create_scenario(0.01, target_vol=0.02, method='tv')
+    create_scenario(0.01, target_vol=0.01, method='tv')
