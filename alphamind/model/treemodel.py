@@ -9,7 +9,6 @@ from distutils.version import LooseVersion
 import arrow
 import numpy as np
 import pandas as pd
-from sklearn import __version__ as sklearn_version
 from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
 from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
 from sklearn.model_selection import train_test_split
@@ -17,11 +16,11 @@ import xgboost as xgb
 from xgboost import __version__ as xgbboot_version
 from xgboost import XGBRegressor as XGBRegressorImpl
 from xgboost import XGBClassifier as XGBClassifierImpl
-from alphamind.model.modelbase import ModelBase
+from alphamind.model.modelbase import create_model_base
 from alphamind.utilities import alpha_logger
 
 
-class RandomForestRegressor(ModelBase):
+class RandomForestRegressor(create_model_base('sklearn')):
 
     def __init__(self,
                  n_estimators: int=100,
@@ -34,27 +33,12 @@ class RandomForestRegressor(ModelBase):
                                               max_features=max_features,
                                               **kwargs)
 
-    def save(self) -> dict:
-        model_desc = super().save()
-        model_desc['sklearn_version'] = sklearn_version
-        return model_desc
-
-    @classmethod
-    def load(cls, model_desc: dict):
-        obj_layout = super().load(model_desc)
-
-        if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
-            alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(sklearn_version,
-                                                                             model_desc['sklearn_version']))
-        return obj_layout
-
     @property
     def importances(self):
         return self.impl.feature_importances_.tolist()
 
 
-class RandomForestClassifier(ModelBase):
+class RandomForestClassifier(create_model_base('sklearn')):
 
     def __init__(self,
                  n_estimators: int=100,
@@ -67,27 +51,12 @@ class RandomForestClassifier(ModelBase):
                                                max_features=max_features,
                                                **kwargs)
 
-    def save(self) -> dict:
-        model_desc = super().save()
-        model_desc['sklearn_version'] = sklearn_version
-        return model_desc
-
-    @classmethod
-    def load(cls, model_desc: dict):
-        obj_layout = super().load(model_desc)
-
-        if LooseVersion(sklearn_version) < LooseVersion(model_desc['sklearn_version']):
-            alpha_logger.warning('Current sklearn version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(sklearn_version,
-                                                                             model_desc['sklearn_version']))
-        return obj_layout
-
     @property
     def importances(self):
         return self.impl.feature_importances_.tolist()
 
 
-class XGBRegressor(ModelBase):
+class XGBRegressor(create_model_base('xgboost')):
 
     def __init__(self,
                  n_estimators: int=100,
@@ -104,27 +73,12 @@ class XGBRegressor(ModelBase):
                                      n_jobs=n_jobs,
                                      **kwargs)
 
-    def save(self) -> dict:
-        model_desc = super().save()
-        model_desc['xgbboot_version'] = xgbboot_version
-        return model_desc
-
-    @classmethod
-    def load(cls, model_desc: dict):
-        obj_layout = super().load(model_desc)
-
-        if LooseVersion(xgbboot_version) < LooseVersion(model_desc['xgbboot_version']):
-            alpha_logger.warning('Current xgboost version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(xgbboot_version,
-                                                                             model_desc['xgbboot_version']))
-        return obj_layout
-
     @property
     def importances(self):
         return self.impl.feature_importances_.tolist()
 
 
-class XGBClassifier(ModelBase):
+class XGBClassifier(create_model_base('xgboost')):
 
     def __init__(self,
                  n_estimators: int=100,
@@ -141,27 +95,12 @@ class XGBClassifier(ModelBase):
                                       n_jobs=n_jobs,
                                       **kwargs)
 
-    def save(self) -> dict:
-        model_desc = super().save()
-        model_desc['xgbboot_version'] = xgbboot_version
-        return model_desc
-
-    @classmethod
-    def load(cls, model_desc: dict):
-        obj_layout = super().load(model_desc)
-
-        if LooseVersion(xgbboot_version) < LooseVersion(model_desc['xgbboot_version']):
-            alpha_logger.warning('Current xgboost version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(xgbboot_version,
-                                                                             model_desc['xgbboot_version']))
-        return obj_layout
-
     @property
     def importances(self):
         return self.impl.feature_importances_.tolist()
 
 
-class XGBTrainer(ModelBase):
+class XGBTrainer(create_model_base('xgboost')):
 
     def __init__(self,
                  objective='binary:logistic',
@@ -225,21 +164,6 @@ class XGBTrainer(ModelBase):
     def predict(self, x: pd.DataFrame) -> np.ndarray:
         d_predict = xgb.DMatrix(x[self.features].values)
         return self.impl.predict(d_predict)
-
-    def save(self) -> dict:
-        model_desc = super().save()
-        model_desc['xgbboot_version'] = xgbboot_version
-        return model_desc
-
-    @classmethod
-    def load(cls, model_desc: dict):
-        obj_layout = super().load(model_desc)
-
-        if LooseVersion(xgbboot_version) < LooseVersion(model_desc['xgbboot_version']):
-            alpha_logger.warning('Current xgboost version {0} is lower than the model version {1}. '
-                                 'Loaded model may work incorrectly.'.format(xgbboot_version,
-                                                                             model_desc['xgbboot_version']))
-        return obj_layout
 
     @property
     def importances(self):
