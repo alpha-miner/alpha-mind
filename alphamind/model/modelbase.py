@@ -98,9 +98,9 @@ def create_model_base(party_name=None):
             def save(self) -> dict:
                 model_desc = super().save()
                 if self._lib_name == 'sklearn':
-                    model_desc[self._lib_name] = sklearn_version
+                    model_desc[self._lib_name + "_version"] = sklearn_version
                 elif self._lib_name == 'xgboost':
-                    model_desc[self._lib_name] = xgbboot_version
+                    model_desc[self._lib_name + "_version"] = xgbboot_version
                 else:
                     raise ValueError("3rd party lib name ({0}) is not recognized".format(self._lib_name))
                 return model_desc
@@ -116,7 +116,7 @@ def create_model_base(party_name=None):
                 else:
                     raise ValueError("3rd party lib name ({0}) is not recognized".format(cls._lib_name))
 
-                if LooseVersion(current_version) < LooseVersion(model_desc[cls._lib_name]):
+                if LooseVersion(current_version) < LooseVersion(model_desc[cls._lib_name + "_version"]):
                     alpha_logger.warning('Current {2} version {0} is lower than the model version {1}. '
                                          'Loaded model may work incorrectly.'.format(sklearn_version,
                                                                                      model_desc[cls._lib_name],
