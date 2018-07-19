@@ -116,7 +116,6 @@ class TestOptimizers(unittest.TestCase):
                                 None,
                                 None,
                                 None,
-                                target_vol,
                                 target_vol)
 
         # check against known good result
@@ -144,7 +143,6 @@ class TestOptimizers(unittest.TestCase):
                                 cons,
                                 clbound,
                                 cubound,
-                                target_vol,
                                 target_vol)
 
         # check against known good result
@@ -173,7 +171,6 @@ class TestOptimizers(unittest.TestCase):
                                 cons,
                                 clbound,
                                 cubound,
-                                0.,
                                 target_vol,
                                 factor_var,
                                 factor_load,
@@ -204,7 +201,6 @@ class TestOptimizers(unittest.TestCase):
                                 cons,
                                 clbound,
                                 cubound,
-                                0.,
                                 target_vol)
 
         # check against known good result

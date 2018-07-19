@@ -23,6 +23,7 @@ from alphamind.data.engines.sqlengine import industry_styles
 from alphamind.data.engines.sqlengine import macro_styles
 from alphamind.data.processing import factor_processing
 from alphamind.analysis.factoranalysis import er_portfolio_analysis
+from alphamind.exceptions.exceptions import PortfolioBuilderException
 
 all_styles = risk_styles + industry_styles + macro_styles
 
@@ -73,6 +74,7 @@ class Strategy(object):
         self.total_data = None
         self.index_return = None
         self.risk_models = None
+        self.alpha_models = None
 
     def prepare_backtest_data(self):
         total_factors = self.engine.fetch_factor_range(self.universe,
@@ -119,6 +121,25 @@ class Strategy(object):
                                                                     horizon=self.horizon,
                                                                     offset=1).set_index('trade_date')
         self.total_data = total_data
+
+    def prepare_backtest_models(self):
+        if self.total_data is None:
+            self.prepare_backtest_data()
+        total_data_groups = self.total_data.groupby('trade_date')
+        if self.dask_client is None:
+            models = {}
+            for ref_date, _ in total_data_groups:
+                models[ref_date] = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
+        else:
+            def worker(parameters):
+                new_model = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1], parameters[2])
+                return parameters[0], new_model
+
+            l = self.dask_client.map(worker, [(d[0], self.alpha_model, self.data_meta) for d in total_data_groups])
+            results = self.dask_client.gather(l)
+            models = dict(results)
+        self.alpha_models = models
+        alpha_logger.info("alpha models training finished ...")
 
     @staticmethod
     def _create_lu_bounds(running_setting, codes, benchmark_w):
@@ -168,29 +189,19 @@ class Strategy(object):
         executor = copy.deepcopy(running_setting.executor)
         positions = pd.DataFrame()
 
-        if self.dask_client is None:
-            models = {}
-            for ref_date, _ in total_data_groups:
-                models[ref_date] = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
-        else:
-            def worker(parameters):
-                new_model = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1], parameters[2])
-                return parameters[0], new_model
-
-            l = self.dask_client.map(worker, [(d[0], self.alpha_model, self.data_meta) for d in total_data_groups])
-            results = self.dask_client.gather(l)
-            models = dict(results)
+        if self.alpha_models is None:
+            self.prepare_backtest_models()
 
         for ref_date, this_data in total_data_groups:
             risk_model = self.risk_models[ref_date]
-            new_model = models[ref_date]
+            new_model = self.alpha_models[ref_date]
             codes = this_data.code.values.tolist()
 
             if previous_pos.empty:
                 current_position = None
             else:
                 previous_pos.set_index('code', inplace=True)
-                remained_pos = previous_pos.loc[codes]
+                remained_pos = previous_pos.reindex(codes)
 
                 remained_pos.fillna(0., inplace=True)
                 current_position = remained_pos.weight.values
@@ -248,25 +259,38 @@ class Strategy(object):
         ret_df = ret_df.shift(1)
         ret_df.iloc[0] = 0.
         ret_df['excess_return'] = ret_df['returns'] - ret_df['benchmark_returns'] * ret_df['leverage']
-
         return ret_df, positions
 
     def _calculate_pos(self, running_setting, er, data, constraints, benchmark_w, lbound, ubound, risk_model,
                        current_position):
         more_opts = running_setting.more_opts
-        target_pos, _ = er_portfolio_analysis(er,
-                                              industry=data.industry_name.values,
-                                              dx_return=None,
-                                              constraints=constraints,
-                                              detail_analysis=False,
-                                              benchmark=benchmark_w,
-                                              method=running_setting.rebalance_method,
-                                              lbound=lbound,
-                                              ubound=ubound,
-                                              current_position=current_position,
-                                              target_vol=more_opts.get('target_vol'),
-                                              risk_model=risk_model,
-                                              turn_over_target=more_opts.get('turn_over_target'))
+        try:
+            target_pos, _ = er_portfolio_analysis(er,
+                                                  industry=data.industry_name.values,
+                                                  dx_return=None,
+                                                  constraints=constraints,
+                                                  detail_analysis=False,
+                                                  benchmark=benchmark_w,
+                                                  method=running_setting.rebalance_method,
+                                                  lbound=lbound,
+                                                  ubound=ubound,
+                                                  current_position=current_position,
+                                                  target_vol=more_opts.get('target_vol'),
+                                                  risk_model=risk_model,
+                                                  turn_over_target=more_opts.get('turn_over_target'))
+        except PortfolioBuilderException:
+            alpha_logger.warning("Not able to fit the constraints. Using full re-balance.")
+            target_pos, _ = er_portfolio_analysis(er,
+                                                  industry=data.industry_name.values,
+                                                  dx_return=None,
+                                                  constraints=constraints,
+                                                  detail_analysis=False,
+                                                  benchmark=benchmark_w,
+                                                  method=running_setting.rebalance_method,
+                                                  lbound=lbound,
+                                                  ubound=ubound,
+                                                  target_vol=more_opts.get('target_vol'),
+                                                  risk_model=risk_model)
         return target_pos
 
 
@@ -291,44 +315,23 @@ if __name__ == '__main__':
     mpl.rcParams['font.sans-serif'] = ['SimHei']
     mpl.rcParams['axes.unicode_minus'] = False
 
-    # Back test parameter settings
-    start_date = '2016-01-01'
-    end_date = '2018-06-11'
+    """
+    Back test parameter settings
+    """
 
+    benchmark_code = 905
+    universe = Universe('zz800') + Universe('cyb')
+
+    start_date = '2011-01-01'
+    end_date = '2011-05-04'
     freq = '10b'
-    industry_name = 'sw_adj'
-    industry_level = 1
-    turn_over_target = 0.4
-    batch = 1
-    horizon = map_freq(freq)
-    weights_bandwidth = 0.02
-    universe = Universe('zz800')
-    data_source = os.environ['DB_URI']
-    benchmark_code = 300
-    method = 'risk_neutral'
+    neutralized_risk = None
 
-    # Model settings
     alpha_factors = {
-        'ep_q_cs': CSQuantiles(LAST('ep_q'), groups='sw1_adj'),
-        'roe_q_cs': CSQuantiles(LAST('roe_q'), groups='sw1_adj'),
-        'SGRO_cs': CSQuantiles(LAST('SGRO'), groups='sw1_adj'),
-        'GREV_cs': CSQuantiles(LAST('GREV'), groups='sw1_adj'),
-        'con_peg_rolling_cs': CSQuantiles(LAST('con_peg_rolling'), groups='sw1_adj'),
-        'con_pe_rolling_order_cs': CSQuantiles(LAST('con_pe_rolling_order'), groups='sw1_adj'),
-        'IVR_cs': CSQuantiles(LAST('IVR'), groups='sw1_adj'),
-        'ILLIQUIDITY_cs': CSQuantiles(LAST('ILLIQUIDITY') * LAST('NegMktValue'), groups='sw1_adj'),
-        'DividendPaidRatio_cs': CSQuantiles(LAST('DividendPaidRatio'), groups='sw1_adj'),
+        'ep_q_cs': CSQuantiles(LAST('ep_q'), groups='sw1_adj')
     }
 
-    weights = dict(ep_q_cs=1.,
-                   roe_q_cs=1.,
-                   SGRO_cs=0.0,
-                   GREV_cs=0.0,
-                   con_peg_rolling_cs=-0.25,
-                   con_pe_rolling_order_cs=-0.25,
-                   IVR_cs=0.5,
-                   ILLIQUIDITY_cs=0.5,
-                   DividendPaidRatio_cs=0.5)
+    weights = dict(ep_q_cs=1.)
 
     alpha_model = ConstLinearModel(features=alpha_factors, weights=weights)
 
@@ -338,79 +341,8 @@ if __name__ == '__main__':
                          neutralized_risk=None,
                          pre_process=None,
                          post_process=None,
-                         data_source=data_source)
+                         data_source=os.environ['DB_URI'])
 
-    # Constraintes settings
-
-    industry_names = industry_list(industry_name, industry_level)
-    constraint_risk = ['SIZE', 'BETA']
-    total_risk_names = constraint_risk + ['benchmark', 'total']
-    all_styles = risk_styles + industry_names + macro_styles
-
-    b_type = []
-    l_val = []
-    u_val = []
-
-    previous_pos = pd.DataFrame()
-    rets = []
-    turn_overs = []
-    leverags = []
-
-    for name in total_risk_names:
-        if name == 'benchmark':
-            b_type.append(BoundaryType.RELATIVE)
-            l_val.append(0.8)
-            u_val.append(1.0)
-        elif name == 'total':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(.0)
-            u_val.append(.0)
-        elif name == 'EARNYILD':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0.00)
-            u_val.append(0.60)
-        elif name == 'GROWTH':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(-0.05)
-            u_val.append(0.05)
-        elif name == 'MOMENTUM':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0.20)
-            u_val.append(0.20)
-        elif name == 'SIZE':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(-0.05)
-            u_val.append(0.05)
-        elif name == 'LIQUIDTY':
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(-0.40)
-            u_val.append(-0.0)
-        elif benchmark_code == 905 and name not in ["计算机", "医药生物", "国防军工", "信息服务", "机械设备"] and name in industry_names:
-            b_type.append(BoundaryType.RELATIVE)
-            l_val.append(0.8)
-            u_val.append(1.0)
-        elif benchmark_code == 300 and name in ["银行", "保险", "证券", "多元金融"]:
-            b_type.append(BoundaryType.RELATIVE)
-            l_val.append(0.70)
-            u_val.append(0.90)
-        elif name in ["计算机", "医药生物", "国防军工", "信息服务", "机械设备"]:
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(0.0)
-            u_val.append(0.05)
-        else:
-            b_type.append(BoundaryType.ABSOLUTE)
-            l_val.append(-0.002)
-            u_val.append(0.002)
-
-    bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
-
-    # Running settings
-    running_setting = RunningSetting(weights_bandwidth=weights_bandwidth,
-                                     rebalance_method=method,
-                                     bounds=bounds,
-                                     turn_over_target=turn_over_target)
-
-    # Strategy
     strategy = Strategy(alpha_model,
                         data_meta,
                         universe=universe,
@@ -420,4 +352,60 @@ if __name__ == '__main__':
                         benchmark=benchmark_code)
 
     strategy.prepare_backtest_data()
-    ret_df, positions = strategy.run(running_setting=running_setting)
+
+
+    def create_scenario(weights_bandwidth=0.02, target_vol=0.01, method='risk_neutral'):
+        industry_names = industry_list('sw_adj', 1)
+        constraint_risk = ['EARNYILD', 'LIQUIDTY', 'GROWTH', 'SIZE', 'BETA', 'MOMENTUM']
+        total_risk_names = constraint_risk + industry_names + ['benchmark', 'total']
+
+        b_type = []
+        l_val = []
+        u_val = []
+
+        for name in total_risk_names:
+            if name == 'benchmark':
+                b_type.append(BoundaryType.RELATIVE)
+                l_val.append(0.8)
+                u_val.append(1.001)
+            elif name == 'total':
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.001)
+                u_val.append(.001)
+            elif name == 'EARNYILD':
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.001)
+                u_val.append(0.60)
+            elif name == 'GROWTH':
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.20)
+                u_val.append(0.20)
+            elif name == 'MOMENTUM':
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.10)
+                u_val.append(0.20)
+            elif name == 'SIZE':
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.20)
+                u_val.append(0.20)
+            elif name == 'LIQUIDTY':
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.25)
+                u_val.append(0.25)
+            else:
+                b_type.append(BoundaryType.ABSOLUTE)
+                l_val.append(-0.01)
+                u_val.append(0.01)
+
+        bounds = create_box_bounds(total_risk_names, b_type, l_val, u_val)
+        running_setting = RunningSetting(weights_bandwidth=weights_bandwidth,
+                                         rebalance_method=method,
+                                         bounds=bounds,
+                                         target_vol=target_vol,
+                                         turn_over_target=0.4)
+
+        ret_df, positions = strategy.run(running_setting)
+        return ret_df
+
+
+    create_scenario(0.01, target_vol=0.01, method='tv')

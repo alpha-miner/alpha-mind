@@ -16,6 +16,8 @@ from alphamind.model.treemodel import XGBRegressor
 from alphamind.model.treemodel import XGBClassifier
 from alphamind.model.treemodel import XGBTrainer
 
+from alphamind.model.svm import NvSVRModel
+
 from alphamind.model.loader import load_model
 
 
@@ -28,4 +30,5 @@ __all__ = ['LinearRegression',
            'XGBRegressor',
            'XGBClassifier',
            'XGBTrainer',
+           'NvSVRModel',
            'load_model']

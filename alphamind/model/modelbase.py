@@ -6,10 +6,13 @@ Created on 2017-9-4
 """
 
 import abc
+from distutils.version import LooseVersion
 import arrow
 import numpy as np
 import pandas as pd
 from simpleutils.miscellaneous import list_eq
+from sklearn import __version__ as sklearn_version
+from xgboost import __version__ as xgbboot_version
 from alphamind.utilities import alpha_logger
 from alphamind.utilities import encode
 from alphamind.utilities import decode
@@ -84,3 +87,39 @@ class ModelBase(metaclass=abc.ABCMeta):
             obj_layout.fit_target = None
         return obj_layout
 
+
+def create_model_base(party_name=None):
+    if not party_name:
+        return ModelBase
+    else:
+        class ExternalLibBase(ModelBase):
+            _lib_name = party_name
+
+            def save(self) -> dict:
+                model_desc = super().save()
+                if self._lib_name == 'sklearn':
+                    model_desc[self._lib_name + "_version"] = sklearn_version
+                elif self._lib_name == 'xgboost':
+                    model_desc[self._lib_name + "_version"] = xgbboot_version
+                else:
+                    raise ValueError("3rd party lib name ({0}) is not recognized".format(self._lib_name))
+                return model_desc
+
+            @classmethod
+            def load(cls, model_desc: dict):
+                obj_layout = super().load(model_desc)
+
+                if cls._lib_name == 'sklearn':
+                    current_version = sklearn_version
+                elif cls._lib_name == 'xgboost':
+                    current_version = xgbboot_version
+                else:
+                    raise ValueError("3rd party lib name ({0}) is not recognized".format(cls._lib_name))
+
+                if LooseVersion(current_version) < LooseVersion(model_desc[cls._lib_name + "_version"]):
+                    alpha_logger.warning('Current {2} version {0} is lower than the model version {1}. '
+                                         'Loaded model may work incorrectly.'.format(sklearn_version,
+                                                                                     model_desc[cls._lib_name],
+                                                                                     cls._lib_name))
+                return obj_layout
+        return ExternalLibBase

@@ -57,6 +57,9 @@ class TestMeanVarianceBuild(unittest.TestCase):
         status, _, x = mean_variance_builder(er, model, bm, lbound, ubound, None, None, lam=1)
         np.testing.assert_array_almost_equal(x, np.linalg.inv(cov) @ er)
 
+    def test_mean_variance_builder_without_constraints_with_factor_model(self):
+        pass
+
     def test_mean_variance_builder_with_none_unity_lambda(self):
         er = np.array([0.01, 0.02, 0.03])
         cov = np.array([[0.02, 0.01, 0.02],
