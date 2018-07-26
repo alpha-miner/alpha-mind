@@ -79,7 +79,7 @@ class TestLinearBuild(unittest.TestCase):
         self.assertTrue(np.all(w >= -eplson))
 
         calc_risk = (w - bm) @ self.risk_exp / np.abs(bm @ self.risk_exp)
-        self.assertTrue(np.all(np.abs(calc_risk) <= 1.0001e-2))
+        self.assertTrue(np.all(np.abs(calc_risk) <= 1.01e-2))
 
     def test_linear_build_with_to_constraint(self):
         bm = self.bm / self.bm.sum()
