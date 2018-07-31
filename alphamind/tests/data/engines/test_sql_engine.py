@@ -536,13 +536,13 @@ class TestSqlEngine(unittest.TestCase):
         series = (ind_matrix[cols] * np.array(range(1, len(cols)+1))).sum(axis=1)
         df3['cat'] = series.values
 
-        expected_rank = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values) - 1.)
+        expected_rank = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values))
         expected_rank[np.isnan(df3.ROE)] = np.nan
         df3['rank'] = expected_rank['ROE'].values
         np.testing.assert_array_almost_equal(df3['rank'].values,
                                              df1['f'].values)
 
-        expected_quantile = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: (rankdata(x.values) - 1.) / ((len(x) - 1.) if len(x) > 1 else 1.))
+        expected_quantile = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values) / (len(x) + 1))
         expected_quantile[np.isnan(df3.ROE)] = np.nan
         df3['quantile'] = expected_quantile['ROE'].values
         np.testing.assert_array_almost_equal(df3['quantile'].values,

@@ -106,7 +106,7 @@ def linear_builder(er: np.ndarray,
 
             objective = Minimize(-w.T * er)
             prob = Problem(objective, constraints)
-            prob.solve(solver='ECOS', feastol=1e-9, abstol=1e-9, reltol=1e-9)
+            prob.solve(solver='ECOS', feastol=1e-10, abstol=1e-10, reltol=1e-10)
 
             if prob.status == 'optimal' or prob.status == 'optimal_inaccurate':
                 return prob.status, prob.value, w.value.flatten()
