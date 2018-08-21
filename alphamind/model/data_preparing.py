@@ -176,7 +176,10 @@ def batch_processing(names,
         inner_left_index = bisect.bisect_left(sub_dates, end)
         inner_right_index = bisect.bisect_right(sub_dates, end)
         predict_x_buckets[end] = pd.DataFrame(ne_x[inner_left_index:inner_right_index], columns=names)
-        predict_risk_buckets[end] = this_risk_exp[inner_left_index:inner_right_index]
+        if risk_exp is not None:
+            predict_risk_buckets[end] = this_risk_exp[inner_left_index:inner_right_index]
+        else:
+            predict_risk_buckets = None
         predict_codes_bucket[end] = this_codes[inner_left_index:inner_right_index]
 
         this_raw_y = y_values[left_index:right_index]
@@ -262,7 +265,10 @@ def fetch_data_package(engine: SqlEngine,
 
     predict_x_buckets = {k: predict_x_buckets[k] for k in predict_x_buckets if k.strftime('%Y-%m-%d') >= start_date}
     predict_y_buckets = {k: predict_y_buckets[k] for k in predict_y_buckets if k.strftime('%Y-%m-%d') >= start_date}
-    predict_risk_buckets = {k: predict_risk_buckets[k] for k in predict_risk_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    if neutralized_risk:
+        predict_risk_buckets = {k: predict_risk_buckets[k] for k in predict_risk_buckets if k.strftime('%Y-%m-%d') >= start_date}
+    else:
+        predict_risk_buckets = None
     predict_codes_bucket = {k: predict_codes_bucket[k] for k in predict_codes_bucket if k.strftime('%Y-%m-%d') >= start_date}
 
     ret['train'] = {'x': train_x_buckets, 'y': train_y_buckets, 'risk': train_risk_buckets}
