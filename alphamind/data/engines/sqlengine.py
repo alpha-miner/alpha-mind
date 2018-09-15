@@ -19,20 +19,12 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import bindparam
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
-from alphamind.data.dbmodel.models import FactorLog
-from alphamind.data.dbmodel.models import Strategy
 from alphamind.data.dbmodel.models import IndexComponent
 from alphamind.data.dbmodel.models import Industry
-from alphamind.data.dbmodel.models import Experimental
 from alphamind.data.dbmodel.models import RiskMaster
-from alphamind.data.dbmodel.models import Models
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
-from alphamind.data.dbmodel.models import Formulas
-from alphamind.data.dbmodel.models import DailyPortfoliosSchedule
-from alphamind.data.dbmodel.models import Performance
-from alphamind.data.dbmodel.models import Outright
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.transformer import Transformer
 from alphamind.model.loader import load_model

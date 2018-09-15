@@ -15,8 +15,6 @@ from alphamind.data.dbmodel.models import SpecificRiskDay
 from alphamind.data.dbmodel.models import SpecificRiskShort
 from alphamind.data.dbmodel.models import SpecificRiskLong
 from alphamind.data.dbmodel.models import Uqer
-from alphamind.data.dbmodel.models import Gogoal
-from alphamind.data.dbmodel.models import Experimental
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import Categories
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
