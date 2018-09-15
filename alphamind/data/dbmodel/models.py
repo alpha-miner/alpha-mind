@@ -951,28 +951,6 @@ class Uqer(Base):
     NLSIZE = Column(Float(53))
 
 
-class FactorCorrelation(Base):
-    __tablename__ = 'factor_correlation'
-    __table_args__ = (
-        Index('factor_correlation_idx', 'trade_date', 'factor', 'source', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    factor = Column(String(30), primary_key=True, nullable=False)
-    source = Column(String(30), primary_key=True, nullable=False)
-
-    BETA = Column(Float(53))
-    MOMENTUM = Column(Float(53))
-    SIZE = Column(Float(53))
-    EARNYILD = Column(Float(53))
-    RESVOL = Column(Float(53))
-    GROWTH = Column(Float(53))
-    BTOP = Column(Float(53))
-    LEVERAGE = Column(Float(53))
-    LIQUIDTY = Column(Float(53))
-    SIZENL = Column(Float(53))
-
-
 class IndexMarket(Base):
     __tablename__ = 'index_market'
     __table_args__ = (

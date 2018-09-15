@@ -160,22 +160,6 @@ class SqlEngine(object):
         query = self.session.query(RiskMaster)
         return pd.read_sql(query.statement, query.session.bind)
 
-    def fetch_strategy(self, ref_date: str, strategy: str) -> pd.DataFrame():
-        query = select([Strategy.strategyName, Strategy.factor, Strategy.weight]).where(
-            and_(
-                Strategy.trade_date == ref_date,
-                Strategy.strategyName == strategy
-            )
-        )
-
-        return pd.read_sql(query, self.session.bind)
-
-    def fetch_strategy_names(self):
-        query = select([Strategy.strategyName]).distinct()
-        cursor = self.engine.execute(query)
-        strategy_names = {s[0] for s in cursor.fetchall()}
-        return strategy_names
-
     def fetch_codes(self, ref_date: str, universe: Universe) -> List[int]:
         df = universe.query(self, ref_date, ref_date)
         return sorted(df.code.tolist())
@@ -588,7 +572,7 @@ class SqlEngine(object):
             return risk_cov, risk_exp
         elif model_type == 'factor':
             factor_names = risk_cov.Factor.tolist()
-            new_risk_cov.set_index('Factor')
+            new_risk_cov = risk_cov.set_index('Factor')
             factor_cov = new_risk_cov.loc[factor_names, factor_names] / 10000.
             new_risk_exp = risk_exp.set_index('code')
             factor_loading = new_risk_exp.loc[:, factor_names]
@@ -833,39 +817,6 @@ class SqlEngine(object):
         total_data['factor'] = factor_data
         return total_data
 
-    def fetch_data_experimental(self, ref_date: str,
-                                factors: Iterable[str],
-                                codes: Iterable[int],
-                                benchmark: int = None,
-                                risk_model: str = 'short',
-                                industry: str = 'sw') -> Dict[str, pd.DataFrame]:
-
-        total_data = {}
-
-        transformer = Transformer(factors)
-        factor_data = self.fetch_factor(ref_date, transformer, codes, used_factor_tables=[Experimental])
-
-        if benchmark:
-            benchmark_data = self.fetch_benchmark(ref_date, benchmark)
-            total_data['benchmark'] = benchmark_data
-            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['code'])
-            factor_data['weight'] = factor_data['weight'].fillna(0.)
-
-        if risk_model:
-            excluded = list(set(total_risk_factors).intersection(transformer.dependency))
-            risk_cov, risk_exp = self.fetch_risk_model(ref_date, codes, risk_model, excluded)
-            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['code'])
-            total_data['risk_cov'] = risk_cov
-
-        industry_info = self.fetch_industry(ref_date=ref_date,
-                                            codes=codes,
-                                            category=industry)
-
-        factor_data = pd.merge(factor_data, industry_info, on=['code'])
-
-        total_data['factor'] = factor_data
-        return total_data
-
     def fetch_data_range(self,
                          universe: Universe,
                          factors: Iterable[str],
@@ -908,164 +859,6 @@ class SqlEngine(object):
         factor_data = pd.merge(factor_data, industry_info, on=['trade_date', 'code'])
         total_data['factor'] = factor_data
         return total_data
-
-    def fetch_model(self,
-                    ref_date=None,
-                    model_type=None,
-                    model_version=None,
-                    is_primary=True,
-                    model_id=None) -> pd.DataFrame:
-        from alphamind.model.composer import DataMeta
-
-        conditions = []
-
-        if ref_date:
-            conditions.append(Models.trade_date == ref_date)
-
-        if model_id:
-            conditions.append(Models.model_id == model_id)
-
-        if model_type:
-            conditions.append(Models.model_type == model_type)
-
-        if model_version:
-            conditions.append(Models.model_version == model_version)
-
-        conditions.append(Models.is_primary == is_primary)
-
-        query = select([Models]).where(and_(*conditions))
-
-        model_df = pd.read_sql(query, self.engine)
-
-        for i, data in enumerate(zip(model_df.model_desc, model_df.data_meta)):
-            model_desc, data_desc = data
-            model_df.loc[i, 'model'] = load_model(model_desc)
-            model_df.loc[i, 'data_meta'] = DataMeta.load(data_desc)
-
-        del model_df['model_desc']
-        return model_df
-
-    def insert_formula(self, formula_name, formula_obj):
-        comment = str(formula_obj)
-        dict_repr = encode_formula(formula=formula_obj)
-
-        query = delete(Formulas).where(
-            Formulas.formula == formula_name
-        )
-
-        self.engine.execute(query)
-
-        query = insert(Formulas, values=dict(formula=formula_name,
-                                             formula_desc=dict_repr,
-                                             comment=comment))
-        self.engine.execute(query)
-
-    def load_formula(self, formula_name):
-        query = select([Formulas]).where(
-            Formulas.formula == formula_name
-        )
-
-        df = pd.read_sql(query, self.engine)
-
-        if not df.empty:
-            return decode_formula(df.loc[0, 'formula_desc']['desc'])
-
-    def load_all_formulas(self):
-        query = select([Formulas])
-
-        df = pd.read_sql(query, self.engine, index_col='formula')
-
-        if not df.empty:
-            return pd.Series({name: decode_formula(df.loc[name, 'formula_desc']['desc']) for name in df.index})
-
-    def insert_portfolio_schedule(self, df):
-        query = insert(DailyPortfoliosSchedule).values(
-            {
-                DailyPortfoliosSchedule.portfolio_name: bindparam('portfolio_name'),
-                DailyPortfoliosSchedule.trade_date: bindparam('trade_date')
-            }
-        )
-
-        self.engine.execute(query, df.to_dict('record'))
-
-    def upsert_performance(self, ref_date, df):
-        build_types = df['type'].unique().tolist()
-        universes = df['universe'].unique().tolist()
-        benchmarks = df['benchmark'].unique().tolist()
-        portfolios = df['portfolio'].unique().tolist()
-        sources = df['source'].unique().tolist()
-
-        query = delete(Performance).where(
-            and_(
-                Performance.trade_date == ref_date,
-                Performance.type.in_(build_types),
-                Performance.universe.in_(universes),
-                Performance.benchmark.in_(benchmarks),
-                Performance.source.in_(sources),
-                Performance.portfolio.in_(portfolios)
-            )
-        )
-
-        self.engine.execute(query)
-        df.to_sql(Performance.__table__.name, self.engine, if_exists='append', index=False)
-
-    def fetch_outright_status(self, ref_date: str, is_open=True, ignore_internal_borrow=False):
-        table = Outright
-        if is_open:
-            id_filter = 'notin_'
-        else:
-            id_filter = 'in_'
-
-        if ignore_internal_borrow:
-            this_filter = [table.internal_borrow == False]
-        else:
-            this_filter = []
-
-        t = select([table.trade_id]). \
-            where(and_(table.trade_date <= ref_date,
-                       table.operation == 'withdraw')).alias('t')
-        query = select([table]). \
-            where(and_(*([getattr(table.trade_id, id_filter)(t),
-                          table.trade_date <= ref_date,
-                          table.operation == 'lend'] + this_filter)))
-        df = pd.read_sql(query, self.engine).set_index('trade_id')
-        del df['internal_borrow']
-
-        if df.empty:
-            return
-
-        # calc total volume
-        df['total_volume'] = df.groupby('trade_id')['volume'].transform(sum)
-
-        # parse price
-        def parse_price_rule(x: pd.Series):
-            code = x['code']
-            rule = x['price_rule'].split('@')
-
-            if rule[0] in ['closePrice', 'openPrice']:
-                query = select([getattr(Market, rule[0])]). \
-                    where(and_(Market.code == code, Market.trade_date == rule[1]))
-                data = pd.read_sql(query, self.engine)
-                if not data.empty:
-                    price = data.values[0][0]
-                else:
-                    price = None
-            elif rule[0] == 'fixedPrice':
-                price = float(rule[1])
-            else:
-                raise KeyError('do not have rule for %s' % x['price_rule'])
-            return price
-
-        df['price'] = df.apply(lambda x: parse_price_rule(x), axis=1)
-
-        df.drop(['remark', 'price_rule', 'operation'], axis=1, inplace=True)
-        # pivot portfolio volume
-        total_cols = df.columns
-        pivot_cols = ['portfolio_name', 'volume']
-        tmp = df[pivot_cols].pivot(columns='portfolio_name')
-        tmp.columns = tmp.columns.droplevel(0)
-        res = df[[c for c in total_cols if c not in pivot_cols]].drop_duplicates().join(tmp).reset_index()
-        return res.sort_values(['trade_id'])
 
 
 if __name__ == '__main__':
