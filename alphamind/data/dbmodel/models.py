@@ -25,65 +25,6 @@ class Categories(Base):
     sw1_adj = Column(Integer)
 
 
-class DailyPortfolios(Base):
-    __tablename__ = 'daily_portfolios'
-    __table_args__ = (
-        Index('daily_portfolios_pk', 'trade_date', 'portfolio_name', 'code', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    code = Column(BigInteger, primary_key=True, nullable=False)
-    weight = Column(Float(53), nullable=False)
-    er = Column(Float(53), nullable=False)
-    industry = Column(String(50), nullable=False)
-    benchmark_weight = Column(Float(53), nullable=False)
-    is_tradable = Column(Boolean, nullable=False)
-    factor = Column(JSON)
-
-
-class DailyPortfoliosSchedule(Base):
-    __tablename__ = 'daily_portfolios_schedule'
-    __table_args__ = (
-        Index('daily_portfolios_schedule_trade_date_portfolio_name_uindex', 'trade_date', 'portfolio_name', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-
-
-class Experimental(Base):
-    __tablename__ = 'experimental'
-    __table_args__ = (
-        Index('experimental_idx', 'trade_date', 'code', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    CHV = Column(Float(53))
-    DROE = Column(Float(53))
-    IVR = Column(Float(53))
-    ROEAfterNonRecurring = Column(Float(53))
-    EPAfterNonRecurring = Column(Float(53))
-    DROEAfterNonRecurring = Column(Float(53))
-    CFinc1 = Column(Float(53))
-    xueqiu_hotness = Column(Float(53))
-    eps_q = Column(Float(53))
-    roe_q = Column(Float(53))
-    cfinc1_q = Column(Float(53))
-    val_q = Column(Float(53))
-    ep_q = Column(Float(53))
-    ep_q_d_1w = Column(Float(53))
-    ev = Column(Float(53))
-    liq = Column(Float(53))
-    pure_liq_0 = Column(Float(53))
-    pure_liq_1 = Column(Float(53))
-    pure_liq_2 = Column(Float(53))
-    pure_liq_3 = Column(Float(53))
-    pure_liq_4 = Column(Float(53))
-    pe_hist60 = Column(Float(53))
-
-
 class FactorMaster(Base):
     __tablename__ = 'factor_master'
     __table_args__ = (
@@ -180,77 +121,6 @@ class Market(Base):
     PB = Column(Float(53))
     isOpen = Column(Integer)
     vwap = Column(Float(53))
-
-
-class Models(Base):
-    __tablename__ = 'models'
-    __table_args__ = (
-        Index('model_pk', 'trade_date', 'model_type', 'model_version', unique=True),
-    )
-
-    trade_date = Column(DateTime, nullable=False)
-    model_type = Column(String(30), nullable=False)
-    model_version = Column(BigInteger, nullable=False)
-    update_time = Column(DateTime, nullable=False)
-    model_desc = Column(JSON, nullable=False)
-    data_meta = Column(JSON, nullable=True)
-    is_primary = Column(Boolean)
-    model_id = Column(Integer, primary_key=True, autoincrement=True)
-
-
-class Performance(Base):
-    __tablename__ = 'performance'
-    __table_args__ = (
-        Index('performance_pk', 'trade_date', 'type', 'portfolio', 'source', 'universe', 'benchmark', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    type = Column(String(20), primary_key=True, nullable=False)
-    portfolio = Column(String(50), primary_key=True, nullable=False)
-    source = Column(String(20), primary_key=True, nullable=False)
-    universe = Column(String(50), primary_key=True, nullable=False)
-    benchmark = Column(Integer, primary_key=True, nullable=False)
-    er = Column(Float(53), nullable=False)
-    turn_over = Column(Float(53))
-    ic = Column(Float(53))
-
-
-class PnlLog(Base):
-    __tablename__ = 'pnl_log'
-    __table_args__ = (
-        Index('pnl_log_idx', 'trade_date', 'portfolio_name', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    excess_return = Column(Float(53))
-    pct_change = Column(Float(53))
-
-
-class PortfolioSettings(Base):
-    __tablename__ = 'portfolio_settings'
-    __table_args__ = (
-        Index('portfolio_pk', 'trade_date', 'portfolio_name', 'model_id', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    model_id = Column(BigInteger, primary_key=True, nullable=False)
-    weight = Column(Float(53), nullable=False)
-
-
-class RebalanceLog(Base):
-    __tablename__ = 'rebalance_log'
-    __table_args__ = (
-        Index('rebalance_idx', 'trade_date', 'portfolio_name', 'code', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    factor_date = Column(DateTime, nullable=False)
-    weight = Column(Float(53), nullable=False)
-    price = Column(Float(53), nullable=False)
 
 
 class RiskCovDay(Base):
@@ -516,22 +386,6 @@ class RiskReturn(Base):
     updateTime = Column(DateTime)
 
 
-class RiskStat(Base):
-    __tablename__ = 'risk_stats'
-    __table_args__ = (
-        Index('risk_stats_uindex', 'trade_date', 'type', 'portfolio', 'source', 'universe', 'benchmark', 'factor', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    type = Column(String(20), primary_key=True, nullable=False)
-    portfolio = Column(String(50), primary_key=True, nullable=False)
-    source = Column(String(20), primary_key=True, nullable=False)
-    universe = Column(String(50), primary_key=True, nullable=False)
-    benchmark = Column(Integer, primary_key=True, nullable=False)
-    factor = Column(String(30), primary_key=True, nullable=False)
-    exposure = Column(Float(53))
-
-
 class SecurityMaster(Base):
     __tablename__ = 'security_master'
 
@@ -556,20 +410,6 @@ class SecurityMaster(Base):
     endDate = Column(DateTime)
     TShEquity = Column(Float(53))
     code = Column(Integer, primary_key=True, unique=True)
-
-
-class SpecialTreatment(Base):
-    __tablename__ = 'special_treatment'
-    __table_args__ = (
-        Index('special_treament_pk', 'trade_date', 'portfolio_name', 'code', 'treatment', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    code = Column(BigInteger, primary_key=True, nullable=False)
-    treatment = Column(String(30), primary_key=True, nullable=False)
-    comment = Column(Text)
-    weight = Column(Float(53))
 
 
 class SpecificReturn(Base):
@@ -626,19 +466,6 @@ class SpecificRiskShort(Base):
     secShortName = Column(String(20))
     SRISK = Column(Float(53))
     updateTime = Column(DateTime)
-
-
-class Strategy(Base):
-    __tablename__ = 'strategy'
-    __table_args__ = (
-        Index('strategy_idx', 'trade_date', 'strategyName', 'factor', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    strategyName = Column(String(20), primary_key=True, nullable=False)
-    factor = Column(String(50), primary_key=True, nullable=False)
-    weight = Column(Float(53))
-    source = Column(String(20), primary_key=True, nullable=False)
 
 
 class Universe(Base):
@@ -1124,21 +951,6 @@ class Uqer(Base):
     NLSIZE = Column(Float(53))
 
 
-class FactorLog(Base):
-    __tablename__ = 'factor_log'
-    __table_args__ = (
-        Index('factor_log_idx', 'trade_date', 'factor', 'source', 'universe', unique=True),
-    )
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    factor = Column(String(30), primary_key=True, nullable=False)
-    source = Column(String(30), primary_key=True, nullable=False)
-    universe = Column(String(20), primary_key=True, nullable=False)
-    coverage = Column(Float(53))
-    maximum = Column(Float(53))
-    minimum = Column(Float(53))
-
-
 class FactorCorrelation(Base):
     __tablename__ = 'factor_correlation'
     __table_args__ = (
@@ -1177,86 +989,6 @@ class IndexMarket(Base):
     turnoverVol = Column(Float(53))
     turnoverValue = Column(Float(53))
     chgPct = Column(Float(53))
-
-
-class Formulas(Base):
-    __tablename__ = 'formulas'
-
-    formula = Column(String(50), primary_key=True)
-    formula_desc = Column(JSON, nullable=False)
-    comment = Column(Text)
-
-
-class Gogoal(Base):
-    __tablename__ = 'gogoal'
-
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    con_eps = Column(Float(53))
-    con_eps_rolling = Column(Float(53))
-    con_na = Column(Float(53))
-    con_na_rolling = Column(Float(53))
-    con_np = Column(Float(53))
-    con_npcgrate_1w = Column(Float(53))
-    con_npcgrate_4w = Column(Float(53))
-    con_npcgrate_13w = Column(Float(53))
-    con_npcgrate_26w = Column(Float(53))
-    con_npcgrate_52w = Column(Float(53))
-    con_npcgrate_2y = Column(Float(53))
-    con_np_rolling = Column(Float(53))
-    con_np_yoy = Column(Float(53))
-    con_pb = Column(Float(53))
-    con_pb_order = Column(Float(53))
-    con_pb_rolling = Column(Float(53))
-    con_pb_rolling_order = Column(Float(53))
-    con_or = Column(Float(53))
-    con_pe = Column(Float(53))
-    con_pe_order = Column(Float(53))
-    con_pe_rolling = Column(Float(53))
-    con_pe_rolling_order = Column(Float(53))
-    con_peg = Column(Float(53))
-    con_peg_order = Column(Float(53))
-    con_peg_rolling = Column(Float(53))
-    con_peg_rolling_order = Column(Float(53))
-    con_roe = Column(Float(53))
-    con_target_price = Column(Float(53))
-    market_confidence_5d = Column(Float(53))
-    market_confidence_10d = Column(Float(53))
-    market_confidence_15d = Column(Float(53))
-    market_confidence_25d = Column(Float(53))
-    market_confidence_75d = Column(Float(53))
-    mcap = Column(Float(53))
-    optimism_confidence_5d = Column(Float(53))
-    optimism_confidence_10d = Column(Float(53))
-    optimism_confidence_15d = Column(Float(53))
-    optimism_confidence_25d = Column(Float(53))
-    optimism_confidence_75d = Column(Float(53))
-    pessimism_confidence_5d = Column(Float(53))
-    pessimism_confidence_10d = Column(Float(53))
-    pessimism_confidence_15d = Column(Float(53))
-    pessimism_confidence_25d = Column(Float(53))
-    pessimism_confidence_75d = Column(Float(53))
-    tcap = Column(Float(53))
-
-
-class Outright(Base):
-    __tablename__ = 'outright'
-    __table_args__ = (
-        Index('outright_trade_id_trade_date_code_portfolio_name_uindex', 'trade_id', 'trade_date', 'code',
-              'portfolio_name', unique=True),
-    )
-
-    trade_id = Column(Integer, primary_key=True, nullable=False)
-    trade_date = Column(DateTime, primary_key=True, nullable=False)
-    code = Column(Integer, primary_key=True, nullable=False)
-    portfolio_name = Column(String(50), primary_key=True, nullable=False)
-    volume = Column(Integer, nullable=False)
-    operation = Column(String(10), nullable=False)
-    interest_rate = Column(Float, nullable=False)
-    price_rule = Column(String(50), nullable=False)
-    due_date = Column(DateTime)
-    remark = Column(Text, nullable=True)
-    internal_borrow = Column(Boolean, server_default=text("false"))
 
 
 if __name__ == '__main__':
