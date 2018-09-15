@@ -52,7 +52,8 @@ def mean_variance_builder(er: np.ndarray,
                           ubound: Union[np.ndarray, float],
                           risk_exposure: Optional[np.ndarray],
                           risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                          lam: float=1.) -> Tuple[str, float, np.ndarray]:
+                          lam: float=1.,
+                          linear_solver: str='ma27') -> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     if np.all(lbound == -np.inf) and np.all(ubound == np.inf) and cons_mat is None:
@@ -87,7 +88,8 @@ def mean_variance_builder(er: np.ndarray,
                                 lam,
                                 risk_model['factor_cov'],
                                 risk_model['factor_loading'],
-                                risk_model['idsync'])
+                                risk_model['idsync'],
+                                linear_solver=linear_solver)
 
         return _create_result(optimizer, bm)
 
@@ -99,7 +101,8 @@ def target_vol_builder(er: np.ndarray,
                        ubound: Union[np.ndarray, float],
                        risk_exposure: Optional[np.ndarray],
                        risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                       vol_target: float = 1.)-> Tuple[str, float, np.ndarray]:
+                       vol_target: float = 1.,
+                       linear_solver: str = 'ma27')-> Tuple[str, float, np.ndarray]:
     lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
 
     optimizer = CVOptimizer(er,
@@ -112,7 +115,8 @@ def target_vol_builder(er: np.ndarray,
                             vol_target,
                             risk_model['factor_cov'],
                             risk_model['factor_loading'],
-                            risk_model['idsync'])
+                            risk_model['idsync'],
+                            linear_solver=linear_solver)
 
     return _create_result(optimizer, bm)
 
