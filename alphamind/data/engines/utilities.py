@@ -22,7 +22,7 @@ from alphamind.data.dbmodel.models import Categories
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
-factor_tables = [Market, RiskExposure, Uqer, Gogoal, Experimental, Categories]
+factor_tables = [Market, RiskExposure, Uqer, Categories]
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
