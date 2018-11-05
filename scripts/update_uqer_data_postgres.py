@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
-from airflow.operators.sensors import ExternalTaskSensor
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from airflow.models import DAG
 from uqer import DataAPI as api
 from alphamind.utilities import alpha_logger
@@ -30,7 +30,7 @@ from alphamind.api import risk_styles
 
 uqer.DataAPI.api_base.timeout = 300
 
-start_date = dt.datetime(2018, 5, 4)
+start_date = dt.datetime(2018, 7, 15)
 dag_name = 'update_uqer_data_postgres'
 
 default_args = {
@@ -749,7 +749,7 @@ def update_factor_master(ds, **kwargs):
     if not flag:
         return
 
-    tables = [Uqer, Gogoal, Experimental, RiskExposure]
+    tables = [Uqer, RiskExposure]
 
     meta = MetaData(bind=engine, reflect=True)
 
