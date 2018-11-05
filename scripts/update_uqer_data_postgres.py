@@ -13,6 +13,7 @@ import uqer
 import sqlalchemy
 import numpy as np
 import pandas as pd
+import pendulum
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
 from airflow.sensors.external_task_sensor import ExternalTaskSensor
@@ -30,7 +31,8 @@ from alphamind.api import risk_styles
 
 uqer.DataAPI.api_base.timeout = 300
 
-start_date = dt.datetime(2018, 7, 15)
+local_tz = pendulum.timezone("Asia/Shanghai")
+start_date = dt.datetime(2018, 7, 15, tzinfo=local_tz)
 dag_name = 'update_uqer_data_postgres'
 
 default_args = {
@@ -887,4 +889,4 @@ factor_master_task.set_upstream(uqer_task)
 
 
 if __name__ == '__main__':
-    update_universe(ds='2018-05-09')
+    update_uqer_index_components(ds='2018-07-16')
