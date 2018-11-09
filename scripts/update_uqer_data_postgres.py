@@ -6,7 +6,6 @@ Created on 2017-5-20
 """
 
 import os
-import sys
 import arrow
 import datetime as dt
 import uqer
@@ -15,8 +14,6 @@ import numpy as np
 import pandas as pd
 import pendulum
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.email_operator import EmailOperator
-from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from airflow.models import DAG
 from uqer import DataAPI as api
 from alphamind.utilities import alpha_logger
@@ -27,12 +24,11 @@ from alphamind.api import SqlEngine
 from alphamind.data.dbmodel.models import *
 from alphamind.api import Universe as UniversProxy
 from alphamind.api import industry_styles
-from alphamind.api import risk_styles
 
 uqer.DataAPI.api_base.timeout = 300
 
 local_tz = pendulum.timezone("Asia/Shanghai")
-start_date = dt.datetime(2018, 7, 15, tzinfo=local_tz)
+start_date = dt.datetime(2018, 7, 27, tzinfo=local_tz)
 dag_name = 'update_uqer_data_postgres'
 
 default_args = {
@@ -44,7 +40,7 @@ default_args = {
 dag = DAG(
     dag_id=dag_name,
     default_args=default_args,
-    schedule_interval='0 1 * * 1,2,3,4,5'
+    schedule_interval='0 9 * * 1,2,3,4,5'
 )
 
 _ = uqer.Client(token=os.environ['DATAYES_TOKEN'])
@@ -889,4 +885,16 @@ factor_master_task.set_upstream(uqer_task)
 
 
 if __name__ == '__main__':
-    update_uqer_index_components(ds='2018-07-16')
+    codes = api.FundGet().secID.values
+    steps = 1000
+
+    dates = pd.date_range('2005-01-01', '2018-11-30', freq='Q')
+    for d in dates:
+        start = 0
+        total_df = pd.DataFrame()
+        while start < len(codes):
+            df = api.FundHoldingsGet(secID=codes[start:start + steps], reportDate=d)
+            start += steps
+            total_df = total_df.append(df)
+        total_df.to_sql('fund_holding', con=engine, index=False, if_exists='append')
+        print(d)
