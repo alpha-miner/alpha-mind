@@ -47,7 +47,7 @@ class BaseUniverse(metaclass=abc.ABCMeta):
     def query(self, engine, start_date: str = None, end_date: str = None, dates=None):
         query = select([UniverseTable.trade_date, UniverseTable.code]).where(
             self._query_statements(start_date, end_date, dates)
-        )
+        ).order_by([Universe.trade_date, Universe.code])
         return pd.read_sql(query, engine.engine)
 
     def _query_statements(self, start_date: str = None, end_date: str = None, dates=None):
