@@ -74,7 +74,7 @@ def mean_variance_builder(er: np.ndarray,
         prob.solve(solver='ECOS', feastol=1e-9, abstol=1e-9, reltol=1e-9)
 
         if prob.status == 'optimal' or prob.status == 'optimal_inaccurate':
-            return 'optimal', prob.value, np.array(w.value) + bm
+            return 'optimal', prob.value, np.array(w.value).flatten() + bm
         else:
             raise PortfolioBuilderException(prob.status)
     else:

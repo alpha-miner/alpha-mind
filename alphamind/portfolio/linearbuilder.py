@@ -91,7 +91,6 @@ def linear_builder(er: np.ndarray,
         elif method.lower() == 'ecos':
             from cvxpy import Problem
             from cvxpy import Variable
-            from cvxpy import multiply
             from cvxpy import norm1
             from cvxpy import Minimize
 
