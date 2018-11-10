@@ -14,9 +14,8 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-from sqlalchemy import select, and_, outerjoin, join, delete, insert, column
+from sqlalchemy import select, and_, outerjoin, join, column
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import bindparam
 from alphamind.data.engines.universe import Universe
 from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import IndexComponent
@@ -27,14 +26,10 @@ from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.transformer import Transformer
-from alphamind.model.loader import load_model
-from alphamind.formula.utilities import encode_formula
-from alphamind.formula.utilities import decode_formula
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
 from alphamind.data.engines.utilities import _map_risk_model_table
 from alphamind.data.engines.utilities import factor_tables
-from alphamind.data.engines.utilities import industry_list
 from alphamind.data.processing import factor_processing
 from alphamind.portfolio.riskmodel import FactorRiskModel
 from PyFin.api import advanceDateByCalendar
@@ -855,7 +850,7 @@ class SqlEngine(object):
 
 if __name__ == '__main__':
 
-    from PyFin.api import *
+    from PyFin.api import bizDatesList
     engine = SqlEngine()
     ref_date = '2017-05-03'
     universe = Universe('zz800')
