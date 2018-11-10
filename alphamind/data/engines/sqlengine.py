@@ -26,6 +26,7 @@ from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import FundMaster
+from alphamind.data.dbmodel.models import FundHolding
 from alphamind.data.transformer import Transformer
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
@@ -115,6 +116,20 @@ class SqlEngine(object):
     def fetch_fund_meta(self) -> pd.DataFrame:
         query = self.session.query(FundMaster)
         return pd.read_sql(query.statement, query.session.bind)
+
+    def fetch_fund_holding(self,
+                           fund_codes,
+                           start_date: str=None,
+                           end_date: str=None,
+                           dates: Iterable[str]=None) -> pd.DataFrame:
+
+        query = select([FundHolding]).where(
+            and_(
+                FundHolding.fund_code.in_(fund_codes),
+                FundHolding.reportDate.in_(dates) if dates else FundHolding.reportDate.between(start_date, end_date)
+            )
+        )
+        return pd.read_sql(query, self.session.bind)
 
     def fetch_factors_meta(self) -> pd.DataFrame:
         query = self.session.query(FactorMaster)
