@@ -25,6 +25,7 @@ from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import IndexMarket
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.dbmodel.models import RiskExposure
+from alphamind.data.dbmodel.models import FundMaster
 from alphamind.data.transformer import Transformer
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
@@ -81,18 +82,13 @@ macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
 
-DEFAULT_URL = 'postgresql+psycopg2://postgres:A12345678!@10.63.6.220/alpha'
-
 DAILY_RETURN_OFFSET = 0
 
 
 class SqlEngine(object):
     def __init__(self,
                  db_url: str = None):
-        if db_url:
-            self.engine = sa.create_engine(db_url)
-        else:
-            self.engine = sa.create_engine(DEFAULT_URL)
+        self.engine = sa.create_engine(db_url)
 
         self.session = self.create_session()
 
@@ -116,32 +112,13 @@ class SqlEngine(object):
         db_session = orm.sessionmaker(bind=self.engine)
         return db_session()
 
+    def fetch_fund_meta(self) -> pd.DataFrame:
+        query = self.session.query(FundMaster)
+        return pd.read_sql(query.statement, query.session.bind)
+
     def fetch_factors_meta(self) -> pd.DataFrame:
         query = self.session.query(FactorMaster)
         return pd.read_sql(query.statement, query.session.bind)
-
-    def fetch_factor_coverage(self,
-                              start_date: str,
-                              end_date: str,
-                              universe: str=None,
-                              source: str=None) -> pd.DataFrame:
-
-        conditions = []
-        conditions.append(FactorLog.trade_date.between(start_date, end_date))
-
-        if universe:
-            conditions.append(FactorLog.universe == universe)
-
-        if source:
-            conditions.append(FactorLog.source == source)
-
-        query = select([FactorLog]).where(
-            and_(
-                *conditions
-            )
-        )
-
-        return pd.read_sql(query, self.session.bind)
 
     def fetch_risk_meta(self) -> pd.DataFrame:
         query = self.session.query(RiskMaster)
