@@ -12,6 +12,65 @@ Base = declarative_base()
 metadata = Base.metadata
 
 
+class FundHolding(Base):
+    __tablename__ = 'fund_holding'
+
+    fund_code = Column(String(15), primary_key=True, nullable=False)
+    ticker = Column(String(15), nullable=False)
+    short_name = Column(String(30), nullable=False)
+    reportDate = Column(DateTime, primary_key=True, nullable=False)
+    holdingsecType = Column(String(5), nullable=False)
+    holdingSecID = Column(String(15), primary_key=True, nullable=False)
+    holdingTicker = Column(String(15), nullable=False)
+    holdingExchangeCd = Column(String(5))
+    holdingsecShortName = Column(String(30))
+    holdVolume = Column(Float(53))
+    marketValue = Column(Float(53))
+    ratioInNa = Column(Float(53))
+    publishDate = Column(DateTime, nullable=False)
+    currencyCd = Column(String(5))
+
+
+class FundMaster(Base):
+    __tablename__ = 'fund_master'
+
+    fund_code = Column(String(15), primary_key=True)
+    ticker = Column(String(15), nullable=False)
+    short_name = Column(String(30), nullable=False)
+    tradeAbbrName = Column(String(20))
+    category = Column(String(5), nullable=False)
+    operationMode = Column(String(5))
+    indexFund = Column(String(5))
+    etfLof = Column(String(5))
+    isQdii = Column(Integer, nullable=False)
+    isFof = Column(Integer, nullable=False)
+    isGuarFund = Column(Integer, nullable=False)
+    guarPeriod = Column(Float(53))
+    guarRatio = Column(Float(53))
+    exchangeCd = Column(String(4))
+    listStatusCd = Column(String(4))
+    managerName = Column(String(50))
+    status = Column(String(5))
+    establishDate = Column(DateTime)
+    listDate = Column(DateTime)
+    delistDate = Column(DateTime)
+    expireDate = Column(DateTime)
+    managementCompany = Column(BigInteger)
+    managementFullName = Column(String(50))
+    custodian = Column(BigInteger)
+    custodianFullName = Column(String(50))
+    investField = Column(Text)
+    investTarget = Column(Text)
+    perfBenchmark = Column(Text)
+    circulationShares = Column(Float(53))
+    isClass = Column(Integer)
+    idxID = Column(String(15))
+    idxTicker = Column(String(15))
+    idxShortName = Column(String(30))
+    managementShortName = Column(String(30))
+    custodianShortName = Column(String(30))
+
+
 class Categories(Base):
 
     __tablename__ = 'categories'
