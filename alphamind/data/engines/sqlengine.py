@@ -359,6 +359,7 @@ class SqlEngine(object):
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
         res['chgPct'] = df.chgPct
+        res['secShortName'] = df['secShortName']
         res = res.loc[ref_date]
         res.index = list(range(len(res)))
         return res
@@ -421,6 +422,7 @@ class SqlEngine(object):
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
         res['chgPct'] = df.chgPct
+        res['secShortName'] = df['secShortName']
         res = res.reset_index()
         return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
 
