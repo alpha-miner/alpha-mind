@@ -348,7 +348,7 @@ class SqlEngine(object):
                 joined_tables.add(t.__table__.name)
 
         query = select(
-            [Market.trade_date, Market.code, Market.chgPct] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct, Market.secShortName] + list(factor_cols.keys())) \
             .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
                                                Market.code.in_(codes)))
 
@@ -403,7 +403,7 @@ class SqlEngine(object):
         universe_df = universe.query(self, start_date, end_date, dates)
 
         query = select(
-            [Market.trade_date, Market.code, Market.chgPct] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct, Market.secShortName] + list(factor_cols.keys())) \
             .select_from(big_table).where(
                 and_(
                     Market.code.in_(universe_df.code.unique().tolist()),
