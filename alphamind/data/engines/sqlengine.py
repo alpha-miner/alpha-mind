@@ -360,7 +360,7 @@ class SqlEngine(object):
 
         res['chgPct'] = df.chgPct
         res['secShortName'] = df['secShortName']
-        res = res.loc[ref_date]
+        res = res.loc[ref_date:ref_date, :]
         res.index = list(range(len(res)))
         return res
 
