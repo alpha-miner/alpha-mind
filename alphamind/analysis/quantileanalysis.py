@@ -35,12 +35,13 @@ def quantile_analysis(factors: pd.DataFrame,
         post_process = [standardize]
 
     er = factor_processing(factors.values, pre_process, risk_exp, post_process) @ factor_weights
-    return er_quantile_analysis(er, n_bins, dx_return)
+    return er_quantile_analysis(er, n_bins, dx_return, **kwargs)
 
 
 def er_quantile_analysis(er: np.ndarray,
                          n_bins: int,
-                         dx_return: np.ndarray) -> np.ndarray:
+                         dx_return: np.ndarray,
+                         de_trend=False) -> np.ndarray:
 
     er = er.flatten()
     q_groups = quantile(er, n_bins)
@@ -52,10 +53,11 @@ def er_quantile_analysis(er: np.ndarray,
     total_return = group_return.sum()
     ret = group_return.copy()
 
-    resid = n_bins - 1
-    res_weight = 1. / resid
-    for i, value in enumerate(ret):
-        ret[i] = (1. + res_weight) * value - res_weight * total_return
+    if de_trend:
+        resid = n_bins - 1
+        res_weight = 1. / resid
+        for i, value in enumerate(ret):
+            ret[i] = (1. + res_weight) * value - res_weight * total_return
 
     return ret
 
@@ -74,14 +76,13 @@ if __name__ == '__main__':
     calculated = quantile_analysis(f_df,
                                    x_w,
                                    r,
-                                   risk_exp=risk_exp,
+                                   risk_exp=None,
                                    n_bins=n_bins,
-                                   do_neutralize=True,
-                                   pre_process=[winsorize_normal, standardize],
-                                   post_process=[standardize])
+                                   pre_process=[], #[winsorize_normal, standardize],
+                                   post_process=[]) #[standardize])
 
-    er = x_w @ f_df.T
-    expected = er_quantile_analysis(er, 5, r)
+    er = x_w @ f_df.values.T
+    expected = er_quantile_analysis(er, n_bins, r)
 
     print(calculated)
     print(expected)
