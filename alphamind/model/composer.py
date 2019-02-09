@@ -8,6 +8,7 @@ Created on 2017-9-27
 import copy
 import bisect
 from typing import Iterable
+from typing import Tuple
 import numpy as np
 import pandas as pd
 from simpleutils.miscellaneous import list_eq
@@ -152,7 +153,7 @@ def train_model(ref_date: str,
             x_values = train_data['train']['x']
             y_values = train_data['train']['y']
         base_model.fit(x_values, y_values)
-    return base_model
+    return base_model, x_values, y_values
 
 
 def predict_by_model(ref_date: str,
@@ -164,10 +165,10 @@ def predict_by_model(ref_date: str,
         predict_data = data_meta.fetch_predict_data(ref_date, alpha_model)
         codes, x_values = predict_data['predict']['code'], predict_data['predict']['x']
 
-    return pd.DataFrame(alpha_model.predict(x_values).flatten(), index=codes)
+    return pd.DataFrame(alpha_model.predict(x_values).flatten(), index=codes), x_values
 
 
-class Composer(object):
+class Composer:
     def __init__(self,
                  alpha_model: ModelBase,
                  data_meta: DataMeta):
@@ -178,20 +179,23 @@ class Composer(object):
         self.is_updated = False
         self.sorted_keys = None
 
-    def train(self, ref_date: str):
-        self.models[ref_date] = train_model(ref_date, self.alpha_model, self.data_meta)
+    def train(self, ref_date: str) -> Tuple[ModelBase, pd.DataFrame, pd.DataFrame]:
+        model, x, y = train_model(ref_date, self.alpha_model, self.data_meta)
+        self.models[ref_date] = model
         self.is_updated = False
+        return model, x, y
 
-    def predict(self, ref_date: str, x: pd.DataFrame = None) -> pd.DataFrame:
+    def predict(self, ref_date: str, x: pd.DataFrame = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         model = self._fetch_latest_model(ref_date)
         if x is None:
             return predict_by_model(ref_date, model, self.data_meta)
         else:
             x_values = x.values
             codes = x.index
-            return pd.DataFrame(model.predict(x_values).flatten(), index=codes)
+            return pd.DataFrame(model.predict(x_values).flatten(), index=codes), x
 
-    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None, d_type: str = 'test') -> float:
+    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None, d_type: str = 'test') \
+            -> Tuple[float, pd.DataFrame, pd.DataFrame]:
         model = self._fetch_latest_model(ref_date)
         if x is None:
             if d_type == 'test':
@@ -204,14 +208,14 @@ class Composer(object):
                 x = test_data['train']['x']
                 if y is None:
                     y = test_data['train']['y']
-        return model.score(x, y)
+        return model.score(x, y), x, y
 
-    def ic(self, ref_date) -> float:
+    def ic(self, ref_date) -> Tuple[float, pd.DataFrame, pd.DataFrame]:
         model = self._fetch_latest_model(ref_date)
         test_data = self.data_meta.fetch_predict_data(ref_date, model)
         x = test_data['predict']['x']
         y = test_data['predict']['y']
-        return model.ic(x, y)
+        return model.ic(x, y), x, y
 
     def _fetch_latest_model(self, ref_date) -> ModelBase:
         if self.is_updated:
@@ -292,7 +296,6 @@ if __name__ == '__main__':
 
     regression_model = LinearRegression(features=regress_features, fit_intercept=fit_intercept, fit_target=fit_target)
     regression_composer = Composer(alpha_model=regression_model, data_meta=data_meta)
-    #regression_composer.train('2010-07-07')
 
     data_package1 = fetch_data_package(engine,
                                        alpha_factors=[kernal_feature],
@@ -307,5 +310,3 @@ if __name__ == '__main__':
                                        pre_process=pre_process,
                                        post_process=post_process,
                                        fit_target=fit_target)
-
-    pass

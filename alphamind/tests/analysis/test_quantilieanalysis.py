@@ -45,7 +45,7 @@ class TestQuantileAnalysis(unittest.TestCase):
         for i, value in enumerate(expected_res):
             expected_res[i] = (1. + res_weight) * value - res_weight * grouped_return.sum()
 
-        calculated_res = er_quantile_analysis(x, n_bins, self.r)
+        calculated_res = er_quantile_analysis(x, n_bins, self.r, de_trend=True)
 
         np.testing.assert_array_almost_equal(expected_res, calculated_res)
 
@@ -55,7 +55,6 @@ class TestQuantileAnalysis(unittest.TestCase):
                                        self.x_w,
                                        self.r,
                                        n_bins=self.n_bins,
-                                       do_neutralize=False,
                                        pre_process=[],
                                        post_process=[])
 
@@ -69,7 +68,6 @@ class TestQuantileAnalysis(unittest.TestCase):
                                        self.x_w,
                                        self.r,
                                        n_bins=self.n_bins,
-                                       do_neutralize=True,
                                        risk_exp=self.risk_exp,
                                        pre_process=[winsorize_normal, standardize],
                                        post_process=[standardize])
