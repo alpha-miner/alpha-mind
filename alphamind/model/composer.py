@@ -179,8 +179,8 @@ class Composer:
         self.is_updated = False
         self.sorted_keys = None
 
-    def train(self, ref_date: str) -> Tuple[ModelBase, pd.DataFrame, pd.DataFrame]:
-        model, x, y = train_model(ref_date, self.alpha_model, self.data_meta)
+    def train(self, ref_date: str, x=None, y=None) -> Tuple[ModelBase, pd.DataFrame, pd.DataFrame]:
+        model, x, y = train_model(ref_date, self.alpha_model, self.data_meta, x, y)
         self.models[ref_date] = model
         self.is_updated = False
         return model, x, y
@@ -190,31 +190,30 @@ class Composer:
         if x is None:
             return predict_by_model(ref_date, model, self.data_meta)
         else:
-            x_values = x.values
             codes = x.index
-            return pd.DataFrame(model.predict(x_values).flatten(), index=codes), x
+            return pd.DataFrame(model.predict(x).flatten(), index=codes), x
 
     def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None, d_type: str = 'test') \
             -> Tuple[float, pd.DataFrame, pd.DataFrame]:
         model = self._fetch_latest_model(ref_date)
-        if x is None:
+        if x is None or y is None:
             if d_type == 'test':
                 test_data = self.data_meta.fetch_predict_data(ref_date, model)
                 x = test_data['predict']['x']
-                if y is None:
-                    y = test_data['predict']['y']
+                y = test_data['predict']['y']
             else:
                 test_data = self.data_meta.fetch_train_data(ref_date, model)
                 x = test_data['train']['x']
-                if y is None:
-                    y = test_data['train']['y']
+                y = test_data['train']['y']
         return model.score(x, y), x, y
 
-    def ic(self, ref_date) -> Tuple[float, pd.DataFrame, pd.DataFrame]:
+    def ic(self, ref_date, x=None, y=None) -> Tuple[float, pd.DataFrame, pd.DataFrame]:
         model = self._fetch_latest_model(ref_date)
-        test_data = self.data_meta.fetch_predict_data(ref_date, model)
-        x = test_data['predict']['x']
-        y = test_data['predict']['y']
+        if x is None or y is None:
+            test_data = self.data_meta.fetch_predict_data(ref_date, model)
+            x = test_data['predict']['x']
+            y = test_data['predict']['y']
+
         return model.ic(x, y), x, y
 
     def _fetch_latest_model(self, ref_date) -> ModelBase:
