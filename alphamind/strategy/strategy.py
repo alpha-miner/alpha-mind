@@ -129,10 +129,10 @@ class Strategy(object):
         if self.dask_client is None:
             models = {}
             for ref_date, _ in total_data_groups:
-                models[ref_date] = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
+                models[ref_date], _, _ = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
         else:
             def worker(parameters):
-                new_model = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1], parameters[2])
+                new_model, _, _ = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1], parameters[2])
                 return parameters[0], new_model
 
             l = self.dask_client.map(worker, [(d[0], self.alpha_model, self.data_meta) for d in total_data_groups])
