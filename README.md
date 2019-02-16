@@ -99,6 +99,10 @@ git clone https://github.com/alpha-miner/alpha-mind.git
 cd alpha-mind
 git submodule init
 git submodule update
+cd alphamind/pfopt
+git submodule init
+git submodule update
+cd ../..
 ```
 
 2. 参照上节内容，编译好依赖的子项目。
