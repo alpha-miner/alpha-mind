@@ -14,7 +14,7 @@
 </tr>
 <tr>
   <td>Coverage</td>
-  <td><img src="https://coveralls.io/repos/github/wegamekinglc/alpha-mind/badge.svg?branch=master" alt="coverage" /></td>
+  <td><img src="https://coveralls.io/repos/github/alpha-miner/alpha-mind/badge.svg?branch=master" alt="coverage" /></td>
 </tr>
 </table>
 
