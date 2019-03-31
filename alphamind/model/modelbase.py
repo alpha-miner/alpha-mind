@@ -35,8 +35,15 @@ class ModelBase(metaclass=abc.ABCMeta):
         self.impl = None
         self.trained_time = None
 
+    def model_encode(self):
+        return encode(self.impl)
+
+    @classmethod
+    def model_decode(cls, model_desc):
+        return decode(model_desc)
+
     def __eq__(self, rhs):
-        return encode(self.impl) == encode(rhs.impl) \
+        return self.model_encode() == rhs.model_encode() \
                and self.trained_time == rhs.trained_time \
                and list_eq(self.features, rhs.features) \
                and encode(self.formulas) == encode(rhs.formulas) \
@@ -67,7 +74,7 @@ class ModelBase(metaclass=abc.ABCMeta):
                           saved_time=arrow.now().format("YYYY-MM-DD HH:mm:ss"),
                           features=list(self.features),
                           trained_time=self.trained_time,
-                          desc=encode(self.impl),
+                          desc=self.model_encode(),
                           formulas=encode(self.formulas),
                           fit_target=encode(self.fit_target),
                           internal_model=self.impl.__class__.__module__ + "." + self.impl.__class__.__name__)
@@ -80,7 +87,7 @@ class ModelBase(metaclass=abc.ABCMeta):
         obj_layout.features = model_desc['features']
         obj_layout.formulas = decode(model_desc['formulas'])
         obj_layout.trained_time = model_desc['trained_time']
-        obj_layout.impl = decode(model_desc['desc'])
+        obj_layout.impl = cls.model_decode(model_desc['desc'])
         if 'fit_target' in model_desc:
             obj_layout.fit_target = decode(model_desc['fit_target'])
         else:

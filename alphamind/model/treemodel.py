@@ -5,7 +5,6 @@ Created on 2017-12-4
 @author: cheng.li
 """
 
-from distutils.version import LooseVersion
 import arrow
 import numpy as np
 import pandas as pd
@@ -13,11 +12,9 @@ from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
 from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
-from xgboost import __version__ as xgbboot_version
 from xgboost import XGBRegressor as XGBRegressorImpl
 from xgboost import XGBClassifier as XGBClassifierImpl
 from alphamind.model.modelbase import create_model_base
-from alphamind.utilities import alpha_logger
 
 
 class RandomForestRegressor(create_model_base('sklearn')):
@@ -65,12 +62,14 @@ class XGBRegressor(create_model_base('xgboost')):
                  features=None,
                  fit_target=None,
                  n_jobs: int=1,
+                 missing: float=np.nan,
                  **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
                                      learning_rate=learning_rate,
                                      max_depth=max_depth,
                                      n_jobs=n_jobs,
+                                     missing=missing,
                                      **kwargs)
 
     @property
@@ -87,13 +86,16 @@ class XGBClassifier(create_model_base('xgboost')):
                  features=None,
                  fit_target=None,
                  n_jobs: int=1,
+                 missing: float=np.nan,
                  **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.impl = XGBClassifierImpl(n_estimators=n_estimators,
                                       learning_rate=learning_rate,
                                       max_depth=max_depth,
                                       n_jobs=n_jobs,
+                                      missing=missing,
                                       **kwargs)
+        self.impl = XGBClassifier.model_decode(self.model_encode())
 
     @property
     def importances(self):
