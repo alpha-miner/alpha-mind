@@ -5,7 +5,7 @@ python:
   - "3.7"
 # command to install dependencies
 sudo: enabled
-dist: trusty
+dist: xenial
 group: travis_lts
 addons:
   apt:
