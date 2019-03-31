@@ -71,6 +71,7 @@ class XGBRegressor(create_model_base('xgboost')):
                                      n_jobs=n_jobs,
                                      missing=missing,
                                      **kwargs)
+        self.impl = XGBRegressor.model_decode(self.model_encode())
 
     @property
     def importances(self):
