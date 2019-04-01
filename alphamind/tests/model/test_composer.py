@@ -15,7 +15,7 @@ from alphamind.model.treemodel import XGBClassifier
 class TestComposer(unittest.TestCase):
 
     def _assert_composer_equal(self, lhs: Composer, rhs: Composer):
-        self.assertEqual(lhs.alpha_model, rhs.alpha_model)
+        self.assertEqual(type(lhs.alpha_model), type(rhs.alpha_model))
         self.assertEqual(lhs.data_meta, rhs.data_meta)
 
     def test_data_meta_persistence(self):

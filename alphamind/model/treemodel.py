@@ -71,7 +71,6 @@ class XGBRegressor(create_model_base('xgboost')):
                                      n_jobs=n_jobs,
                                      missing=missing,
                                      **kwargs)
-        self.impl = XGBRegressor.model_decode(self.model_encode())
 
     @property
     def importances(self):
@@ -140,6 +139,7 @@ class XGBTrainer(create_model_base('xgboost')):
         self.early_stopping_rounds = early_stopping_rounds
         self.impl = None
         self.kwargs = kwargs
+        self.trained_time = None
 
     def fit(self, x: pd.DataFrame, y: np.ndarray):
         if self.eval_sample:
