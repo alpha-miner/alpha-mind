@@ -843,13 +843,13 @@ class SqlEngine(object):
 
 
 if __name__ == '__main__':
+    from PyFin.api import *
+    from alphamind.api import *
 
-    from PyFin.api import bizDatesList
-    engine = SqlEngine()
-    ref_date = '2017-05-03'
+    freq = "1m"
     universe = Universe('zz800')
-    dates = bizDatesList('china.sse', '2018-05-01', '2018-05-10')
-    codes = engine.fetch_codes(ref_date, universe)
+    engine = SqlEngine('postgresql+psycopg2://alpha:alpha@180.166.26.82:8889')
+    rebalance_dates = makeSchedule('2015-01-31', '2019-05-30', freq, 'china.sse', BizDayConventions.Preceding)
 
-    res = engine.fetch_dx_return_range(universe, dates=dates, horizon=4, benchmark=300)
-    print(res)
+    formula = CSTopN(LAST('EP'), 5, groups='sw1')
+    factors = engine.fetch_factor_range(universe, {'alpha': formula}, dates=rebalance_dates)

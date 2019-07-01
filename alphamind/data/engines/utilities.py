@@ -36,15 +36,17 @@ def _map_risk_model_table(risk_model: str) -> tuple:
 
 def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
     factor_cols = {}
-    excluded = {'trade_date', 'code', 'isOpen'}
+    factors = set(factors).difference({'trade_date', 'code', 'isOpen'})
+    to_keep = factors.copy()
     for f in factors:
         for t in used_factor_tables:
-            if f not in excluded and f in t.__table__.columns:
+            if f in t.__table__.columns:
                 factor_cols[t.__table__.columns[f]] = t
+                to_keep.remove(f)
                 break
 
-    if not factor_cols:
-        raise ValueError("some factors in <{0}> can't be find".format(factors))
+    if to_keep:
+        raise ValueError("factors in <{0}> can't be find".format(to_keep))
 
     return factor_cols
 
