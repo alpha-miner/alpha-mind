@@ -30,6 +30,20 @@
 
 这两个库都已经使用git子模块的方式打包到alpha-mind代码库中。
 
+工具依赖包括：
+
+* [cmake](https://cmake.org/)
+
+* [Visual Studio 2015](https://visualstudio.microsoft.com)（仅Windows依赖，Visual Studio 2015以上应该也可以工作，但未做测试）
+
+* [gfortran]()（仅Linux依赖）
+
+在Linux上（例如：Ubuntu）可以使用如下指令完成依赖的安装：
+
+```bash
+$ sudo apt-get install git cmake build-essential gfortran -y
+```
+
 ## 功能
 
 alpha - mind 提供了多因子研究中常用的工具链，包括：
