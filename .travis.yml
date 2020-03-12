@@ -38,11 +38,11 @@ install:
   - conda install sqlalchemy
   - conda install psycopg2
   - conda install -c conda-forge arrow
-  - pip install simpleutils
-  - pip install coveralls
-  - pip install finance-python
-  - pip install deprecated
-  - pip install cvxpy
+  - pip install simpleutils --ignore-installed
+  - pip install coveralls --ignore-installed
+  - pip install finance-python --ignore-installed
+  - pip install deprecated --ignore-installed
+  - pip install cvxpy --ignore-installed
   - export CWD=$PWD
   - cd /usr/src/gtest
   - sudo cmake CMakeLists.txt
