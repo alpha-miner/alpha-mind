@@ -42,7 +42,7 @@ install:
   - pip install coveralls --ignore-installed
   - pip install finance-python --ignore-installed
   - pip install deprecated --ignore-installed
-  - pip install cvxpy --ignore-installed
+  - pip install cvxpy
   - export CWD=$PWD
   - cd /usr/src/gtest
   - sudo cmake CMakeLists.txt
