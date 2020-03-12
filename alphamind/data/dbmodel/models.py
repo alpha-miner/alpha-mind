@@ -1031,5 +1031,5 @@ class IndexMarket(Base):
 if __name__ == '__main__':
     from sqlalchemy import create_engine
 
-    engine = create_engine('postgresql+psycopg2://postgres:we083826@101.132.104.118/alpha')
+    engine = create_engine('postgresql+psycopg2://alpha:alpha@180.166.26.82:8890/alpha')
     Base.metadata.create_all(engine)
