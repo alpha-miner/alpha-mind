@@ -23,14 +23,14 @@ class TestRank(unittest.TestCase):
         sorted_array = np.zeros_like(self.x)
         for i in range(self.x.shape[0]):
             for j in range(self.x.shape[1]):
-                sorted_array[data_rank[i, j], j] = self.x[i, j]
+                sorted_array[int(data_rank[i, j]), j] = self.x[i, j]
 
         arr_diff = np.diff(sorted_array, axis=0)
         np.testing.assert_array_less(0, arr_diff)
 
     def test_rank_with_groups(self):
         data = pd.DataFrame(data={'raw': self.x.tolist()}, index=self.groups)
-        data['rank'] = rank(data['raw'], groups=data.index)
+        data['rank'] = rank(data['raw'].values, groups=data.index)
         groups = dict(list(data['rank'].groupby(level=0)))
         ret = []
         for index in range(10):
