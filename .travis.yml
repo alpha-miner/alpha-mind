@@ -9,7 +9,10 @@ dist: xenial
 group: travis_lts
 addons:
   apt:
+    sources:
+      - llvm-toolchain-trusty-5.0
     packages:
+      - clang-5.0
       - gcc
       - gfortran
       - g++
