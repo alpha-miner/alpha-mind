@@ -28,6 +28,8 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
+  - pip install cvxpy
+  - pip install xgboost
   - conda install coverage
   - conda install numpy
   - conda install numba
@@ -42,9 +44,6 @@ install:
   - pip install coveralls --ignore-installed
   - pip install finance-python --ignore-installed
   - pip install deprecated --ignore-installed
-  - pip install -U numpy
-  - pip install cvxpy
-  - pip install xgboost
   - export CWD=$PWD
   - cd /usr/src/gtest
   - sudo cmake CMakeLists.txt
