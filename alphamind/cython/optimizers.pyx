@@ -11,15 +11,10 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 import numpy as np
 
-cimport
-numpy as cnp
+cimport numpy as cnp
 import numpy as np
-from libcpp.string cimport
-
-string
-from libcpp.vector cimport
-
-vector
+from libcpp.string cimport string
+from libcpp.vector cimport vector
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":
