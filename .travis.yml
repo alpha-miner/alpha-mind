@@ -28,22 +28,22 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
-  - pip install cvxpy
-  - pip install xgboost
-  - conda install coverage
-  - conda install numpy
-  - conda install numba
-  - conda install scipy
-  - conda install pandas
-  - conda install scikit-learn
-  - conda install cython
-  - conda install sqlalchemy
-  - conda install psycopg2
-  - conda install -c conda-forge arrow
+  - pip install coverage
+  - pip install numpy
+  - pip install numba
+  - pip install scipy
+  - pip install pandas
+  - pip install scikit-learn
+  - pip install cython
+  - pip install sqlalchemy
+  - pip install psycopg2-binary
+  - pip install arrow
   - pip install simpleutils --ignore-installed
   - pip install coveralls --ignore-installed
   - pip install finance-python --ignore-installed
   - pip install deprecated --ignore-installed
+  - pip install cvxpy
+  - pip install xgboost
   - export CWD=$PWD
   - cd /usr/src/gtest
   - sudo cmake CMakeLists.txt
