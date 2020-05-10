@@ -9,10 +9,7 @@ dist: xenial
 group: travis_lts
 addons:
   apt:
-    sources:
-      - llvm-toolchain-trusty-5.0
     packages:
-      - clang-5.0
       - gcc
       - gfortran
       - g++
@@ -31,9 +28,9 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
+  - conda install numba
   - pip install coverage
-  - pip install numpy
-  - pip install numba
+  - pip install -U numpy
   - pip install scipy
   - pip install pandas
   - pip install scikit-learn
