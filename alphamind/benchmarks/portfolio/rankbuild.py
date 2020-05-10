@@ -6,15 +6,18 @@ Created on 2017-4-27
 """
 
 import datetime as dt
+
 import numpy as np
 import pandas as pd
+
 from alphamind.portfolio.rankbuilder import rank_build
 
 
 def benchmark_build_rank(n_samples: int, n_loops: int, n_included: int) -> None:
     print("-" * 60)
     print("Starting portfolio construction by rank benchmarking")
-    print("Parameters(n_samples: {0}, n_included: {1}, n_loops: {2})".format(n_samples, n_included, n_loops))
+    print("Parameters(n_samples: {0}, n_included: {1}, n_loops: {2})".format(n_samples, n_included,
+                                                                             n_loops))
 
     n_portfolio = 10
 
@@ -40,10 +43,15 @@ def benchmark_build_rank(n_samples: int, n_loops: int, n_included: int) -> None:
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 
 
-def benchmark_build_rank_with_group(n_samples: int, n_loops: int, n_included: int, n_groups: int) -> None:
+def benchmark_build_rank_with_group(n_samples: int, n_loops: int, n_included: int,
+                                    n_groups: int) -> None:
     print("-" * 60)
     print("Starting  portfolio construction by rank with group-by values benchmarking")
-    print("Parameters(n_samples: {0}, n_included: {1}, n_loops: {2}, n_groups: {3})".format(n_samples, n_included, n_loops, n_groups))
+    print(
+        "Parameters(n_samples: {0}, n_included: {1}, n_loops: {2}, n_groups: {3})".format(n_samples,
+                                                                                          n_included,
+                                                                                          n_loops,
+                                                                                          n_groups))
 
     n_portfolio = 10
 

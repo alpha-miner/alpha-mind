@@ -5,14 +5,15 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
-import numpy as np
 import numba as nb
-from alphamind.utilities import group_mapping
+import numpy as np
+
 from alphamind.utilities import aggregate
-from alphamind.utilities import transform
 from alphamind.utilities import array_index
+from alphamind.utilities import group_mapping
 from alphamind.utilities import simple_mean
 from alphamind.utilities import simple_std
+from alphamind.utilities import transform
 
 
 @nb.njit(nogil=True, cache=True)
@@ -31,7 +32,6 @@ def mask_values_2d(x: np.ndarray,
                 res[i, j] = ubound
             elif x[i, j] < lbound:
                 res[i, j] = lbound
-
     return res
 
 
@@ -54,7 +54,10 @@ def mask_values_1d(x: np.ndarray,
     return res
 
 
-def winsorize_normal(x: np.ndarray, num_stds: int = 3, ddof=1, groups: np.ndarray = None) -> np.ndarray:
+def winsorize_normal(x: np.ndarray, num_stds: int = 3, ddof=1,
+                     groups: np.ndarray = None,
+                     fill_method: str = 'flat',
+                     fill_interval: int = 0.5) -> np.ndarray:
     if groups is not None:
         groups = group_mapping(groups)
         mean_values = transform(groups, x, 'mean')
@@ -69,14 +72,14 @@ def winsorize_normal(x: np.ndarray, num_stds: int = 3, ddof=1, groups: np.ndarra
 
 class NormalWinsorizer(object):
 
-    def __init__(self, num_stds: int=3, ddof=1):
+    def __init__(self, num_stds: int = 3, ddof=1):
         self.num_stds = num_stds
         self.ddof = ddof
         self.mean = None
         self.std = None
         self.labels = None
 
-    def fit(self, x: np.ndarray, groups: np.ndarray=None):
+    def fit(self, x: np.ndarray, groups: np.ndarray = None):
         if groups is not None:
             group_index = group_mapping(groups)
             self.mean = aggregate(group_index, x, 'mean')
@@ -86,12 +89,12 @@ class NormalWinsorizer(object):
             self.mean = simple_mean(x, axis=0)
             self.std = simple_std(x, axis=0, ddof=self.ddof)
 
-    def transform(self, x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+    def transform(self, x: np.ndarray, groups: np.ndarray = None) -> np.ndarray:
         if groups is not None:
             index = array_index(self.labels, groups)
             return mask_values_2d(x, self.mean[index], self.std[index], self.num_stds)
         else:
             return mask_values_1d(x, self.mean, self.std, self.num_stds)
 
-    def __call__(self, x: np.ndarray, groups: np.ndarray=None) -> np.ndarray:
+    def __call__(self, x: np.ndarray, groups: np.ndarray = None) -> np.ndarray:
         return winsorize_normal(x, self.num_stds, self.ddof, groups)

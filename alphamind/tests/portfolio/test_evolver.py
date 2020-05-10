@@ -6,7 +6,9 @@ Created on 2017-11-23
 """
 
 import unittest
+
 import numpy as np
+
 from alphamind.portfolio.evolver import evolve_positions
 
 

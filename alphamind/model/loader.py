@@ -5,21 +5,20 @@ Created on 2017-9-5
 @author: cheng.li
 """
 
-from alphamind.model.modelbase import ModelBase
 from alphamind.model.linearmodel import ConstLinearModel
-from alphamind.model.linearmodel import LinearRegression
 from alphamind.model.linearmodel import LassoRegression
+from alphamind.model.linearmodel import LinearRegression
 from alphamind.model.linearmodel import LogisticRegression
-from alphamind.model.treemodel import RandomForestRegressor
-from alphamind.model.treemodel import RandomForestClassifier
-from alphamind.model.treemodel import XGBRegressor
-from alphamind.model.treemodel import XGBClassifier
-from alphamind.model.treemodel import XGBTrainer
+from alphamind.model.modelbase import ModelBase
 from alphamind.model.svm import NvSVRModel
+from alphamind.model.treemodel import RandomForestClassifier
+from alphamind.model.treemodel import RandomForestRegressor
+from alphamind.model.treemodel import XGBClassifier
+from alphamind.model.treemodel import XGBRegressor
+from alphamind.model.treemodel import XGBTrainer
 
 
 def load_model(model_desc: dict) -> ModelBase:
-
     model_name = model_desc['model_name']
     model_name_parts = set(model_name.split('.'))
 

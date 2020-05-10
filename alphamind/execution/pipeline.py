@@ -7,7 +7,9 @@ Created on 2017-9-25
 
 from typing import List
 from typing import Tuple
+
 import pandas as pd
+
 from alphamind.execution.baseexecutor import ExecutorBase
 
 

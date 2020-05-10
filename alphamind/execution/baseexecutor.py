@@ -5,9 +5,8 @@ Created on 2017-9-22
 @author: cheng.li
 """
 
-
 import abc
-from typing import Tuple
+
 import numpy as np
 import pandas as pd
 

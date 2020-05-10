@@ -6,6 +6,7 @@ Created on 2018-2-8
 """
 
 import unittest
+
 from alphamind.model.linearmodel import ConstLinearModel
 
 

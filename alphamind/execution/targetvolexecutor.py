@@ -6,9 +6,11 @@ Created on 2017-9-22
 """
 
 from typing import Tuple
+
 import pandas as pd
-from PyFin.Math.Accumulators import MovingStandardDeviation
 from PyFin.Math.Accumulators import MovingAverage
+from PyFin.Math.Accumulators import MovingStandardDeviation
+
 from alphamind.execution.baseexecutor import ExecutorBase
 
 

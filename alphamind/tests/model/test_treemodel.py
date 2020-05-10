@@ -6,13 +6,15 @@ Created on 2018-1-5
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.model.loader import load_model
-from alphamind.model.treemodel import RandomForestRegressor
 from alphamind.model.treemodel import RandomForestClassifier
-from alphamind.model.treemodel import XGBRegressor
+from alphamind.model.treemodel import RandomForestRegressor
 from alphamind.model.treemodel import XGBClassifier
+from alphamind.model.treemodel import XGBRegressor
 from alphamind.model.treemodel import XGBTrainer
 
 
@@ -32,7 +34,8 @@ class TestTreeModel(unittest.TestCase):
         new_model = load_model(desc)
         self.assertEqual(model.features, new_model.features)
 
-        np.testing.assert_array_almost_equal(model.predict(self.sample_x), new_model.predict(self.sample_x))
+        np.testing.assert_array_almost_equal(model.predict(self.sample_x),
+                                             new_model.predict(self.sample_x))
         np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_random_forest_classify_persistence(self):
@@ -44,7 +47,8 @@ class TestTreeModel(unittest.TestCase):
         new_model = load_model(desc)
         self.assertEqual(model.features, new_model.features)
 
-        np.testing.assert_array_almost_equal(model.predict(self.sample_x), new_model.predict(self.sample_x))
+        np.testing.assert_array_almost_equal(model.predict(self.sample_x),
+                                             new_model.predict(self.sample_x))
         np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_xgb_regress_persistence(self):
@@ -55,7 +59,8 @@ class TestTreeModel(unittest.TestCase):
         new_model = load_model(desc)
         self.assertEqual(model.features, new_model.features)
 
-        np.testing.assert_array_almost_equal(model.predict(self.sample_x), new_model.predict(self.sample_x))
+        np.testing.assert_array_almost_equal(model.predict(self.sample_x),
+                                             new_model.predict(self.sample_x))
         np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_xgb_classify_persistence(self):
@@ -67,11 +72,11 @@ class TestTreeModel(unittest.TestCase):
         new_model = load_model(desc)
         self.assertEqual(model.features, new_model.features)
 
-        np.testing.assert_array_almost_equal(model.predict(self.sample_x), new_model.predict(self.sample_x))
+        np.testing.assert_array_almost_equal(model.predict(self.sample_x),
+                                             new_model.predict(self.sample_x))
         np.testing.assert_array_almost_equal(model.importances, new_model.importances)
 
     def test_xgb_trainer_equal_classifier(self):
-
         model1 = XGBClassifier(n_estimators=100,
                                learning_rate=0.1,
                                max_depth=3,
@@ -109,5 +114,6 @@ class TestTreeModel(unittest.TestCase):
         new_model = load_model(desc)
         self.assertEqual(model.features, new_model.features)
 
-        np.testing.assert_array_almost_equal(model.predict(self.sample_x), new_model.predict(self.sample_x))
+        np.testing.assert_array_almost_equal(model.predict(self.sample_x),
+                                             new_model.predict(self.sample_x))
         np.testing.assert_array_almost_equal(model.importances, new_model.importances)

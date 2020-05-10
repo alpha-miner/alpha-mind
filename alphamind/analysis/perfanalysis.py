@@ -6,6 +6,7 @@ Created on 2017-5-12
 """
 
 import pandas as pd
+
 from alphamind.analysis.riskanalysis import risk_analysis
 
 

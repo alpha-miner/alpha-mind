@@ -14,7 +14,6 @@ if not SKIP_ENGINE_TESTS:
 else:
     DATA_ENGINE_URI = None
 
-
 if __name__ == '__main__':
     from simpleutils import add_parent_path
 

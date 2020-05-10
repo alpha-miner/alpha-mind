@@ -6,9 +6,10 @@ Created on 2018-2-9
 """
 
 import unittest
+
 from alphamind.data.engines.universe import Universe
-from alphamind.model.composer import DataMeta
 from alphamind.model.composer import Composer
+from alphamind.model.composer import DataMeta
 from alphamind.model.treemodel import XGBClassifier
 
 
@@ -19,7 +20,6 @@ class TestComposer(unittest.TestCase):
         self.assertEqual(lhs.data_meta, rhs.data_meta)
 
     def test_data_meta_persistence(self):
-
         freq = '5b'
         universe = Universe('zz800')
         batch = 4
@@ -83,7 +83,3 @@ class TestComposer(unittest.TestCase):
         comp_desc = composer.save()
         loaded_comp = Composer.load(comp_desc)
         self._assert_composer_equal(composer, loaded_comp)
-
-
-
-

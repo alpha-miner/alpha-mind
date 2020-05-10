@@ -6,10 +6,12 @@ Created on 2017-5-5
 """
 
 import datetime as dt
+
 import numpy as np
-from scipy.optimize import linprog
 from cvxopt import matrix
 from cvxopt import solvers
+from scipy.optimize import linprog
+
 from alphamind.portfolio.linearbuilder import linear_builder
 
 solvers.options['show_progress'] = False
@@ -18,7 +20,8 @@ solvers.options['show_progress'] = False
 def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
     print("-" * 60)
     print("Starting portfolio construction by linear programming")
-    print("Parameters(n_samples: {0}, n_risks: {1}, n_loop: {2})".format(n_samples, n_risks, n_loop))
+    print(
+        "Parameters(n_samples: {0}, n_risks: {1}, n_loop: {2})".format(n_samples, n_risks, n_loop))
 
     er = np.random.randn(n_samples)
     risk_exp = np.random.randn(n_samples, n_risks)
@@ -38,7 +41,7 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
                                       ubound,
                                       risk_exp,
                                       risk_target=(risk_lbound,
-                                                 risk_ubound))
+                                                   risk_ubound))
     impl_model_time = dt.datetime.now() - start
     print('{0:20s}: {1}'.format('Implemented model (ECOS)', impl_model_time))
 

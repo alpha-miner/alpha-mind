@@ -8,12 +8,13 @@ Created on 2017-5-4
 import numpy as np
 from numpy import zeros
 from numpy import zeros_like
+
 from alphamind.utilities import groupby
 from alphamind.utilities import set_value
 
 
-def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None, masks: np.ndarray=None) -> np.ndarray:
-
+def percent_build(er: np.ndarray, percent: float, groups: np.ndarray = None,
+                  masks: np.ndarray = None) -> np.ndarray:
     er = er.copy()
 
     if masks is not None:
@@ -28,7 +29,7 @@ def percent_build(er: np.ndarray, percent: float, groups: np.ndarray=None, masks
             index_diff, order = groupby(groups)
             start = 0
             for diff_loc in index_diff:
-                current_index = order[start:diff_loc+1]
+                current_index = order[start:diff_loc + 1]
                 current_ordering = neg_er[current_index].argsort()
                 current_ordering.shape = -1, 1
                 use_rank = int(percent * len(current_index))

@@ -11,9 +11,8 @@ import pandas as pd
 
 def simple_settle(weights: np.ndarray,
                   dx_return: np.ndarray,
-                  groups: np.ndarray=None,
-                  benchmark: np.ndarray=None) -> pd.DataFrame:
-
+                  groups: np.ndarray = None,
+                  benchmark: np.ndarray = None) -> pd.DataFrame:
     weights = weights.flatten()
     dx_return = dx_return.flatten()
 
@@ -45,5 +44,3 @@ def simple_settle(weights: np.ndarray,
     return pd.DataFrame({'er': ret_agg.values,
                          'ic': ic_table.values},
                         index=ret_agg.index)
-
-

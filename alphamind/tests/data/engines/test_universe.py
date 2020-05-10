@@ -6,6 +6,7 @@ Created on 2018-2-9
 """
 
 import unittest
+
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.universe import load_universe
 

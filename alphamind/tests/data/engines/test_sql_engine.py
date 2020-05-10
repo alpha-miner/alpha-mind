@@ -7,27 +7,29 @@ Created on 2018-4-17
 
 import random
 import unittest
+
 import numpy as np
 import pandas as pd
-from scipy.stats import rankdata
-from sqlalchemy import select, and_, or_
-from PyFin.api import makeSchedule
+from PyFin.api import CSQuantiles
+from PyFin.api import CSRank
 from PyFin.api import advanceDateByCalendar
 from PyFin.api import bizDatesList
-from PyFin.api import CSRank
-from PyFin.api import CSQuantiles
-from alphamind.tests.test_suite import SKIP_ENGINE_TESTS
-from alphamind.tests.test_suite import DATA_ENGINE_URI
-from alphamind.data.dbmodel.models import Universe as UniverseTable
-from alphamind.data.dbmodel.models import Market
-from alphamind.data.dbmodel.models import IndexMarket
+from PyFin.api import makeSchedule
+from scipy.stats import rankdata
+from sqlalchemy import select, and_, or_
+
 from alphamind.data.dbmodel.models import IndexComponent
-from alphamind.data.dbmodel.models import Uqer
+from alphamind.data.dbmodel.models import IndexMarket
+from alphamind.data.dbmodel.models import Industry
+from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskExposure
-from alphamind.data.dbmodel.models import Industry
+from alphamind.data.dbmodel.models import Universe as UniverseTable
+from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
+from alphamind.tests.test_suite import DATA_ENGINE_URI
+from alphamind.tests.test_suite import SKIP_ENGINE_TESTS
 from alphamind.utilities import alpha_logger
 
 
@@ -149,7 +151,8 @@ class TestSqlEngine(unittest.TestCase):
         universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
-        dx_return = self.engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=offset, benchmark=benchmark)
+        dx_return = self.engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=offset,
+                                                benchmark=benchmark)
         start_date = advanceDateByCalendar('china.sse', ref_date, '2b')
         end_date = advanceDateByCalendar('china.sse', ref_date, '6b')
 
@@ -172,7 +175,8 @@ class TestSqlEngine(unittest.TestCase):
 
         df = pd.read_sql(query, con=self.engine.engine)
         b_res = df.groupby('code').apply(lambda x: np.log(1. + x).sum())
-        np.testing.assert_array_almost_equal(dx_return.dx.values, res.chgPct.values - b_res.chgPct.values)
+        np.testing.assert_array_almost_equal(dx_return.dx.values,
+                                             res.chgPct.values - b_res.chgPct.values)
 
         horizon = 4
         offset = 0
@@ -180,7 +184,8 @@ class TestSqlEngine(unittest.TestCase):
         universe = Universe('zz500') + Universe('zz1000')
         codes = self.engine.fetch_codes(ref_date, universe)
 
-        dx_return = self.engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=offset, benchmark=benchmark)
+        dx_return = self.engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=offset,
+                                                benchmark=benchmark)
         start_date = advanceDateByCalendar('china.sse', ref_date, '1b')
         end_date = advanceDateByCalendar('china.sse', ref_date, '5b')
 
@@ -203,7 +208,8 @@ class TestSqlEngine(unittest.TestCase):
 
         df = pd.read_sql(query, con=self.engine.engine)
         b_res = df.groupby('code').apply(lambda x: np.log(1. + x).sum())
-        np.testing.assert_array_almost_equal(dx_return.dx.values, res.chgPct.values - b_res.chgPct.values)
+        np.testing.assert_array_almost_equal(dx_return.dx.values,
+                                             res.chgPct.values - b_res.chgPct.values)
 
     def test_sql_engine_fetch_dx_return_range(self):
         ref_dates = makeSchedule(advanceDateByCalendar('china.sse', self.ref_date, '-6m'),
@@ -276,7 +282,8 @@ class TestSqlEngine(unittest.TestCase):
             b_res = df.groupby('code').apply(lambda x: np.log(1. + x).sum())
 
             calculated_return = dx_return[dx_return.trade_date == ref_date]
-            np.testing.assert_array_almost_equal(calculated_return.dx.values, res.chgPct.values - b_res.chgPct.values)
+            np.testing.assert_array_almost_equal(calculated_return.dx.values,
+                                                 res.chgPct.values - b_res.chgPct.values)
 
     def test_sql_engine_fetch_dx_return_with_universe_adjustment(self):
         ref_dates = makeSchedule(advanceDateByCalendar('china.sse', '2017-01-26', '-6m'),
@@ -404,7 +411,8 @@ class TestSqlEngine(unittest.TestCase):
         ref_dates = makeSchedule(advanceDateByCalendar('china.sse', self.ref_date, '-6m'),
                                  self.ref_date,
                                  '60b', 'china.sse')
-        ref_dates = ref_dates + [advanceDateByCalendar('china.sse', ref_dates[-1], '60b').strftime('%Y-%m-%d')]
+        ref_dates = ref_dates + [
+            advanceDateByCalendar('china.sse', ref_dates[-1], '60b').strftime('%Y-%m-%d')]
         universe = Universe('zz500') + Universe('zz1000')
         factor = 'ROE'
 
@@ -414,7 +422,8 @@ class TestSqlEngine(unittest.TestCase):
         groups = codes.groupby('trade_date')
 
         for ref_date, g in groups:
-            forward_ref_date = advanceDateByCalendar('china.sse', ref_date, '60b').strftime('%Y-%m-%d')
+            forward_ref_date = advanceDateByCalendar('china.sse', ref_date, '60b').strftime(
+                '%Y-%m-%d')
             query = select([Uqer.code, Uqer.ROE]).where(
                 and_(
                     Uqer.trade_date == forward_ref_date,
@@ -451,7 +460,8 @@ class TestSqlEngine(unittest.TestCase):
         benchmark = 906
         index_data = self.engine.fetch_benchmark_range(benchmark, dates=ref_dates)
 
-        query = select([IndexComponent.trade_date, IndexComponent.code, (IndexComponent.weight / 100.).label('weight')]).where(
+        query = select([IndexComponent.trade_date, IndexComponent.code,
+                        (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
                 IndexComponent.trade_date.in_(ref_dates),
                 IndexComponent.indexCode == benchmark
@@ -462,7 +472,8 @@ class TestSqlEngine(unittest.TestCase):
         for ref_date in ref_dates:
             calculated_data = index_data[index_data.trade_date == ref_date]
             expected_data = df[df.trade_date == ref_date]
-            np.testing.assert_array_almost_equal(calculated_data.weight.values, expected_data.weight.values)
+            np.testing.assert_array_almost_equal(calculated_data.weight.values,
+                                                 expected_data.weight.values)
 
     def test_sql_engine_fetch_risk_model(self):
         ref_date = self.ref_date
@@ -533,7 +544,7 @@ class TestSqlEngine(unittest.TestCase):
         ind_matrix = self.engine.fetch_industry_matrix(ref_date, codes, 'sw', 1)
         cols = sorted(ind_matrix.columns[2:].tolist())
 
-        series = (ind_matrix[cols] * np.array(range(1, len(cols)+1))).sum(axis=1)
+        series = (ind_matrix[cols] * np.array(range(1, len(cols) + 1))).sum(axis=1)
         df3['cat'] = series.values
 
         expected_rank = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values))
@@ -542,7 +553,8 @@ class TestSqlEngine(unittest.TestCase):
         np.testing.assert_array_almost_equal(df3['rank'].values,
                                              df1['f'].values)
 
-        expected_quantile = df3[['ROE', 'cat']].groupby('cat').transform(lambda x: rankdata(x.values) / (len(x) + 1))
+        expected_quantile = df3[['ROE', 'cat']].groupby('cat').transform(
+            lambda x: rankdata(x.values) / (len(x) + 1))
         expected_quantile[np.isnan(df3.ROE)] = np.nan
         df3['quantile'] = expected_quantile['ROE'].values
         np.testing.assert_array_almost_equal(df3['quantile'].values,

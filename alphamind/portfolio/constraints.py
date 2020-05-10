@@ -5,18 +5,19 @@ Created on 2017-7-21
 @author: cheng.li
 """
 
-from deprecated import deprecated
+from enum import IntEnum
 from math import inf
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
 import numpy as np
 import pandas as pd
-from enum import IntEnum
-from typing import Tuple
-from typing import Optional
-from typing import Dict
-from typing import List
-from typing import Union
-from typing import Iterable
 from PyFin.api import pyFinAssert
+from deprecated import deprecated
 
 
 class BoundaryDirection(IntEnum):
@@ -43,13 +44,16 @@ class BoundaryImpl(object):
         self._validation()
 
     def _validation(self):
-        pyFinAssert(self.b_type in [BoundaryType.ABSOLUTE, BoundaryType.RELATIVE, BoundaryType.MAXABSREL, BoundaryType.MINABSREL],
-                    ValueError,
-                    "Boundary Type {0} is not recognized".format(self.b_type))
+        pyFinAssert(
+            self.b_type in [BoundaryType.ABSOLUTE, BoundaryType.RELATIVE, BoundaryType.MAXABSREL,
+                            BoundaryType.MINABSREL],
+            ValueError,
+            "Boundary Type {0} is not recognized".format(self.b_type))
 
-        pyFinAssert(self.direction == BoundaryDirection.LOWER or self.direction == BoundaryDirection.UPPER,
-                    ValueError,
-                    "Boundary direction {0} is not recognized".format(self.direction))
+        pyFinAssert(
+            self.direction == BoundaryDirection.LOWER or self.direction == BoundaryDirection.UPPER,
+            ValueError,
+            "Boundary direction {0} is not recognized".format(self.direction))
 
     def __call__(self, center: float):
         if self.b_type == BoundaryType.ABSOLUTE:
@@ -77,7 +81,8 @@ class BoundaryImpl(object):
                 abs_bound = center + abs_threshold
                 return min(rel_bound, abs_bound)
         else:
-            pyFinAssert(center >= 0., ValueError, "relative bounds only support positive back bone value")
+            pyFinAssert(center >= 0., ValueError,
+                        "relative bounds only support positive back bone value")
             return self.val * center
 
 
@@ -129,7 +134,7 @@ class LinearConstraints(object):
     def __init__(self,
                  bounds: Dict[str, BoxBoundary],
                  cons_mat: pd.DataFrame,
-                 backbone: np.ndarray=None):
+                 backbone: np.ndarray = None):
         self.names = list(set(bounds.keys()).intersection(set(cons_mat.columns)))
         self.bounds = bounds
         self.cons_mat = cons_mat
@@ -159,7 +164,8 @@ class LinearConstraints(object):
         return self.cons_mat[self.names].values
 
 
-@deprecated(reason="Constraints is deprecated in alpha-mind 0.1.1. Please use LinearConstraints instead.")
+@deprecated(
+    reason="Constraints is deprecated in alpha-mind 0.1.1. Please use LinearConstraints instead.")
 class Constraints(object):
 
     def __init__(self,
@@ -185,8 +191,9 @@ class Constraints(object):
 
     def add_exposure(self, tags: np.ndarray, new_exp: np.ndarray):
         if len(tags) != new_exp.shape[1]:
-            raise ValueError('new dags length is not compatible with exposure shape {1}'.format(len(tags),
-                                                                                                new_exp.shape))
+            raise ValueError(
+                'new dags length is not compatible with exposure shape {1}'.format(len(tags),
+                                                                                   new_exp.shape))
 
         for tag in tags:
             if tag in self.risk_maps:

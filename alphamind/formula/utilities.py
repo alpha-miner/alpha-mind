@@ -5,8 +5,8 @@ Created on 2017-11-27
 @author: cheng.li
 """
 
-from alphamind.utilities import encode
 from alphamind.utilities import decode
+from alphamind.utilities import encode
 
 
 def encode_formula(formula):

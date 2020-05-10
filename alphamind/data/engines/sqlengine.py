@@ -5,37 +5,35 @@ Created on 2017-7-7
 @author: cheng.li
 """
 
+from typing import Dict
 from typing import Iterable
 from typing import List
-from typing import Dict
 from typing import Tuple
 from typing import Union
+
 import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy import select, and_, outerjoin, join, column
 from sqlalchemy.sql import func
-from alphamind.data.engines.universe import Universe
+
 from alphamind.data.dbmodel.models import FactorMaster
-from alphamind.data.dbmodel.models import IndexComponent
-from alphamind.data.dbmodel.models import Industry
-from alphamind.data.dbmodel.models import RiskMaster
-from alphamind.data.dbmodel.models import Market
-from alphamind.data.dbmodel.models import IndexMarket
-from alphamind.data.dbmodel.models import Universe as UniverseTable
-from alphamind.data.dbmodel.models import RiskExposure
-from alphamind.data.dbmodel.models import FundMaster
 from alphamind.data.dbmodel.models import FundHolding
-from alphamind.data.transformer import Transformer
+from alphamind.data.dbmodel.models import FundMaster
+from alphamind.data.dbmodel.models import IndexComponent
+from alphamind.data.dbmodel.models import IndexMarket
+from alphamind.data.dbmodel.models import Industry
+from alphamind.data.dbmodel.models import Market
+from alphamind.data.dbmodel.models import RiskExposure
+from alphamind.data.dbmodel.models import RiskMaster
+from alphamind.data.dbmodel.models import Universe as UniverseTable
+from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
 from alphamind.data.engines.utilities import _map_risk_model_table
-from alphamind.data.engines.utilities import factor_tables
-from alphamind.data.processing import factor_processing
+from alphamind.data.transformer import Transformer
 from alphamind.portfolio.riskmodel import FactorRiskModel
-from PyFin.api import advanceDateByCalendar
-
 
 risk_styles = ['BETA',
                'MOMENTUM',
@@ -119,14 +117,15 @@ class SqlEngine(object):
 
     def fetch_fund_holding(self,
                            fund_codes,
-                           start_date: str=None,
-                           end_date: str=None,
-                           dates: Iterable[str]=None) -> pd.DataFrame:
+                           start_date: str = None,
+                           end_date: str = None,
+                           dates: Iterable[str] = None) -> pd.DataFrame:
 
         query = select([FundHolding]).where(
             and_(
                 FundHolding.fund_code.in_(fund_codes),
-                FundHolding.reportDate.in_(dates) if dates else FundHolding.reportDate.between(start_date, end_date)
+                FundHolding.reportDate.in_(dates) if dates else FundHolding.reportDate.between(
+                    start_date, end_date)
             )
         )
         return pd.read_sql(query, self.session.bind)
@@ -154,7 +153,9 @@ class SqlEngine(object):
         stats = func.sum(self.ln_func(1. + table.chgPct)).over(
             partition_by=getattr(table, code_attr),
             order_by=table.trade_date,
-            rows=(1 + DAILY_RETURN_OFFSET + offset, 1 + horizon + DAILY_RETURN_OFFSET + offset)).label('dx')
+            rows=(
+            1 + DAILY_RETURN_OFFSET + offset, 1 + horizon + DAILY_RETURN_OFFSET + offset)).label(
+            'dx')
         return stats
 
     def fetch_dx_return(self,
@@ -166,12 +167,14 @@ class SqlEngine(object):
                         neutralized_risks: list = None,
                         pre_process=None,
                         post_process=None,
-                        benchmark: int=None) -> pd.DataFrame:
+                        benchmark: int = None) -> pd.DataFrame:
         start_date = ref_date
 
         if not expiry_date:
             end_date = advanceDateByCalendar('china.sse', ref_date,
-                                             str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
+                                             str(
+                                                 1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime(
+                '%Y%m%d')
         else:
             end_date = expiry_date
 
@@ -216,14 +219,16 @@ class SqlEngine(object):
                               dates: Iterable[str] = None,
                               horizon: int = 0,
                               offset: int = 0,
-                              benchmark: int=None) -> pd.DataFrame:
+                              benchmark: int = None) -> pd.DataFrame:
 
         if dates:
             start_date = dates[0]
             end_date = dates[-1]
 
         end_date = advanceDateByCalendar('china.sse', end_date,
-                                         str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
+                                         str(
+                                             1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime(
+            '%Y-%m-%d')
 
         stats = self._create_stats(Market, horizon, offset)
 
@@ -268,7 +273,9 @@ class SqlEngine(object):
 
         if not expiry_date:
             end_date = advanceDateByCalendar('china.sse', ref_date,
-                                             str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y%m%d')
+                                             str(
+                                                 1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime(
+                '%Y%m%d')
         else:
             end_date = expiry_date
 
@@ -297,7 +304,9 @@ class SqlEngine(object):
             end_date = dates[-1]
 
         end_date = advanceDateByCalendar('china.sse', end_date,
-                                         str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime('%Y-%m-%d')
+                                         str(
+                                             1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime(
+            '%Y-%m-%d')
 
         stats = self._create_stats(IndexMarket, horizon, offset, code_attr='indexCode')
         query = select([IndexMarket.trade_date, IndexMarket.indexCode.label('code'), stats]) \
@@ -333,7 +342,8 @@ class SqlEngine(object):
         else:
             factor_cols = _map_factors(dependency, factor_tables)
 
-        start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime('%Y-%m-%d')
+        start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime(
+            '%Y-%m-%d')
         end_date = ref_date
 
         big_table = Market
@@ -348,7 +358,8 @@ class SqlEngine(object):
                 joined_tables.add(t.__table__.name)
 
         query = select(
-            [Market.trade_date, Market.code, Market.chgPct, Market.secShortName] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct, Market.secShortName] + list(
+                factor_cols.keys())) \
             .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
                                                Market.code.in_(codes)))
 
@@ -398,18 +409,21 @@ class SqlEngine(object):
                 else:
                     big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
                                                              Market.code == t.code,
-                                                             Market.trade_date.between(start_date, end_date)))
+                                                             Market.trade_date.between(start_date,
+                                                                                       end_date)))
                 joined_tables.add(t.__table__.name)
 
         universe_df = universe.query(self, start_date, end_date, dates)
 
         query = select(
-            [Market.trade_date, Market.code, Market.chgPct, Market.secShortName] + list(factor_cols.keys())) \
+            [Market.trade_date, Market.code, Market.chgPct, Market.secShortName] + list(
+                factor_cols.keys())) \
             .select_from(big_table).where(
-                and_(
-                    Market.code.in_(universe_df.code.unique().tolist()),
-                    Market.trade_date.in_(dates) if dates is not None else Market.trade_date.between(start_date, end_date)
-                )
+            and_(
+                Market.code.in_(universe_df.code.unique().tolist()),
+                Market.trade_date.in_(dates) if dates is not None else Market.trade_date.between(
+                    start_date, end_date)
+            )
         ).distinct()
 
         df = pd.read_sql(query, self.engine).replace([-np.inf, np.inf], np.nan)
@@ -424,7 +438,8 @@ class SqlEngine(object):
         res['chgPct'] = df.chgPct
         res['secShortName'] = df['secShortName']
         res = res.reset_index()
-        return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
+        return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(
+            ['trade_date', 'code'])
 
     def fetch_factor_range_forward(self,
                                    universe: Universe,
@@ -457,14 +472,16 @@ class SqlEngine(object):
                 else:
                     big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
                                                              Market.code == t.code,
-                                                             Market.trade_date.between(start_date, end_date)))
+                                                             Market.trade_date.between(start_date,
+                                                                                       end_date)))
                 joined_tables.add(t.__table__.name)
 
         stats = func.lag(list(factor_cols.keys())[0], -1).over(
             partition_by=Market.code,
             order_by=Market.trade_date).label('dx')
 
-        query = select([Market.trade_date, Market.code, Market.chgPct, stats]).select_from(big_table).where(
+        query = select([Market.trade_date, Market.code, Market.chgPct, stats]).select_from(
+            big_table).where(
             and_(
                 Market.trade_date.in_(total_dates),
                 Market.code.in_(total_codes)
@@ -474,12 +491,13 @@ class SqlEngine(object):
         df = pd.read_sql(query, self.engine) \
             .replace([-np.inf, np.inf], np.nan) \
             .sort_values(['trade_date', 'code'])
-        return pd.merge(df, codes[['trade_date', 'code']], how='inner').drop_duplicates(['trade_date', 'code'])
+        return pd.merge(df, codes[['trade_date', 'code']], how='inner').drop_duplicates(
+            ['trade_date', 'code'])
 
     def fetch_benchmark(self,
                         ref_date: str,
                         benchmark: int,
-                        codes: Iterable[int]=None) -> pd.DataFrame:
+                        codes: Iterable[int] = None) -> pd.DataFrame:
         query = select([IndexComponent.code, (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
                 IndexComponent.trade_date == ref_date,
@@ -501,11 +519,13 @@ class SqlEngine(object):
                               end_date: str = None,
                               dates: Iterable[str] = None) -> pd.DataFrame:
 
-        cond = IndexComponent.trade_date.in_(dates) if dates else IndexComponent.trade_date.between(start_date,
-                                                                                                    end_date)
+        cond = IndexComponent.trade_date.in_(dates) if dates else IndexComponent.trade_date.between(
+            start_date,
+            end_date)
 
         query = select(
-            [IndexComponent.trade_date, IndexComponent.code, (IndexComponent.weight / 100.).label('weight')]).where(
+            [IndexComponent.trade_date, IndexComponent.code,
+             (IndexComponent.weight / 100.).label('weight')]).where(
             and_(
                 cond,
                 IndexComponent.indexCode == benchmark
@@ -518,7 +538,8 @@ class SqlEngine(object):
                          codes: Iterable[int],
                          risk_model: str = 'short',
                          excluded: Iterable[str] = None,
-                         model_type: str = None) -> Union[FactorRiskModel, Tuple[pd.DataFrame, pd.DataFrame]]:
+                         model_type: str = None) -> Union[
+        FactorRiskModel, Tuple[pd.DataFrame, pd.DataFrame]]:
         risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
 
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
@@ -530,7 +551,8 @@ class SqlEngine(object):
         risk_cov = pd.read_sql(query, self.engine).sort_values('FactorID')
 
         if excluded:
-            risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
+            risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if
+                                  f not in set(excluded)]
         else:
             risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors]
 
@@ -541,7 +563,8 @@ class SqlEngine(object):
                              RiskExposure.trade_date == special_risk_table.trade_date
                          ))
 
-        query = select([RiskExposure.code, special_risk_table.SRISK.label('srisk')] + risk_exposure_cols) \
+        query = select(
+            [RiskExposure.code, special_risk_table.SRISK.label('srisk')] + risk_exposure_cols) \
             .select_from(big_table).where(
             and_(RiskExposure.trade_date == ref_date,
                  RiskExposure.code.in_(codes)
@@ -571,8 +594,9 @@ class SqlEngine(object):
 
         risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
-        cond = risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(start_date,
-                                                                                                    end_date)
+        cond = risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(
+            start_date,
+            end_date)
         query = select([risk_cov_table.trade_date,
                         risk_cov_table.FactorID,
                         risk_cov_table.Factor]
@@ -584,7 +608,8 @@ class SqlEngine(object):
         if not excluded:
             excluded = []
 
-        risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if f not in set(excluded)]
+        risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if
+                              f not in set(excluded)]
         cond = universe._query_statements(start_date, end_date, dates)
         big_table = join(RiskExposure, UniverseTable,
                          and_(
@@ -639,13 +664,13 @@ class SqlEngine(object):
         category_name = 'industryName' + str(level)
 
         cond = and_(
-                Industry.trade_date == ref_date,
-                Industry.code.in_(codes),
-                Industry.industry == industry_category_name
-            ) if codes else and_(
-                Industry.trade_date == ref_date,
-                Industry.industry == industry_category_name
-            )
+            Industry.trade_date == ref_date,
+            Industry.code.in_(codes),
+            Industry.industry == industry_category_name
+        ) if codes else and_(
+            Industry.trade_date == ref_date,
+            Industry.industry == industry_category_name
+        )
 
         query = select([Industry.code,
                         getattr(Industry, code_name).label('industry_code'),
@@ -689,7 +714,7 @@ class SqlEngine(object):
         query = select([Industry.trade_date,
                         Industry.code,
                         getattr(Industry, code_name).label('industry_code'),
-                        getattr(Industry, category_name).label('industry')]).select_from(big_table)\
+                        getattr(Industry, category_name).label('industry')]).select_from(big_table) \
             .order_by(Industry.trade_date, Industry.code)
 
         return pd.read_sql(query, self.engine).dropna()
@@ -756,7 +781,8 @@ class SqlEngine(object):
             )
         ).cte('cte')
 
-        query = select([cte]).select_from(cte).order_by(cte.columns['trade_date'], cte.columns['code'])
+        query = select([cte]).select_from(cte).order_by(cte.columns['trade_date'],
+                                                        cte.columns['code'])
         df = pd.read_sql(query, self.engine)
 
         return pd.merge(df, codes[['trade_date', 'code']], on=['trade_date', 'code'])
@@ -821,12 +847,14 @@ class SqlEngine(object):
         if benchmark:
             benchmark_data = self.fetch_benchmark_range(benchmark, start_date, end_date, dates)
             total_data['benchmark'] = benchmark_data
-            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['trade_date', 'code'])
+            factor_data = pd.merge(factor_data, benchmark_data, how='left',
+                                   on=['trade_date', 'code'])
             factor_data['weight'] = factor_data['weight'].fillna(0.)
 
         if risk_model:
             excluded = list(set(total_risk_factors).intersection(transformer.dependency))
-            risk_cov, risk_exp = self.fetch_risk_model_range(universe, start_date, end_date, dates, risk_model,
+            risk_cov, risk_exp = self.fetch_risk_model_range(universe, start_date, end_date, dates,
+                                                             risk_model,
                                                              excluded)
             factor_data = pd.merge(factor_data, risk_exp, how='left', on=['trade_date', 'code'])
             total_data['risk_cov'] = risk_cov
@@ -849,7 +877,8 @@ if __name__ == '__main__':
     freq = "1m"
     universe = Universe('zz800')
     engine = SqlEngine('postgresql+psycopg2://alpha:alpha@180.166.26.82:8889')
-    rebalance_dates = makeSchedule('2015-01-31', '2019-05-30', freq, 'china.sse', BizDayConventions.Preceding)
+    rebalance_dates = makeSchedule('2015-01-31', '2019-05-30', freq, 'china.sse',
+                                   BizDayConventions.Preceding)
 
     formula = CSTopN(LAST('EP'), 5, groups='sw1')
     factors = engine.fetch_factor_range(universe, {'alpha': formula}, dates=rebalance_dates)

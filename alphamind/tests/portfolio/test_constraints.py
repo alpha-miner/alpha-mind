@@ -6,15 +6,17 @@ Created on 2017-7-20
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
-from alphamind.portfolio.constraints import Constraints
-from alphamind.portfolio.constraints import BoxBoundary
-from alphamind.portfolio.constraints import BoundaryImpl
+
 from alphamind.portfolio.constraints import BoundaryDirection
+from alphamind.portfolio.constraints import BoundaryImpl
 from alphamind.portfolio.constraints import BoundaryType
-from alphamind.portfolio.constraints import create_box_bounds
+from alphamind.portfolio.constraints import BoxBoundary
+from alphamind.portfolio.constraints import Constraints
 from alphamind.portfolio.constraints import LinearConstraints
+from alphamind.portfolio.constraints import create_box_bounds
 
 
 class TestConstraints(unittest.TestCase):

@@ -6,24 +6,26 @@ Created on 2018-5-3
 """
 
 import copy
+
 import numpy as np
 import pandas as pd
-from PyFin.api import makeSchedule
 from PyFin.api import advanceDateByCalendar
-from alphamind.utilities import map_freq
-from alphamind.utilities import alpha_logger
-from alphamind.model.composer import train_model
-from alphamind.portfolio.constraints import LinearConstraints
-from alphamind.portfolio.constraints import BoundaryType
-from alphamind.portfolio.constraints import create_box_bounds
-from alphamind.execution.naiveexecutor import NaiveExecutor
+from PyFin.api import makeSchedule
+
+from alphamind.analysis.factoranalysis import er_portfolio_analysis
 from alphamind.data.engines.sqlengine import SqlEngine
-from alphamind.data.engines.sqlengine import risk_styles
 from alphamind.data.engines.sqlengine import industry_styles
 from alphamind.data.engines.sqlengine import macro_styles
+from alphamind.data.engines.sqlengine import risk_styles
 from alphamind.data.processing import factor_processing
-from alphamind.analysis.factoranalysis import er_portfolio_analysis
 from alphamind.exceptions.exceptions import PortfolioBuilderException
+from alphamind.execution.naiveexecutor import NaiveExecutor
+from alphamind.model.composer import train_model
+from alphamind.portfolio.constraints import BoundaryType
+from alphamind.portfolio.constraints import LinearConstraints
+from alphamind.portfolio.constraints import create_box_bounds
+from alphamind.utilities import alpha_logger
+from alphamind.utilities import map_freq
 
 all_styles = risk_styles + industry_styles + macro_styles
 
@@ -119,7 +121,8 @@ class Strategy(object):
         self.index_return = self.engine.fetch_dx_return_index_range(self.benchmark,
                                                                     dates=self.dates,
                                                                     horizon=self.horizon,
-                                                                    offset=1).set_index('trade_date')
+                                                                    offset=1).set_index(
+            'trade_date')
         self.total_data = total_data
 
     def prepare_backtest_models(self):
@@ -129,13 +132,16 @@ class Strategy(object):
         if self.dask_client is None:
             models = {}
             for ref_date, _ in total_data_groups:
-                models[ref_date], _, _ = train_model(ref_date.strftime('%Y-%m-%d'), self.alpha_model, self.data_meta)
+                models[ref_date], _, _ = train_model(ref_date.strftime('%Y-%m-%d'),
+                                                     self.alpha_model, self.data_meta)
         else:
             def worker(parameters):
-                new_model, _, _ = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1], parameters[2])
+                new_model, _, _ = train_model(parameters[0].strftime('%Y-%m-%d'), parameters[1],
+                                              parameters[2])
                 return parameters[0], new_model
 
-            l = self.dask_client.map(worker, [(d[0], self.alpha_model, self.data_meta) for d in total_data_groups])
+            l = self.dask_client.map(worker, [(d[0], self.alpha_model, self.data_meta) for d in
+                                              total_data_groups])
             results = self.dask_client.gather(l)
             models = dict(results)
         self.alpha_models = models
@@ -252,16 +258,19 @@ class Strategy(object):
         positions['dx'] = self.total_data.dx.values
 
         trade_dates = positions.trade_date.unique()
-        ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverags}, index=trade_dates)
+        ret_df = pd.DataFrame({'returns': rets, 'turn_over': turn_overs, 'leverage': leverags},
+                              index=trade_dates)
 
         ret_df['benchmark_returns'] = self.index_return['dx']
         ret_df.loc[advanceDateByCalendar('china.sse', ret_df.index[-1], self.freq)] = 0.
         ret_df = ret_df.shift(1)
         ret_df.iloc[0] = 0.
-        ret_df['excess_return'] = ret_df['returns'] - ret_df['benchmark_returns'] * ret_df['leverage']
+        ret_df['excess_return'] = ret_df['returns'] - ret_df['benchmark_returns'] * ret_df[
+            'leverage']
         return ret_df, positions
 
-    def _calculate_pos(self, running_setting, er, data, constraints, benchmark_w, lbound, ubound, risk_model,
+    def _calculate_pos(self, running_setting, er, data, constraints, benchmark_w, lbound, ubound,
+                       risk_model,
                        current_position):
         more_opts = running_setting.more_opts
         try:
@@ -277,7 +286,8 @@ class Strategy(object):
                                                   current_position=current_position,
                                                   target_vol=more_opts.get('target_vol'),
                                                   risk_model=risk_model,
-                                                  turn_over_target=more_opts.get('turn_over_target'))
+                                                  turn_over_target=more_opts.get(
+                                                      'turn_over_target'))
         except PortfolioBuilderException:
             alpha_logger.warning("Not able to fit the constraints. Using full re-balance.")
             target_pos, _ = er_portfolio_analysis(er,
@@ -297,16 +307,12 @@ class Strategy(object):
 if __name__ == '__main__':
     import os
     from matplotlib import pyplot as plt
-    from dask.distributed import Client
     from PyFin.api import CSQuantiles
     from PyFin.api import LAST
     from alphamind.api import Universe
     from alphamind.api import ConstLinearModel
-    from alphamind.api import XGBTrainer
     from alphamind.api import DataMeta
     from alphamind.api import industry_list
-    from alphamind.api import winsorize_normal
-    from alphamind.api import standardize
 
     from matplotlib import pyplot as plt
     from matplotlib.pylab import mpl

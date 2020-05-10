@@ -7,7 +7,9 @@ Created on 2017-6-29
 
 import argparse
 from collections import namedtuple
+
 from sqlalchemy import create_engine
+
 from alphamind.data.dbmodel import models
 from alphamind.utilities import alpha_logger
 

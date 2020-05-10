@@ -6,15 +6,16 @@ Created on 2017-5-6
 """
 
 from typing import Tuple
+
 import numpy as np
 import pandas as pd
+
 from alphamind.data.neutralize import neutralize
 
 
 def risk_analysis(net_weight_series: pd.Series,
                   next_bar_return_series: pd.Series,
                   risk_table: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
     group_idx = net_weight_series.index.values.astype(int)
     net_pos = net_weight_series.values.reshape((-1, 1))
     risk_factor_cols = risk_table.columns
@@ -31,6 +32,8 @@ def risk_analysis(net_weight_series: pd.Series,
     cols = ['idiosyncratic']
     cols.extend(risk_factor_cols)
 
-    explained_table = pd.DataFrame(explained_table * net_pos, columns=cols, index=net_weight_series.index)
-    exposure_table = pd.DataFrame(exposure[:, :, 0] * net_pos, columns=risk_factor_cols, index=net_weight_series.index)
+    explained_table = pd.DataFrame(explained_table * net_pos, columns=cols,
+                                   index=net_weight_series.index)
+    exposure_table = pd.DataFrame(exposure[:, :, 0] * net_pos, columns=risk_factor_cols,
+                                  index=net_weight_series.index)
     return explained_table, exposure_table.groupby(level=0).first()

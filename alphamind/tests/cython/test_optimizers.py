@@ -6,10 +6,11 @@ Created on 2017-11-1
 """
 
 import unittest
+
 import numpy as np
+from alphamind.cython.optimizers import CVOptimizer
 from alphamind.cython.optimizers import LPOptimizer
 from alphamind.cython.optimizers import QPOptimizer
-from alphamind.cython.optimizers import CVOptimizer
 
 
 class TestOptimizers(unittest.TestCase):

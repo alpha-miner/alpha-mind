@@ -6,8 +6,10 @@ Created on 2017-4-25
 """
 
 import unittest
+
 import numpy as np
 from sklearn.linear_model import LinearRegression
+
 from alphamind.data.neutralize import neutralize
 
 
@@ -79,7 +81,8 @@ class TestNeutralize(unittest.TestCase):
             exp_res = curr_y - curr_x @ model.coef_.T
             exp_explained = curr_x * model.coef_.T
             np.testing.assert_array_almost_equal(calc_res[self.groups == i], exp_res.reshape(-1, 1))
-            np.testing.assert_array_almost_equal(other_stats['explained'][self.groups == i, :, 0], exp_explained)
+            np.testing.assert_array_almost_equal(other_stats['explained'][self.groups == i, :, 0],
+                                                 exp_explained)
 
         calc_res, other_stats = neutralize(self.x, self.y, self.groups, detail=True)
 
@@ -93,7 +96,8 @@ class TestNeutralize(unittest.TestCase):
 
             for j in range(self.y.shape[1]):
                 exp_explained = curr_x * model.coef_.T[:, j]
-                np.testing.assert_array_almost_equal(other_stats['explained'][self.groups == i, :, j], exp_explained)
+                np.testing.assert_array_almost_equal(
+                    other_stats['explained'][self.groups == i, :, j], exp_explained)
 
 
 if __name__ == '__main__':

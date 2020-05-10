@@ -5,24 +5,26 @@ Created on 2017-9-27
 @author: cheng.li
 """
 
-import copy
 import bisect
+import copy
 from typing import Iterable
 from typing import Tuple
+
 import numpy as np
 import pandas as pd
 from simpleutils.miscellaneous import list_eq
-from alphamind.model.modelbase import ModelBase
-from alphamind.model.data_preparing import fetch_train_phase
-from alphamind.model.data_preparing import fetch_predict_phase
+
+from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.universe import load_universe
-from alphamind.data.engines.sqlengine import SqlEngine
-from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.rank import rank
 from alphamind.data.standardize import standardize
-from alphamind.model.loader import load_model
+from alphamind.data.winsorize import winsorize_normal
+from alphamind.model.data_preparing import fetch_predict_phase
+from alphamind.model.data_preparing import fetch_train_phase
 from alphamind.model.linearmodel import ConstLinearModel
+from alphamind.model.loader import load_model
+from alphamind.model.modelbase import ModelBase
 
 PROCESS_MAPPING = {
     'winsorize_normal': winsorize_normal,
@@ -87,7 +89,7 @@ class DataMeta(object):
     @classmethod
     def load(cls, data_desc: dict):
         freq = data_desc['freq']
-        universe =load_universe(data_desc['universe'])
+        universe = load_universe(data_desc['universe'])
         batch = data_desc['batch']
         neutralized_risk = data_desc['neutralized_risk']
         risk_model = data_desc['risk_model']
@@ -193,7 +195,8 @@ class Composer:
             codes = x.index
             return pd.DataFrame(model.predict(x).flatten(), index=codes), x
 
-    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None, d_type: str = 'test') \
+    def score(self, ref_date: str, x: pd.DataFrame = None, y: np.ndarray = None,
+              d_type: str = 'test') \
             -> Tuple[float, pd.DataFrame, pd.DataFrame]:
         model = self._fetch_latest_model(ref_date)
         if x is None or y is None:
@@ -244,8 +247,7 @@ class Composer:
 
 
 if __name__ == '__main__':
-    from alphamind.api import (risk_styles,
-                               industry_styles,
+    from alphamind.api import (industry_styles,
                                standardize,
                                winsorize_normal,
                                DataMeta,
@@ -287,13 +289,15 @@ if __name__ == '__main__':
                          warm_start=warm_start,
                          data_source=data_source)
 
-    alpha_model = LinearRegression(features=regress_features, fit_intercept=True, fit_target=fit_target)
+    alpha_model = LinearRegression(features=regress_features, fit_intercept=True,
+                                   fit_target=fit_target)
     composer = Composer(alpha_model=alpha_model, data_meta=data_meta)
 
     start_date = '2014-01-01'
     end_date = '2016-01-01'
 
-    regression_model = LinearRegression(features=regress_features, fit_intercept=fit_intercept, fit_target=fit_target)
+    regression_model = LinearRegression(features=regress_features, fit_intercept=fit_intercept,
+                                        fit_target=fit_target)
     regression_composer = Composer(alpha_model=regression_model, data_meta=data_meta)
 
     data_package1 = fetch_data_package(engine,

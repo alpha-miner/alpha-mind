@@ -6,8 +6,10 @@ Created on 2017-8-8
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.data.rank import rank
 
 
@@ -37,6 +39,7 @@ class TestRank(unittest.TestCase):
             ret.append(groups[index].values)
         ret = np.concatenate(ret).reshape(-1, 1)
 
-        expected_rank = data['raw'].groupby(level=0).apply(lambda x: x.values.argsort(axis=0).argsort(axis=0))
+        expected_rank = data['raw'].groupby(level=0).apply(
+            lambda x: x.values.argsort(axis=0).argsort(axis=0))
         expected_rank = np.concatenate(expected_rank).reshape(-1, 1)
         np.testing.assert_array_equal(ret, expected_rank)

@@ -6,8 +6,10 @@ Created on 2017-5-8
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.analysis.riskanalysis import risk_analysis
 
 

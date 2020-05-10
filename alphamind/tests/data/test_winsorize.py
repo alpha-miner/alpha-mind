@@ -6,10 +6,12 @@ Created on 2017-4-25
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
-from alphamind.data.winsorize import winsorize_normal
+
 from alphamind.data.winsorize import NormalWinsorizer
+from alphamind.data.winsorize import winsorize_normal
 
 
 class TestWinsorize(unittest.TestCase):

@@ -5,7 +5,7 @@ Created on 2017-6-29
 @author: cheng.li
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text, Boolean, text, JSON
+from sqlalchemy import BigInteger, Column, DateTime, Float, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -72,7 +72,6 @@ class FundMaster(Base):
 
 
 class Categories(Base):
-
     __tablename__ = 'categories'
     __table_args__ = (
         Index('categories_pk', 'trade_date', 'code', unique=True),
@@ -100,7 +99,8 @@ class FactorMaster(Base):
 class HaltList(Base):
     __tablename__ = 'halt_list'
     __table_args__ = (
-        Index('halt_list_Date_Code_haltBeginTime_uindex', 'trade_date', 'code', 'haltBeginTime', unique=True),
+        Index('halt_list_Date_Code_haltBeginTime_uindex', 'trade_date', 'code', 'haltBeginTime',
+              unique=True),
     )
 
     trade_date = Column(DateTime, primary_key=True, nullable=False)

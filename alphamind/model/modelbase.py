@@ -7,16 +7,18 @@ Created on 2017-9-4
 
 import abc
 from distutils.version import LooseVersion
+
 import arrow
 import numpy as np
 import pandas as pd
 from simpleutils.miscellaneous import list_eq
 from sklearn import __version__ as sklearn_version
 from xgboost import __version__ as xgbboot_version
-from alphamind.utilities import alpha_logger
-from alphamind.utilities import encode
-from alphamind.utilities import decode
+
 from alphamind.data.transformer import Transformer
+from alphamind.utilities import alpha_logger
+from alphamind.utilities import decode
+from alphamind.utilities import encode
 
 
 class ModelBase(metaclass=abc.ABCMeta):
@@ -67,7 +69,8 @@ class ModelBase(metaclass=abc.ABCMeta):
     def save(self) -> dict:
 
         if self.__class__.__module__ == '__main__':
-            alpha_logger.warning("model is defined in a main module. The model_name may not be correct.")
+            alpha_logger.warning(
+                "model is defined in a main module. The model_name may not be correct.")
 
         model_desc = dict(model_name=self.__class__.__module__ + "." + self.__class__.__name__,
                           language='python',
@@ -109,7 +112,8 @@ def create_model_base(party_name=None):
                 elif self._lib_name == 'xgboost':
                     model_desc[self._lib_name + "_version"] = xgbboot_version
                 else:
-                    raise ValueError("3rd party lib name ({0}) is not recognized".format(self._lib_name))
+                    raise ValueError(
+                        "3rd party lib name ({0}) is not recognized".format(self._lib_name))
                 return model_desc
 
             @classmethod
@@ -121,12 +125,16 @@ def create_model_base(party_name=None):
                 elif cls._lib_name == 'xgboost':
                     current_version = xgbboot_version
                 else:
-                    raise ValueError("3rd party lib name ({0}) is not recognized".format(cls._lib_name))
+                    raise ValueError(
+                        "3rd party lib name ({0}) is not recognized".format(cls._lib_name))
 
-                if LooseVersion(current_version) < LooseVersion(model_desc[cls._lib_name + "_version"]):
-                    alpha_logger.warning('Current {2} version {0} is lower than the model version {1}. '
-                                         'Loaded model may work incorrectly.'.format(sklearn_version,
-                                                                                     model_desc[cls._lib_name],
-                                                                                     cls._lib_name))
+                if LooseVersion(current_version) < LooseVersion(
+                        model_desc[cls._lib_name + "_version"]):
+                    alpha_logger.warning(
+                        'Current {2} version {0} is lower than the model version {1}. '
+                        'Loaded model may work incorrectly.'.format(sklearn_version,
+                                                                    model_desc[cls._lib_name],
+                                                                    cls._lib_name))
                 return obj_layout
+
         return ExternalLibBase

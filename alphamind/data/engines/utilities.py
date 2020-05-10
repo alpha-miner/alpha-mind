@@ -5,20 +5,20 @@ Created on 2017-12-25
 @author: cheng.li
 """
 
-from typing import Iterable
 from typing import Dict
+from typing import Iterable
+
+from alphamind.data.dbmodel.models import Categories
 from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import RiskCovDay
-from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskCovLong
-from alphamind.data.dbmodel.models import SpecificRiskDay
-from alphamind.data.dbmodel.models import SpecificRiskShort
-from alphamind.data.dbmodel.models import SpecificRiskLong
-from alphamind.data.dbmodel.models import Uqer
+from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskExposure
-from alphamind.data.dbmodel.models import Categories
+from alphamind.data.dbmodel.models import SpecificRiskDay
+from alphamind.data.dbmodel.models import SpecificRiskLong
+from alphamind.data.dbmodel.models import SpecificRiskShort
+from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
-
 
 factor_tables = [Market, RiskExposure, Uqer, Categories]
 
@@ -66,5 +66,5 @@ def _map_industry_category(category: str) -> str:
         raise ValueError("No other industry is supported at the current time")
 
 
-def industry_list(category: str, level: int=1) -> list:
+def industry_list(category: str, level: int = 1) -> list:
     return INDUSTRY_MAPPING[category][level]

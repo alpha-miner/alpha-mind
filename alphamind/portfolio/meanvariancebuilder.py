@@ -5,14 +5,16 @@ Created on 2017-6-27
 @author: cheng.li
 """
 
-import numpy as np
-from typing import Union
-from typing import Tuple
-from typing import Optional
 from typing import Dict
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
 import cvxpy
-from alphamind.cython.optimizers import QPOptimizer
+import numpy as np
 from alphamind.cython.optimizers import CVOptimizer
+from alphamind.cython.optimizers import QPOptimizer
+
 from alphamind.exceptions.exceptions import PortfolioBuilderException
 
 
@@ -52,9 +54,10 @@ def mean_variance_builder(er: np.ndarray,
                           ubound: Union[np.ndarray, float],
                           risk_exposure: Optional[np.ndarray],
                           risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
-                          lam: float=1.,
-                          linear_solver: str='ma27') -> Tuple[str, float, np.ndarray]:
-    lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
+                          lam: float = 1.,
+                          linear_solver: str = 'ma27') -> Tuple[str, float, np.ndarray]:
+    lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure,
+                                                                risk_target)
 
     if np.all(lbound == -np.inf) and np.all(ubound == np.inf) and cons_mat is None:
         # using fast path cvxpy
@@ -102,8 +105,9 @@ def target_vol_builder(er: np.ndarray,
                        risk_exposure: Optional[np.ndarray],
                        risk_target: Optional[Tuple[np.ndarray, np.ndarray]],
                        vol_target: float = 1.,
-                       linear_solver: str = 'ma27')-> Tuple[str, float, np.ndarray]:
-    lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure, risk_target)
+                       linear_solver: str = 'ma27') -> Tuple[str, float, np.ndarray]:
+    lbound, ubound, cons_mat, clbound, cubound = _create_bounds(lbound, ubound, bm, risk_exposure,
+                                                                risk_target)
 
     optimizer = CVOptimizer(er,
                             risk_model['cov'],
@@ -119,6 +123,3 @@ def target_vol_builder(er: np.ndarray,
                             linear_solver=linear_solver)
 
     return _create_result(optimizer, bm)
-
-
-

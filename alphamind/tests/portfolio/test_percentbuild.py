@@ -6,8 +6,10 @@ Created on 2017-5-4
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.portfolio.percentbuilder import percent_build
 
 

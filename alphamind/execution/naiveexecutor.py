@@ -6,7 +6,9 @@ Created on 2017-9-22
 """
 
 from typing import Tuple
+
 import pandas as pd
+
 from alphamind.execution.baseexecutor import ExecutorBase
 
 

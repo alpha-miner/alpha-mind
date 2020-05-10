@@ -8,20 +8,21 @@ Created on 2017-12-4
 import arrow
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
-from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
-from sklearn.model_selection import train_test_split
 import xgboost as xgb
-from xgboost import XGBRegressor as XGBRegressorImpl
+from sklearn.ensemble import RandomForestClassifier as RandomForestClassifierImpl
+from sklearn.ensemble import RandomForestRegressor as RandomForestRegressorImpl
+from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier as XGBClassifierImpl
+from xgboost import XGBRegressor as XGBRegressorImpl
+
 from alphamind.model.modelbase import create_model_base
 
 
 class RandomForestRegressor(create_model_base('sklearn')):
 
     def __init__(self,
-                 n_estimators: int=100,
-                 max_features: str='auto',
+                 n_estimators: int = 100,
+                 max_features: str = 'auto',
                  features=None,
                  fit_target=None,
                  **kwargs):
@@ -38,8 +39,8 @@ class RandomForestRegressor(create_model_base('sklearn')):
 class RandomForestClassifier(create_model_base('sklearn')):
 
     def __init__(self,
-                 n_estimators: int=100,
-                 max_features: str='auto',
+                 n_estimators: int = 100,
+                 max_features: str = 'auto',
                  features=None,
                  fit_target=None,
                  **kwargs):
@@ -56,13 +57,13 @@ class RandomForestClassifier(create_model_base('sklearn')):
 class XGBRegressor(create_model_base('xgboost')):
 
     def __init__(self,
-                 n_estimators: int=100,
-                 learning_rate: float=0.1,
-                 max_depth: int=3,
+                 n_estimators: int = 100,
+                 learning_rate: float = 0.1,
+                 max_depth: int = 3,
                  features=None,
                  fit_target=None,
-                 n_jobs: int=1,
-                 missing: float=np.nan,
+                 n_jobs: int = 1,
+                 missing: float = np.nan,
                  **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.impl = XGBRegressorImpl(n_estimators=n_estimators,
@@ -80,13 +81,13 @@ class XGBRegressor(create_model_base('xgboost')):
 class XGBClassifier(create_model_base('xgboost')):
 
     def __init__(self,
-                 n_estimators: int=100,
-                 learning_rate: float=0.1,
-                 max_depth: int=3,
+                 n_estimators: int = 100,
+                 learning_rate: float = 0.1,
+                 max_depth: int = 3,
                  features=None,
                  fit_target=None,
-                 n_jobs: int=1,
-                 missing: float=np.nan,
+                 n_jobs: int = 1,
+                 missing: float = np.nan,
                  **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.impl = XGBClassifierImpl(n_estimators=n_estimators,
@@ -108,8 +109,8 @@ class XGBTrainer(create_model_base('xgboost')):
                  objective='binary:logistic',
                  booster='gbtree',
                  tree_method='hist',
-                 n_estimators: int=100,
-                 learning_rate: float=0.1,
+                 n_estimators: int = 100,
+                 learning_rate: float = 0.1,
                  max_depth=3,
                  eval_sample=None,
                  early_stopping_rounds=None,
@@ -117,8 +118,8 @@ class XGBTrainer(create_model_base('xgboost')):
                  colsample_bytree=1.,
                  features=None,
                  fit_target=None,
-                 random_state: int=0,
-                 n_jobs: int=1,
+                 random_state: int = 0,
+                 n_jobs: int = 1,
                  **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.params = {
@@ -173,8 +174,3 @@ class XGBTrainer(create_model_base('xgboost')):
         imps = self.impl.get_fscore().items()
         imps = sorted(imps, key=lambda x: x[0])
         return list(zip(*imps))[1]
-
-
-
-
-

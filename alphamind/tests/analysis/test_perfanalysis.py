@@ -6,8 +6,10 @@ Created on 2017-5-12
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.analysis.perfanalysis import perf_attribution_by_pos
 
 
@@ -28,14 +30,15 @@ class TestPerformanceAnalysis(unittest.TestCase):
                                   index=dates)
 
         explained_table = perf_attribution_by_pos(weights_series - bm_series,
-                                           next_bar_return_series,
-                                           risk_table)
+                                                  next_bar_return_series,
+                                                  risk_table)
 
         to_explain = (weights_series - bm_series).multiply(next_bar_return_series, axis=0)
         aggregated_to_explain = pd.Series(to_explain).groupby(dates).sum()
         aggregated_explained = explained_table.sum(axis=1)
 
-        np.testing.assert_array_almost_equal(aggregated_to_explain.values, aggregated_explained.values)
+        np.testing.assert_array_almost_equal(aggregated_to_explain.values,
+                                             aggregated_explained.values)
 
 
 if __name__ == '__main__':

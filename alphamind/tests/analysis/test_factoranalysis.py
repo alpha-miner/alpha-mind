@@ -6,14 +6,16 @@ Created on 2017-5-25
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
-from alphamind.data.winsorize import winsorize_normal
-from alphamind.data.standardize import standardize
-from alphamind.data.neutralize import neutralize
-from alphamind.portfolio.constraints import Constraints
-from alphamind.data.processing import factor_processing
+
 from alphamind.analysis.factoranalysis import factor_analysis
+from alphamind.data.neutralize import neutralize
+from alphamind.data.processing import factor_processing
+from alphamind.data.standardize import standardize
+from alphamind.data.winsorize import winsorize_normal
+from alphamind.portfolio.constraints import Constraints
 
 
 class TestFactorAnalysis(unittest.TestCase):
@@ -29,14 +31,16 @@ class TestFactorAnalysis(unittest.TestCase):
         new_factor = factor_processing(self.raw_factor,
                                        pre_process=[standardize, winsorize_normal])
 
-        np.testing.assert_array_almost_equal(new_factor, winsorize_normal(standardize(self.raw_factor)))
+        np.testing.assert_array_almost_equal(new_factor,
+                                             winsorize_normal(standardize(self.raw_factor)))
 
         new_factor = factor_processing(self.raw_factor,
                                        pre_process=[standardize, winsorize_normal],
                                        risk_factors=self.risk_factor)
 
         np.testing.assert_array_almost_equal(new_factor, neutralize(self.risk_factor,
-                                                                    winsorize_normal(standardize(self.raw_factor))))
+                                                                    winsorize_normal(standardize(
+                                                                        self.raw_factor))))
 
     def test_factor_analysis(self):
         benchmark = np.random.randint(50, size=1000)
@@ -64,7 +68,8 @@ class TestFactorAnalysis(unittest.TestCase):
         weight = weight_table.weight
 
         self.assertEqual(analysis_table['er'].sum() / analysis_table['er'].iloc[-1], 2.0)
-        np.testing.assert_array_almost_equal(weight @ self.risk_factor, benchmark @ self.risk_factor)
+        np.testing.assert_array_almost_equal(weight @ self.risk_factor,
+                                             benchmark @ self.risk_factor)
         self.assertTrue(weight @ factor_df.values > benchmark @ factor_df.values)
 
     def test_factor_analysis_with_several_factors(self):
@@ -92,7 +97,8 @@ class TestFactorAnalysis(unittest.TestCase):
 
         weight = weight_table.weight
         self.assertEqual(analysis_table['er'].sum() / analysis_table['er'].iloc[-1], 2.0)
-        np.testing.assert_array_almost_equal(weight @ self.risk_factor, benchmark @ self.risk_factor)
+        np.testing.assert_array_almost_equal(weight @ self.risk_factor,
+                                             benchmark @ self.risk_factor)
 
 
 if __name__ == '__main__':

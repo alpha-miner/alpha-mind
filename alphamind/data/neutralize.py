@@ -5,21 +5,22 @@ Created on 2017-4-25
 @author: cheng.li
 """
 
-import numpy as np
-import numba as nb
+from typing import Dict
 from typing import Tuple
 from typing import Union
-from typing import Dict
+
+import numba as nb
+import numpy as np
+
 import alphamind.utilities as utils
 
 
 def neutralize(x: np.ndarray,
                y: np.ndarray,
-               groups: np.ndarray=None,
-               detail: bool=False,
+               groups: np.ndarray = None,
+               detail: bool = False,
                weights: np.ndarray = None) \
         -> Union[np.ndarray, Tuple[np.ndarray, Dict]]:
-
     if y.ndim == 1:
         y = y.reshape((-1, 1))
 

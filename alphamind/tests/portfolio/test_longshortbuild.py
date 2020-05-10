@@ -6,8 +6,10 @@ Created on 2017-5-9
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.portfolio.longshortbulder import long_short_builder
 
 
@@ -37,7 +39,8 @@ class TestLongShortBuild(unittest.TestCase):
         np.testing.assert_array_almost_equal(calc_weights, expected_weights)
 
         calc_weights = long_short_builder(self.x, groups=self.groups)
-        expected_weights = pd.DataFrame(self.x).groupby(self.groups).apply(lambda s: s / np.abs(s).sum(axis=0))
+        expected_weights = pd.DataFrame(self.x).groupby(self.groups).apply(
+            lambda s: s / np.abs(s).sum(axis=0))
         np.testing.assert_array_almost_equal(calc_weights, expected_weights)
 
     def test_long_short_build_with_masks(self):

@@ -7,8 +7,10 @@ Created on 2017-9-22
 
 import unittest
 from collections import deque
+
 import numpy as np
 import pandas as pd
+
 from alphamind.execution.targetvolexecutor import TargetVolExecutor
 
 

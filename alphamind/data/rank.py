@@ -6,13 +6,14 @@ Created on 2017-8-8
 """
 
 from typing import Optional
+
 import numpy as np
 from scipy.stats import rankdata
+
 import alphamind.utilities as utils
 
 
-def rank(x: np.ndarray, groups: Optional[np.ndarray]=None) -> np.ndarray:
-
+def rank(x: np.ndarray, groups: Optional[np.ndarray] = None) -> np.ndarray:
     if x.ndim == 1:
         x = x.reshape((-1, 1))
 
@@ -30,8 +31,7 @@ def rank(x: np.ndarray, groups: Optional[np.ndarray]=None) -> np.ndarray:
         return (rankdata(x).astype(float) - 1.).reshape((-1, 1))
 
 
-def percentile(x: np.ndarray, groups: Optional[np.ndarray]=None) -> np.ndarray:
-
+def percentile(x: np.ndarray, groups: Optional[np.ndarray] = None) -> np.ndarray:
     if x.ndim == 1:
         x = x.reshape((-1, 1))
 

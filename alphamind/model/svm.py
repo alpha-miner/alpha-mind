@@ -6,6 +6,7 @@ Created on 2018-7-9
 """
 
 from sklearn.svm import NuSVR
+
 from alphamind.model.modelbase import create_model_base
 
 

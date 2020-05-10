@@ -6,7 +6,9 @@ Created on 2017-9-22
 """
 
 import unittest
+
 import pandas as pd
+
 from alphamind.execution.thresholdexecutor import ThresholdExecutor
 
 

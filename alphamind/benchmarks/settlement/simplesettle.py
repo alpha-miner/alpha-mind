@@ -6,15 +6,19 @@ Created on 2017-4-28
 """
 
 import datetime as dt
+
 import numpy as np
 import pandas as pd
+
 from alphamind.settlement.simplesettle import simple_settle
 
 
 def benchmark_simple_settle(n_samples: int, n_portfolios: int, n_loops: int) -> None:
     print("-" * 60)
     print("Starting simple settle benchmarking")
-    print("Parameters(n_samples: {0}, n_portfolios: {1}, n_loops: {2})".format(n_samples, n_portfolios, n_loops))
+    print("Parameters(n_samples: {0}, n_portfolios: {1}, n_loops: {2})".format(n_samples,
+                                                                               n_portfolios,
+                                                                               n_loops))
 
     weights = np.random.randn(n_samples, n_portfolios)
     ret_series = np.random.randn(n_samples)
@@ -37,10 +41,12 @@ def benchmark_simple_settle(n_samples: int, n_portfolios: int, n_loops: int) -> 
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 
 
-def benchmark_simple_settle_with_group(n_samples: int, n_portfolios: int, n_loops: int, n_groups: int) -> None:
+def benchmark_simple_settle_with_group(n_samples: int, n_portfolios: int, n_loops: int,
+                                       n_groups: int) -> None:
     print("-" * 60)
     print("Starting simple settle with group-by values benchmarking")
-    print("Parameters(n_samples: {0}, n_portfolios: {1}, n_loops: {2}, n_groups: {3})".format(n_samples, n_portfolios, n_loops, n_groups))
+    print("Parameters(n_samples: {0}, n_portfolios: {1}, n_loops: {2}, n_groups: {3})".format(
+        n_samples, n_portfolios, n_loops, n_groups))
 
     weights = np.random.randn(n_samples, n_portfolios)
     ret_series = np.random.randn(n_samples)

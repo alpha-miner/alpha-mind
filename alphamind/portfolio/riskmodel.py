@@ -7,6 +7,7 @@ Created on 2018-5-29
 
 import abc
 from typing import List
+
 import pandas as pd
 
 
@@ -22,13 +23,13 @@ class FullRiskModel(RiskModel):
         self.codes = sec_cov.index.tolist()
         self.sec_cov = sec_cov.loc[self.codes, self.codes]
 
-    def get_cov(self, codes: List[int]=None):
+    def get_cov(self, codes: List[int] = None):
         if codes:
             return self.sec_cov.loc[codes, codes].values
         else:
             return self.sec_cov.values
 
-    def get_risk_profile(self, codes: List[int]=None):
+    def get_risk_profile(self, codes: List[int] = None):
         return dict(
             cov=self.get_cov(codes),
             factor_cov=None,
@@ -51,7 +52,7 @@ class FactorRiskModel(RiskModel):
         self.factor_cov = self.factor_cov.loc[self.factor_names, self.factor_names]
         self.idsync = self.idsync[self.codes]
 
-    def get_risk_exp(self, codes: List[int]=None):
+    def get_risk_exp(self, codes: List[int] = None):
         if codes:
             return self.risk_exp.loc[codes, :].values
         else:
@@ -60,13 +61,13 @@ class FactorRiskModel(RiskModel):
     def get_factor_cov(self):
         return self.factor_cov.values
 
-    def get_idsync(self, codes: List[int]=None):
+    def get_idsync(self, codes: List[int] = None):
         if codes:
             return self.idsync[codes].values
         else:
             return self.idsync.values
 
-    def get_risk_profile(self, codes: List[int]=None):
+    def get_risk_profile(self, codes: List[int] = None):
         return dict(
             cov=None,
             factor_cov=self.get_factor_cov(),

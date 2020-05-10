@@ -7,11 +7,13 @@ Created on 2017-9-25
 
 import unittest
 from collections import deque
+
 import numpy as np
 import pandas as pd
+
 from alphamind.execution.pipeline import ExecutionPipeline
-from alphamind.execution.thresholdexecutor import ThresholdExecutor
 from alphamind.execution.targetvolexecutor import TargetVolExecutor
+from alphamind.execution.thresholdexecutor import ThresholdExecutor
 
 
 class TestExecutionPipeline(unittest.TestCase):

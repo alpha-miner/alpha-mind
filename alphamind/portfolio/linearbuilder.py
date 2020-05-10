@@ -5,11 +5,13 @@ Created on 2017-5-5
 @author: cheng.li
 """
 
-import numpy as np
 from typing import Tuple
 from typing import Union
-from alphamind.exceptions.exceptions import PortfolioBuilderException
+
+import numpy as np
 from alphamind.cython.optimizers import LPOptimizer
+
+from alphamind.exceptions.exceptions import PortfolioBuilderException
 
 
 def linear_builder(er: np.ndarray,
@@ -19,7 +21,7 @@ def linear_builder(er: np.ndarray,
                    risk_target: Tuple[np.ndarray, np.ndarray],
                    turn_over_target: float = None,
                    current_position: np.ndarray = None,
-                   method: str='ecos') -> Tuple[str, np.ndarray, np.ndarray]:
+                   method: str = 'ecos') -> Tuple[str, np.ndarray, np.ndarray]:
     er = er.flatten()
     n, m = risk_constraints.shape
 

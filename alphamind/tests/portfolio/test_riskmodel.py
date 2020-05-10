@@ -6,17 +6,21 @@ Created on 2018-5-29
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
-from alphamind.portfolio.riskmodel import FullRiskModel
+
 from alphamind.portfolio.riskmodel import FactorRiskModel
+from alphamind.portfolio.riskmodel import FullRiskModel
 
 
 class TestRiskModel(unittest.TestCase):
 
     def setUp(self):
-        self.factor_cov = pd.DataFrame([[0.5, -0.3], [-0.3, 0.7]], columns=['a', 'b'], index=['a', 'b'])
-        self.risk_exp = pd.DataFrame([[0.8, 0.2], [0.5, 0.5], [0.2, 0.8]], columns=['a', 'b'], index=[1, 2, 3])
+        self.factor_cov = pd.DataFrame([[0.5, -0.3], [-0.3, 0.7]], columns=['a', 'b'],
+                                       index=['a', 'b'])
+        self.risk_exp = pd.DataFrame([[0.8, 0.2], [0.5, 0.5], [0.2, 0.8]], columns=['a', 'b'],
+                                     index=[1, 2, 3])
         self.idsync = pd.Series([0.1, 0.3, 0.2], index=[1, 2, 3])
         self.sec_cov = self.risk_exp.values @ self.factor_cov.values @ self.risk_exp.values.T \
                        + np.diag(self.idsync.values)
@@ -55,5 +59,3 @@ class TestRiskModel(unittest.TestCase):
         np.testing.assert_array_almost_equal(res, self.risk_exp)
         res = model.get_idsync()
         np.testing.assert_array_almost_equal(res, self.idsync)
-
-

@@ -9,7 +9,6 @@ import numpy as np
 
 
 def evolve_positions(positions: np.ndarray, dx_ret: np.ndarray) -> np.ndarray:
-
     # assume return is log return
 
     simple_return = np.exp(dx_ret)

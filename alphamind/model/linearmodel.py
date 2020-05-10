@@ -6,10 +6,11 @@ Created on 2017-5-10
 """
 
 import numpy as np
-from sklearn.linear_model import LinearRegression as LinearRegressionImpl
-from sklearn.linear_model import Lasso
-from sklearn.linear_model import LogisticRegression as LogisticRegressionImpl
 from PyFin.api import pyFinAssert
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import LinearRegression as LinearRegressionImpl
+from sklearn.linear_model import LogisticRegression as LogisticRegressionImpl
+
 from alphamind.model.modelbase import create_model_base
 
 
@@ -78,7 +79,8 @@ class LinearRegression(create_model_base('sklearn')):
 
 class LassoRegression(create_model_base('sklearn')):
 
-    def __init__(self, alpha=0.01, features=None, fit_intercept: bool = False, fit_target=None, **kwargs):
+    def __init__(self, alpha=0.01, features=None, fit_intercept: bool = False, fit_target=None,
+                 **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.impl = Lasso(alpha=alpha, fit_intercept=fit_intercept, **kwargs)
 

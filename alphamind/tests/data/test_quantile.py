@@ -6,7 +6,9 @@ Created on 2017-8-16
 """
 
 import unittest
+
 import numpy as np
+
 from alphamind.data.quantile import quantile
 
 

@@ -6,18 +6,17 @@ Created on 2017-4-25
 """
 
 import base64
-import pickle
 import math
-from simpleutils import CustomLogger
-import numpy as np
-import numba as nb
+import pickle
 
+import numba as nb
+import numpy as np
+from simpleutils import CustomLogger
 
 alpha_logger = CustomLogger('ALPHA_MIND', 'info')
 
 
 def map_freq(freq):
-
     if freq == '1m':
         horizon = 21
     elif freq == '1w':
@@ -97,7 +96,6 @@ def simple_sum(x, axis=0):
 
 @nb.njit(nogil=True, cache=True)
 def simple_abssum(x, axis=0):
-
     length, width = x.shape
 
     if axis == 0:
@@ -189,7 +187,7 @@ def simple_std(x, axis=0, ddof=1):
 def agg_sum(groups, x):
     max_g = groups.max()
     length, width = x.shape
-    res = np.zeros((max_g+1, width), dtype=np.float64)
+    res = np.zeros((max_g + 1, width), dtype=np.float64)
 
     for i in range(length):
         for j in range(width):
@@ -215,7 +213,7 @@ def agg_sqrsum(groups, x):
 def agg_abssum(groups, x):
     max_g = groups.max()
     length, width = x.shape
-    res = np.zeros((max_g+1, width), dtype=np.float64)
+    res = np.zeros((max_g + 1, width), dtype=np.float64)
 
     for i in range(length):
         for j in range(width):
@@ -227,15 +225,15 @@ def agg_abssum(groups, x):
 def agg_mean(groups, x):
     max_g = groups.max()
     length, width = x.shape
-    res = np.zeros((max_g+1, width), dtype=np.float64)
-    bin_count = np.zeros(max_g+1, dtype=np.int32)
+    res = np.zeros((max_g + 1, width), dtype=np.float64)
+    bin_count = np.zeros(max_g + 1, dtype=np.int32)
 
     for i in range(length):
         for j in range(width):
             res[groups[i], j] += x[i, j]
         bin_count[groups[i]] += 1
 
-    for i in range(max_g+1):
+    for i in range(max_g + 1):
         curr = bin_count[i]
         for j in range(width):
             res[i, j] /= curr
@@ -246,9 +244,9 @@ def agg_mean(groups, x):
 def agg_std(groups, x, ddof=1):
     max_g = groups.max()
     length, width = x.shape
-    res = np.zeros((max_g+1, width), dtype=np.float64)
+    res = np.zeros((max_g + 1, width), dtype=np.float64)
     sumsq = np.zeros((max_g + 1, width), dtype=np.float64)
-    bin_count = np.zeros(max_g+1, dtype=np.int32)
+    bin_count = np.zeros(max_g + 1, dtype=np.int32)
 
     for i in range(length):
         for j in range(width):
@@ -256,7 +254,7 @@ def agg_std(groups, x, ddof=1):
             sumsq[groups[i], j] += x[i, j] * x[i, j]
         bin_count[groups[i]] += 1
 
-    for i in range(max_g+1):
+    for i in range(max_g + 1):
         curr = bin_count[i]
         for j in range(width):
             res[i, j] = math.sqrt((sumsq[i, j] - res[i, j] * res[i, j] / curr) / (curr - ddof))
@@ -304,9 +302,8 @@ def array_index(array, items):
 def transform(groups: np.ndarray,
               x: np.ndarray,
               func: str,
-              ddof: int=1,
-              scale: float=1.) -> np.ndarray:
-
+              ddof: int = 1,
+              scale: float = 1.) -> np.ndarray:
     if func == 'mean':
         value_data = agg_mean(groups, x)
     elif func == 'std':

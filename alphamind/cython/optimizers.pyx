@@ -10,7 +10,16 @@ cimport numpy as cnp
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 import numpy as np
-from PyFin.api import pyFinAssert
+
+cimport
+numpy as cnp
+import numpy as np
+from libcpp.string cimport
+
+string
+from libcpp.vector cimport
+
+vector
 
 
 cdef extern from "lpoptimizer.hpp" namespace "pfopt":

@@ -6,8 +6,10 @@ Created on 2017-9-5
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.model.linearmodel import LinearRegression
 from alphamind.model.loader import load_model
 

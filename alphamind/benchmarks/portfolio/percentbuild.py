@@ -6,15 +6,18 @@ Created on 2017-5-4
 """
 
 import datetime as dt
+
 import numpy as np
 import pandas as pd
+
 from alphamind.portfolio.percentbuilder import percent_build
 
 
 def benchmark_build_percent(n_samples: int, n_loops: int, p_included: float) -> None:
     print("-" * 60)
     print("Starting portfolio construction by percent benchmarking")
-    print("Parameters(n_samples: {0}, p_included: {1}, n_loops: {2})".format(n_samples, p_included, n_loops))
+    print("Parameters(n_samples: {0}, p_included: {1}, n_loops: {2})".format(n_samples, p_included,
+                                                                             n_loops))
 
     n_portfolio = 10
 
@@ -41,10 +44,15 @@ def benchmark_build_percent(n_samples: int, n_loops: int, p_included: float) -> 
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 
 
-def benchmark_build_percent_with_group(n_samples: int, n_loops: int, p_included: float, n_groups: int) -> None:
+def benchmark_build_percent_with_group(n_samples: int, n_loops: int, p_included: float,
+                                       n_groups: int) -> None:
     print("-" * 60)
     print("Starting  portfolio construction by percent with group-by values benchmarking")
-    print("Parameters(n_samples: {0}, p_included: {1}, n_loops: {2}, n_groups: {3})".format(n_samples, p_included, n_loops, n_groups))
+    print(
+        "Parameters(n_samples: {0}, p_included: {1}, n_loops: {2}, n_groups: {3})".format(n_samples,
+                                                                                          p_included,
+                                                                                          n_loops,
+                                                                                          n_groups))
 
     n_portfolio = 10
 

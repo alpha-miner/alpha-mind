@@ -6,8 +6,10 @@ Created on 2017-4-27
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.portfolio.rankbuilder import rank_build
 
 

@@ -6,7 +6,9 @@ Created on 2017-5-5
 """
 
 import unittest
+
 import numpy as np
+
 from alphamind.portfolio.linearbuilder import linear_builder
 
 

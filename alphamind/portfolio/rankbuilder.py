@@ -8,12 +8,13 @@ Created on 2017-4-26
 import numpy as np
 from numpy import zeros
 from numpy import zeros_like
+
 from alphamind.utilities import groupby
 from alphamind.utilities import set_value
 
 
-def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None, masks: np.ndarray=None) -> np.ndarray:
-
+def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray = None,
+               masks: np.ndarray = None) -> np.ndarray:
     er = er.copy()
 
     if masks is not None:
@@ -28,7 +29,7 @@ def rank_build(er: np.ndarray, use_rank: int, groups: np.ndarray=None, masks: np
             index_diff, order = groupby(groups)
             start = 0
             for diff_loc in index_diff:
-                current_index = order[start:diff_loc+1]
+                current_index = order[start:diff_loc + 1]
                 current_ordering = neg_er[current_index].argsort()
                 current_ordering.shape = -1, 1
                 set_value(weights, current_index[current_ordering[:use_rank]], 1.)

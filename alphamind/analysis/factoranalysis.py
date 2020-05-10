@@ -8,18 +8,20 @@ Created on 2017-5-25
 from typing import Optional
 from typing import Tuple
 from typing import Union
+
 import numpy as np
 import pandas as pd
+
+from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
 from alphamind.portfolio.constraints import Constraints
 from alphamind.portfolio.constraints import LinearConstraints
-from alphamind.portfolio.longshortbulder import long_short_builder
-from alphamind.portfolio.rankbuilder import rank_build
 from alphamind.portfolio.linearbuilder import linear_builder
+from alphamind.portfolio.longshortbulder import long_short_builder
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
 from alphamind.portfolio.meanvariancebuilder import target_vol_builder
-from alphamind.data.processing import factor_processing
+from alphamind.portfolio.rankbuilder import rank_build
 from alphamind.settlement.simplesettle import simple_settle
 
 
@@ -106,8 +108,9 @@ def er_portfolio_analysis(er: np.ndarray,
             raise ValueError('linear programming optimizer in status: {0}'.format(status))
 
     elif method == 'rank':
-        weights = rank_build(er, use_rank=kwargs['use_rank'], masks=is_tradable).flatten() * benchmark.sum() / kwargs[
-            'use_rank']
+        weights = rank_build(er, use_rank=kwargs['use_rank'],
+                             masks=is_tradable).flatten() * benchmark.sum() / kwargs[
+                      'use_rank']
     elif method == 'ls' or method == 'long_short':
         weights = long_short_builder(er).flatten()
     elif method == 'mv' or method == 'mean_variance':

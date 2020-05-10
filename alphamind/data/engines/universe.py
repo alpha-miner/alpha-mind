@@ -5,13 +5,15 @@ Created on 2017-7-7
 @author: cheng.li
 """
 
-import sys
 import abc
+import sys
+
 import pandas as pd
 from sqlalchemy import and_
-from sqlalchemy import or_
 from sqlalchemy import not_
+from sqlalchemy import or_
 from sqlalchemy import select
+
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 
 
@@ -53,7 +55,8 @@ class BaseUniverse(metaclass=abc.ABCMeta):
     def _query_statements(self, start_date: str = None, end_date: str = None, dates=None):
         return and_(
             self.condition(),
-            UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(start_date, end_date)
+            UniverseTable.trade_date.in_(dates) if dates else UniverseTable.trade_date.between(
+                start_date, end_date)
         )
 
 
@@ -177,7 +180,6 @@ def load_universe(u_desc: dict):
 
 
 if __name__ == '__main__':
-    from PyFin.api import *
     from alphamind.data.engines.sqlengine import SqlEngine
 
     engine = SqlEngine()

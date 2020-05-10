@@ -6,15 +6,18 @@ Created on 2017-4-25
 """
 
 import datetime as dt
+
 import numpy as np
 import pandas as pd
+
 from alphamind.data.winsorize import winsorize_normal
 
 
 def benchmark_winsorize_normal(n_samples: int, n_features: int, n_loops: int) -> None:
     print("-" * 60)
     print("Starting winsorize normal benchmarking")
-    print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2})".format(n_samples, n_features, n_loops))
+    print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2})".format(n_samples, n_features,
+                                                                             n_loops))
 
     num_stds = 2
 
@@ -46,10 +49,15 @@ def benchmark_winsorize_normal(n_samples: int, n_features: int, n_loops: int) ->
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 
 
-def benchmark_winsorize_normal_with_group(n_samples: int, n_features: int, n_loops: int, n_groups: int) -> None:
+def benchmark_winsorize_normal_with_group(n_samples: int, n_features: int, n_loops: int,
+                                          n_groups: int) -> None:
     print("-" * 60)
     print("Starting winsorize normal with group-by values benchmarking")
-    print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2}, n_groups: {3})".format(n_samples, n_features, n_loops, n_groups))
+    print(
+        "Parameters(n_samples: {0}, n_features: {1}, n_loops: {2}, n_groups: {3})".format(n_samples,
+                                                                                          n_features,
+                                                                                          n_loops,
+                                                                                          n_groups))
 
     num_stds = 2
 

@@ -6,12 +6,14 @@ Created on 2017-4-25
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
 from scipy.stats import zscore
-from alphamind.data.standardize import standardize
-from alphamind.data.standardize import projection
+
 from alphamind.data.standardize import Standardizer
+from alphamind.data.standardize import projection
+from alphamind.data.standardize import standardize
 
 
 class TestStandardize(unittest.TestCase):
@@ -42,8 +44,8 @@ class TestStandardize(unittest.TestCase):
 
     def test_standardize_with_group(self):
         calc_zscore = standardize(self.x, self.groups)
-        exp_zscore = pd.DataFrame(self.x).\
-            groupby(self.groups).\
+        exp_zscore = pd.DataFrame(self.x). \
+            groupby(self.groups). \
             transform(lambda s: (s - s.mean(axis=0)) / s.std(axis=0, ddof=1))
         np.testing.assert_array_almost_equal(calc_zscore, exp_zscore)
 

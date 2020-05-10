@@ -8,10 +8,11 @@ Created on 2018-3-5
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from alphamind.utilities import alpha_logger
+
 from alphamind.data.processing import factor_processing
-from alphamind.data.winsorize import winsorize_normal
 from alphamind.data.standardize import standardize
+from alphamind.data.winsorize import winsorize_normal
+from alphamind.utilities import alpha_logger
 
 
 def cs_impl(ref_date,
@@ -33,7 +34,8 @@ def cs_impl(ref_date,
     total_risk_exp = total_data[constraint_risk]
 
     er = total_data[[factor_name]].values.astype(float)
-    er = factor_processing(er, [winsorize_normal, standardize], total_risk_exp.values, [standardize]).flatten()
+    er = factor_processing(er, [winsorize_normal, standardize], total_risk_exp.values,
+                           [standardize]).flatten()
     industry = total_data.industry_name.values
 
     codes = total_data.code.tolist()
@@ -75,7 +77,8 @@ def cross_section_analysis(ref_date,
     industry_matrix = engine.fetch_industry_matrix(ref_date, codes, 'sw_adj', 1)
     dx_returns = engine.fetch_dx_return(ref_date, codes, horizon=horizon, offset=1)
 
-    return cs_impl(ref_date, factor_data, factor_name, risk_exposure, constraint_risk, industry_matrix, dx_returns)
+    return cs_impl(ref_date, factor_data, factor_name, risk_exposure, constraint_risk,
+                   industry_matrix, dx_returns)
 
 
 if __name__ == '__main__':

@@ -6,14 +6,16 @@ Created on 2017-9-4
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression as LinearRegression2
-from alphamind.model.loader import load_model
+from sklearn.linear_model import LogisticRegression as LogisticRegression2
+
 from alphamind.model.linearmodel import ConstLinearModel
 from alphamind.model.linearmodel import LinearRegression
-from sklearn.linear_model import LogisticRegression as LogisticRegression2
 from alphamind.model.linearmodel import LogisticRegression
+from alphamind.model.loader import load_model
 
 
 class TestLinearModel(unittest.TestCase):
@@ -27,7 +29,6 @@ class TestLinearModel(unittest.TestCase):
         self.predict_x = pd.DataFrame(np.random.randn(10, self.n), columns=['a', 'b', 'c'])
 
     def test_const_linear_model(self):
-
         features = ['c', 'b', 'a']
         weights = dict(c=3., b=2., a=1.)
         model = ConstLinearModel(features=features,
@@ -111,4 +112,3 @@ class TestLinearModel(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(calculated_y, expected_y)
         np.testing.assert_array_almost_equal(new_model.weights, model.weights)
-

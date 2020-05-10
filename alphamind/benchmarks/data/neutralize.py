@@ -16,7 +16,8 @@ from alphamind.data.neutralize import neutralize
 def benchmark_neutralize(n_samples: int, n_features: int, n_loops: int) -> None:
     print("-" * 60)
     print("Starting least square fitting benchmarking")
-    print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2})".format(n_samples, n_features, n_loops))
+    print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2})".format(n_samples, n_features,
+                                                                             n_loops))
 
     y = np.random.randn(n_samples, 5)
     x = np.random.randn(n_samples, n_features)
@@ -40,13 +41,15 @@ def benchmark_neutralize(n_samples: int, n_features: int, n_loops: int) -> None:
     np.testing.assert_array_almost_equal(calc_res, exp_res)
 
 
-def benchmark_neutralize_with_groups(n_samples: int, n_features: int, n_loops: int, n_groups: int) -> None:
+def benchmark_neutralize_with_groups(n_samples: int, n_features: int, n_loops: int,
+                                     n_groups: int) -> None:
     print("-" * 60)
     print("Starting least square fitting with group benchmarking")
-    print("Parameters(n_samples: {0}, n_features: {1}, n_loops: {2}, n_groups: {3})".format(n_samples,
-                                                                                            n_features,
-                                                                                            n_loops,
-                                                                                            n_groups))
+    print(
+        "Parameters(n_samples: {0}, n_features: {1}, n_loops: {2}, n_groups: {3})".format(n_samples,
+                                                                                          n_features,
+                                                                                          n_loops,
+                                                                                          n_groups))
     y = np.random.randn(n_samples, 5)
     x = np.random.randn(n_samples, n_features)
     groups = np.random.randint(n_groups, size=n_samples)
@@ -71,7 +74,7 @@ def benchmark_neutralize_with_groups(n_samples: int, n_features: int, n_loops: i
 
     print('{0:20s}: {1}'.format('Benchmark model', benchmark_model_time))
 
+
 if __name__ == '__main__':
     benchmark_neutralize(3000, 10, 1000)
     benchmark_neutralize_with_groups(3000, 10, 1000, 30)
-

@@ -6,14 +6,16 @@ Created on 2017-8-16
 """
 
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.analysis.quantileanalysis import er_quantile_analysis
 from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.data.processing import factor_processing
+from alphamind.data.quantile import quantile
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
-from alphamind.data.quantile import quantile
 
 
 class TestQuantileAnalysis(unittest.TestCase):

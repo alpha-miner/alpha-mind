@@ -6,22 +6,23 @@ Created on 2017-8-16
 """
 
 from typing import Optional
+
 import numpy as np
 import pandas as pd
-from alphamind.utilities import agg_mean
+
+from alphamind.data.processing import factor_processing
 from alphamind.data.quantile import quantile
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
-from alphamind.data.processing import factor_processing
+from alphamind.utilities import agg_mean
 
 
 def quantile_analysis(factors: pd.DataFrame,
                       factor_weights: np.ndarray,
                       dx_return: np.ndarray,
-                      n_bins: int=5,
-                      risk_exp: Optional[np.ndarray]=None,
+                      n_bins: int = 5,
+                      risk_exp: Optional[np.ndarray] = None,
                       **kwargs):
-
     if 'pre_process' in kwargs:
         pre_process = kwargs['pre_process']
         del kwargs['pre_process']
@@ -42,7 +43,6 @@ def er_quantile_analysis(er: np.ndarray,
                          n_bins: int,
                          dx_return: np.ndarray,
                          de_trend=False) -> np.ndarray:
-
     er = er.flatten()
     q_groups = quantile(er, n_bins)
 
@@ -78,8 +78,8 @@ if __name__ == '__main__':
                                    r,
                                    risk_exp=None,
                                    n_bins=n_bins,
-                                   pre_process=[], #[winsorize_normal, standardize],
-                                   post_process=[]) #[standardize])
+                                   pre_process=[],  # [winsorize_normal, standardize],
+                                   post_process=[])  # [standardize])
 
     er = x_w @ f_df.values.T
     expected = er_quantile_analysis(er, n_bins, r)

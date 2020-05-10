@@ -5,10 +5,11 @@ Created on 2017-4-28
 @author: cheng.li
 """
 
-
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from alphamind.settlement.simplesettle import simple_settle
 
 

@@ -6,6 +6,7 @@ Created on 2017-5-9
 """
 
 import numpy as np
+
 from alphamind.utilities import group_mapping
 from alphamind.utilities import simple_abssum
 from alphamind.utilities import transform
