@@ -14,7 +14,6 @@ addons:
       - gfortran
       - g++
       - libgtest-dev
-      - cmake
       - git
       - openjdk-8-jdk
 install:
@@ -29,6 +28,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
   - conda install numba
+  - conda install cmake
   - pip install coverage
   - pip install -U numpy
   - pip install scipy
