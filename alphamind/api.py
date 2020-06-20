@@ -10,7 +10,6 @@ from alphamind.analysis.factoranalysis import factor_analysis
 from alphamind.analysis.quantileanalysis import er_quantile_analysis
 from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.data.engines.sqlengine import SqlEngine
-from alphamind.data.engines.sqlengine import factor_tables
 from alphamind.data.engines.sqlengine import industry_styles
 from alphamind.data.engines.sqlengine import macro_styles
 from alphamind.data.engines.sqlengine import risk_styles
@@ -81,7 +80,6 @@ __all__ = [
     'neutralize',
     'rank',
     'percentile',
-    'factor_tables',
     'industry_list',
     'fetch_data_package',
     'fetch_train_phase',
