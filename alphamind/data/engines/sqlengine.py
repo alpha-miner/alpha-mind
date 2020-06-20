@@ -29,6 +29,7 @@ from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import RiskMaster
 from alphamind.data.dbmodel.models import Universe as UniverseTable
 from alphamind.data.engines.universe import Universe
+from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
 from alphamind.data.engines.utilities import _map_risk_model_table
