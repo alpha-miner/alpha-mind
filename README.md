@@ -9,7 +9,7 @@
 <tr>
   <td>Build Status</td>
   <td>
-    <img src="https://travis-ci.org/alpha-miner/alpha-mind.svg?branch=master" alt="travis build status" />
+    <img src="https://travis-ci.org/alpha-miner/alpha-mind.svg" alt="travis build status" />
   </td>
 </tr>
 <tr>
