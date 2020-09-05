@@ -1,11 +1,12 @@
 arrow == 0.16.0
 cython == 0.29.21
 cvxpy == 1.1.5
+cvxopt == 1.2.5
 deprecated == 1.2.10
 ecos == 2.0.7.post1
 jupyter == 1.0.0
 jupyterlab == 2.2.6
-matplotlib
+matplotlib == 3.3.1
 numba == 0.51.1
 numpy == 1.19.1
 pandas == 1.1.1

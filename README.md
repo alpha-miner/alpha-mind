@@ -133,6 +133,8 @@ python setup.py install
 
 1. `docker build -t alpha-mind:latest -f Dockerfile .`
 
+2. `docker run -it -p 8080:8080 --name alpha-mind alpha-mind`
+
 
 * *注意事项*: 
 1. 在Linux系统上,请确保gcc版本大于4.8;
