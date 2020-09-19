@@ -18,6 +18,8 @@ import sqlalchemy.orm as orm
 from sqlalchemy import select, and_, outerjoin, join, column
 from sqlalchemy.sql import func
 
+from PyFin.api import advanceDateByCalendar
+
 from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import FundHolding
 from alphamind.data.dbmodel.models import FundMaster
@@ -869,17 +871,3 @@ class SqlEngine(object):
         factor_data = pd.merge(factor_data, industry_info, on=['trade_date', 'code'])
         total_data['factor'] = factor_data
         return total_data
-
-
-if __name__ == '__main__':
-    from PyFin.api import *
-    from alphamind.api import *
-
-    freq = "1m"
-    universe = Universe('zz800')
-    engine = SqlEngine('postgresql+psycopg2://alpha:alpha@180.166.26.82:8889')
-    rebalance_dates = makeSchedule('2015-01-31', '2019-05-30', freq, 'china.sse',
-                                   BizDayConventions.Preceding)
-
-    formula = CSTopN(LAST('EP'), 5, groups='sw1')
-    factors = engine.fetch_factor_range(universe, {'alpha': formula}, dates=rebalance_dates)
