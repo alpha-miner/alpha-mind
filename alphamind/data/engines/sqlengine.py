@@ -18,6 +18,8 @@ import sqlalchemy.orm as orm
 from sqlalchemy import select, and_, outerjoin, join, column
 from sqlalchemy.sql import func
 
+from PyFin.api import advanceDateByCalendar
+
 from alphamind.data.dbmodel.models import FactorMaster
 from alphamind.data.dbmodel.models import FundHolding
 from alphamind.data.dbmodel.models import FundMaster
