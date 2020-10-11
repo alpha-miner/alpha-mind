@@ -83,7 +83,7 @@ total_risk_factors = risk_styles + industry_styles + macro_styles
 DAILY_RETURN_OFFSET = 0
 
 
-class SqlEngine(object):
+class SqlEngine:
     def __init__(self,
                  db_url: str = None):
         self.engine = sa.create_engine(db_url)
