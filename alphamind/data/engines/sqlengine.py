@@ -31,6 +31,7 @@ from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category
 from alphamind.data.engines.utilities import _map_risk_model_table
+from alphamind.data.processing import factor_processing
 from alphamind.data.transformer import Transformer
 from alphamind.portfolio.riskmodel import FactorRiskModel
 
