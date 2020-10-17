@@ -16,8 +16,8 @@ from sqlalchemy import or_
 from sqlalchemy import select
 
 
-if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
-    from alphamind.data.dbmodel.models_mysql import Universe as UniverseTable
+if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
+    from alphamind.data.dbmodel.models_rl import Universe as UniverseTable
 else:
     from alphamind.data.dbmodel.models import Universe as UniverseTable
 

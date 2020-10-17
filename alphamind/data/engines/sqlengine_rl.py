@@ -23,10 +23,10 @@ from sqlalchemy.sql import func
 
 from PyFin.api import advanceDateByCalendar
 
-from alphamind.data.dbmodel.models_mysql import (
+from alphamind.data.dbmodel.models_rl import (
     Market
 )
-from alphamind.data.dbmodel.models_mysql import Universe as UniverseTable
+from alphamind.data.dbmodel.models_rl import Universe as UniverseTable
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 
@@ -112,8 +112,6 @@ class SqlEngine:
 
 
 if __name__ == "__main__":
-    import os
-    os.environ["DB_VENDOR"] = "mysql"
     db_url = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
 
     sql_engine = SqlEngine(db_url=db_url)
