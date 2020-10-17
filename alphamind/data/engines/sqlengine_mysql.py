@@ -5,7 +5,11 @@ Created on 2020-10-11
 @author: cheng.li
 """
 
+from typing import Dict
 from typing import Iterable
+from typing import List
+from typing import Tuple
+from typing import Union
 
 
 import pandas as pd
@@ -22,6 +26,8 @@ from PyFin.api import advanceDateByCalendar
 from alphamind.data.dbmodel.models_mysql import (
     Market
 )
+from alphamind.data.dbmodel.models_mysql import Universe as UniverseTable
+from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 
 
@@ -45,18 +51,13 @@ class SqlEngine:
         if self._session:
             self._session.close()
 
+    @property
+    def engine(self):
+        return self._engine
+
     def create_session(self):
         db_session = orm.sessionmaker(bind=self._engine)
         return db_session()
-
-    # def _create_stats(self, table, horizon, offset, code_attr='security_code'):
-    #     stats = func.sum(self._ln_func(1. + table.change_pct)).over(
-    #         partition_by=getattr(table, code_attr),
-    #         order_by=table.trade_date,
-    #         rows=(
-    #         1 + DAILY_RETURN_OFFSET + offset, 1 + horizon + DAILY_RETURN_OFFSET + offset)).label(
-    #         'dx')
-    #     return stats
 
     def fetch_dx_return(self,
                         ref_date: str,
@@ -95,12 +96,26 @@ class SqlEngine:
                                            risk_factors=df[neutralized_risks].values,
                                            post_process=post_process)
 
-        return df # df[['code', 'dx']]
+        df.rename(columns={"security_code": "code", "change_pct": "dx"}, inplace=True)
+        return df[['code', 'dx']]
+
+    def fetch_codes(self, ref_date: str, universe: Universe) -> List[int]:
+        df = universe.query(self, ref_date, ref_date).rename(columns={"security_code": "code"})
+        return sorted(df.code.tolist())
+
+    def fetch_codes_range(self,
+                          universe: Universe,
+                          start_date: str = None,
+                          end_date: str = None,
+                          dates: Iterable[str] = None) -> pd.DataFrame:
+        return universe.query(self, start_date, end_date, dates).rename(columns={"security_code": "code"})
 
 
 if __name__ == "__main__":
+    import os
+    os.environ["DB_VENDOR"] = "mysql"
     db_url = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
 
     sql_engine = SqlEngine(db_url=db_url)
-    df = sql_engine.fetch_dx_return(ref_date='2020-09-29', codes=["2010003704"])
+    df = sql_engine.fetch_codes_range(start_date='2020-09-29', end_date='2020-10-10', universe=Universe("hs300"))
     print(df)

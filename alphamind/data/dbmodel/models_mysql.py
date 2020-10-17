@@ -89,5 +89,57 @@ class _StkDailyPricePro(Base):
     update_time = Column(TIMESTAMP, index=True, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
 
 
+class _StkUniverse(Base):
+    __tablename__ = 'stk_universe'
+    __table_args__ = (
+        Index('unique_stk_universe_index', 'trade_date', 'security_code', 'flag', unique=True),
+    )
+
+    id = Column(INTEGER(10), primary_key=True)
+    trade_date = Column(Date, nullable=False)
+    code = Column("security_code", String(20), nullable=False)
+    aerodef = Column(INTEGER(11), server_default=text("'0'"))
+    agriforest = Column(INTEGER(11), server_default=text("'0'"))
+    auto = Column(INTEGER(11), server_default=text("'0'"))
+    bank = Column(INTEGER(11), server_default=text("'0'"))
+    builddeco = Column(INTEGER(11), server_default=text("'0'"))
+    chem = Column(INTEGER(11), server_default=text("'0'"))
+    conmat = Column(INTEGER(11), server_default=text("'0'"))
+    commetrade = Column(INTEGER(11), server_default=text("'0'"))
+    computer = Column(INTEGER(11), server_default=text("'0'"))
+    conglomerates = Column(INTEGER(11), server_default=text("'0'"))
+    eleceqp = Column(INTEGER(11), server_default=text("'0'"))
+    electronics = Column(INTEGER(11), server_default=text("'0'"))
+    foodbever = Column(INTEGER(11), server_default=text("'0'"))
+    health = Column(INTEGER(11), server_default=text("'0'"))
+    houseapp = Column(INTEGER(11), server_default=text("'0'"))
+    ironsteel = Column(INTEGER(11), server_default=text("'0'"))
+    leiservice = Column(INTEGER(11), server_default=text("'0'"))
+    lightindus = Column(INTEGER(11), server_default=text("'0'"))
+    machiequip = Column(INTEGER(11), server_default=text("'0'"))
+    media = Column(INTEGER(11), server_default=text("'0'"))
+    mining = Column(INTEGER(11), server_default=text("'0'"))
+    nonbankfinan = Column(INTEGER(11), server_default=text("'0'"))
+    nonfermetal = Column(INTEGER(11), server_default=text("'0'"))
+    realestate = Column(INTEGER(11), server_default=text("'0'"))
+    telecom = Column(INTEGER(11), server_default=text("'0'"))
+    textile = Column(INTEGER(11), server_default=text("'0'"))
+    transportation = Column(INTEGER(11), server_default=text("'0'"))
+    utilities = Column(INTEGER(11), server_default=text("'0'"))
+    ashare = Column(INTEGER(11), server_default=text("'0'"))
+    ashare_ex = Column(INTEGER(11), server_default=text("'0'"))
+    cyb = Column(INTEGER(11), server_default=text("'0'"))
+    hs300 = Column(INTEGER(11), server_default=text("'0'"))
+    sh50 = Column(INTEGER(11), server_default=text("'0'"))
+    zxb = Column(INTEGER(11), server_default=text("'0'"))
+    zz1000 = Column(INTEGER(11), server_default=text("'0'"))
+    zz500 = Column(INTEGER(11), server_default=text("'0'"))
+    zz800 = Column(INTEGER(11), server_default=text("'0'"))
+    flag = Column(INTEGER(11), index=True, server_default=text("'1'"))
+    is_verify = Column(INTEGER(11), index=True, server_default=text("'0'"))
+    create_time = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    update_time = Column(TIMESTAMP, index=True, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
 
 Market = _StkDailyPricePro
+Universe = _StkUniverse

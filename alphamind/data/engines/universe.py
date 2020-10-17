@@ -7,6 +7,7 @@ Created on 2017-7-7
 
 import abc
 import sys
+import os
 
 import pandas as pd
 from sqlalchemy import and_
@@ -14,7 +15,11 @@ from sqlalchemy import not_
 from sqlalchemy import or_
 from sqlalchemy import select
 
-from alphamind.data.dbmodel.models import Universe as UniverseTable
+
+if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
+    from alphamind.data.dbmodel.models_mysql import Universe as UniverseTable
+else:
+    from alphamind.data.dbmodel.models import Universe as UniverseTable
 
 
 class BaseUniverse(metaclass=abc.ABCMeta):
@@ -47,8 +52,15 @@ class BaseUniverse(metaclass=abc.ABCMeta):
         pass
 
     def query(self, engine, start_date: str = None, end_date: str = None, dates=None):
+        if hasattr(UniverseTable, "flag"):
+            more_conditions = [UniverseTable.flag == 1]
+        else:
+            more_conditions = []
         query = select([UniverseTable.trade_date, UniverseTable.code]).where(
-            self._query_statements(start_date, end_date, dates)
+            and_(
+                self._query_statements(start_date, end_date, dates),
+                *more_conditions
+            )
         ).order_by(UniverseTable.trade_date, UniverseTable.code)
         return pd.read_sql(query, engine.engine)
 
