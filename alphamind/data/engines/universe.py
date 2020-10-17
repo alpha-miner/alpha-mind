@@ -56,7 +56,7 @@ class BaseUniverse(metaclass=abc.ABCMeta):
             more_conditions = [UniverseTable.flag == 1]
         else:
             more_conditions = []
-        query = select([UniverseTable.trade_date, UniverseTable.code]).where(
+        query = select([UniverseTable.trade_date, UniverseTable.code.label("code")]).where(
             and_(
                 self._query_statements(start_date, end_date, dates),
                 *more_conditions
