@@ -19,14 +19,12 @@ from sqlalchemy import (
     and_,
     select
 )
-from sqlalchemy.sql import func
 
 from PyFin.api import advanceDateByCalendar
 
 from alphamind.data.dbmodel.models_rl import (
     Market
 )
-from alphamind.data.dbmodel.models_rl import Universe as UniverseTable
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 
