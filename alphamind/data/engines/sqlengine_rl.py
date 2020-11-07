@@ -19,7 +19,8 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy import (
     and_,
-    select
+    join,
+    select,
 )
 
 from PyFin.api import advanceDateByCalendar
@@ -37,7 +38,56 @@ else:
 
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
-from alphamind.data.engines.utilities import _map_industry_category
+
+from alphamind.data.engines.utilities import _map_risk_model_table
+from alphamind.portfolio.riskmodel import FactorRiskModel
+
+
+risk_styles = ['BETA',
+               'MOMENTUM',
+               'SIZE',
+               'EARNYILD',
+               'RESVOL',
+               'GROWTH',
+               'BTOP',
+               'LEVERAGE',
+               'LIQUIDTY',
+               'SIZENL']
+
+industry_styles = [
+    'Bank',
+    'RealEstate',
+    'Health',
+    'Transportation',
+    'Mining',
+    'NonFerMetal',
+    'HouseApp',
+    'LeiService',
+    'MachiEquip',
+    'BuildDeco',
+    'CommeTrade',
+    'CONMAT',
+    'Auto',
+    'Textile',
+    'FoodBever',
+    'Electronics',
+    'Computer',
+    'LightIndus',
+    'Utilities',
+    'Telecom',
+    'AgriForest',
+    'CHEM',
+    'Media',
+    'IronSteel',
+    'NonBankFinan',
+    'ELECEQP',
+    'AERODEF',
+    'Conglomerates'
+]
+
+macro_styles = ['COUNTRY']
+
+total_risk_factors = risk_styles + industry_styles + macro_styles
 
 
 DAILY_RETURN_OFFSET = 0
