@@ -84,5 +84,29 @@ class _StkUniverse(Base):
     is_verify = Column(INT, index=True, server_default=text("'0'"))
 
 
+class _SwIndustryDaily(Base):
+    __tablename__ = 'sw_industry_daily'
+    __table_args__ = (
+        Index('sw_industry_daily_uindex', 'trade_date', 'industry_code1', 'symbol', 'flag', unique=True),
+    )
+
+    id = Column(INT, primary_key=True)
+    trade_date = Column(Date, nullable=False)
+    symbol = Column(Text, nullable=False)
+    company_id = Column(Text, nullable=False)
+    code = Column("security_code", Text, nullable=False)
+    sname = Column(Text, nullable=False)
+    industry_code1 = Column(Text, nullable=False)
+    industry_name1 = Column(Text)
+    industry_code2 = Column(Text)
+    industry_name2 = Column(Text)
+    industry_code3 = Column(Text)
+    industry_name3 = Column(Text)
+    Industry_code4 = Column(Text)
+    Industry_name4 = Column(Text)
+    flag = Column(INT, server_default=text("'1'"))
+
+
 Market = _StkDailyPricePro
 Universe = _StkUniverse
+Industry = _SwIndustryDaily
