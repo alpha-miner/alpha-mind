@@ -9,6 +9,7 @@ from typing import Iterable
 from typing import List
 from typing import Tuple
 from typing import Union
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -25,9 +26,12 @@ from PyFin.api import advanceDateByCalendar
 
 from alphamind.data.dbmodel.models.models_rl import (
     Market,
+    IndexMarket,
     Industry,
     RiskExposure,
-    Universe as UniverseTable
+    Universe as UniverseTable,
+    IndexComponent,
+    IndexWeight
 )
 from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.engines.utilities import _map_factors
@@ -84,6 +88,10 @@ industry_styles = [
 macro_styles = ['COUNTRY']
 
 total_risk_factors = risk_styles + industry_styles + macro_styles
+
+_map_index_codes = {
+    300: "2070000060"
+}
 
 
 DAILY_RETURN_OFFSET = 0
@@ -164,6 +172,37 @@ class SqlEngine:
                                            post_process=post_process)
         return df[['code', 'dx']]
 
+    def fetch_dx_return_index(self,
+                              ref_date: str,
+                              index_code: int,
+                              expiry_date: str = None,
+                              horizon: int = 0,
+                              offset: int = 0) -> pd.DataFrame:
+        start_date = ref_date
+        index_code = _map_index_codes[index_code]
+
+        if not expiry_date:
+            end_date = advanceDateByCalendar('china.sse', ref_date,
+                                             str(1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime(
+                '%Y%m%d')
+        else:
+            end_date = expiry_date
+
+        query = select([IndexMarket.trade_date,
+                        IndexMarket.indexCode.label('code'),
+                        IndexMarket.chgPct.label("chgPct")]).where(
+            and_(
+                IndexMarket.trade_date.between(start_date, end_date),
+                IndexMarket.indexCode == index_code,
+                IndexMarket.flag == 1
+            )
+        ).order_by(IndexMarket.trade_date, IndexMarket.indexCode)
+
+        df = pd.read_sql(query, self.session.bind).dropna()
+        df = self._create_stats(df, horizon, offset)
+        df = df[df.trade_date == ref_date]
+        return df[['code', 'dx']]
+
     def fetch_dx_return_range(self,
                               universe,
                               start_date: str = None,
@@ -198,6 +237,42 @@ class SqlEngine:
             df = df[df.trade_date.isin(dates)]
 
         return df.reset_index(drop=True).sort_values(['trade_date', 'code'])
+
+    def fetch_dx_return_index_range(self,
+                                    index_code,
+                                    start_date: str = None,
+                                    end_date: str = None,
+                                    dates: Iterable[str] = None,
+                                    horizon: int = 0,
+                                    offset: int = 0) -> pd.DataFrame:
+        if dates:
+            start_date = dates[0]
+            end_date = dates[-1]
+
+        index_code = _map_index_codes[index_code]
+
+        end_date = advanceDateByCalendar('china.sse', end_date,
+                                         str(
+                                             1 + horizon + offset + DAILY_RETURN_OFFSET) + 'b').strftime(
+            '%Y-%m-%d')
+
+        query = select([IndexMarket.trade_date,
+                        IndexMarket.indexCode.label('code'),
+                        IndexMarket.chgPct.label("chgPct")]) \
+            .where(
+            and_(
+                IndexMarket.trade_date.between(start_date, end_date),
+                IndexMarket.indexCode == index_code,
+                IndexMarket.flag == 1
+            )
+        )
+
+        df = pd.read_sql(query, self.session.bind).dropna()
+        df = self._create_stats(df, horizon, offset)
+
+        if dates:
+            df = df[df.trade_date.isin(dates)]
+        return df
 
     def fetch_codes(self, ref_date: str, universe: Universe) -> List[int]:
         df = universe.query(self, ref_date, ref_date)
@@ -373,6 +448,19 @@ class SqlEngine:
         df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
         return df.drop('industry_code', axis=1)
 
+    def fetch_industry_matrix_range(self,
+                                    universe: Universe,
+                                    start_date: str = None,
+                                    end_date: str = None,
+                                    dates: Iterable[str] = None,
+                                    category: str = 'sw',
+                                    level: int = 1):
+
+        df = self.fetch_industry_range(universe, start_date, end_date, dates, category, level)
+        df['industry_name'] = df['industry']
+        df = pd.get_dummies(df, columns=['industry'], prefix="", prefix_sep="")
+        return df.drop('industry_code', axis=1).drop_duplicates(['trade_date', 'code'])
+
     def fetch_industry_range(self,
                              universe: Universe,
                              start_date: str = None,
@@ -521,6 +609,152 @@ class SqlEngine:
                 models[ref_date] = FactorRiskModel(factor_cov, factor_loading, idsync)
         return pd.Series(models), risk_cov, risk_exp
 
+    def fetch_data(self,
+                   ref_date: str,
+                   factors: Iterable[str],
+                   codes: Iterable[int],
+                   benchmark: int = None,
+                   risk_model: str = 'short',
+                   industry: str = 'sw') -> Dict[str, pd.DataFrame]:
+        total_data = dict()
+        transformer = Transformer(factors)
+        factor_data = self.fetch_factor(ref_date,
+                                        transformer,
+                                        codes,
+                                        used_factor_tables=factor_tables)
+
+        if benchmark:
+            benchmark_data = self.fetch_benchmark(ref_date, benchmark)
+            total_data['benchmark'] = benchmark_data
+            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['code'])
+            factor_data['weight'] = factor_data['weight'].fillna(0.)
+
+        if risk_model:
+            excluded = list(set(total_risk_factors).intersection(transformer.dependency))
+            risk_cov, risk_exp = self.fetch_risk_model(ref_date, codes, risk_model, excluded)
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['code'])
+            total_data['risk_cov'] = risk_cov
+
+        industry_info = self.fetch_industry(ref_date=ref_date,
+                                            codes=codes,
+                                            category=industry)
+
+        factor_data = pd.merge(factor_data, industry_info, on=['code'])
+
+        total_data['factor'] = factor_data
+        return total_data
+
+    def fetch_benchmark(self,
+                        ref_date: str,
+                        benchmark: int,
+                        codes: Iterable[int] = None) -> pd.DataFrame:
+        benchmark = _map_index_codes[benchmark]
+
+        big_table = join(IndexComponent, IndexWeight,
+                         and_(
+                             IndexComponent.trade_date == IndexWeight.trade_date,
+                             IndexComponent.indexSymbol == IndexWeight.indexSymbol,
+                             IndexComponent.symbol == IndexWeight.symbol,
+                             IndexComponent.flag == 1,
+                             IndexWeight.flag == 1
+                         )
+                         )
+
+        query = select(
+            [IndexComponent.code.label("code"),
+             (IndexWeight.weight / 100.).label('weight')]).select_from(big_table). \
+            where(
+                and_(
+                    IndexComponent.trade_date == ref_date,
+                    IndexComponent.indexCode == benchmark,
+                )
+            ).distinct()
+
+        df = pd.read_sql(query, self.engine)
+
+        if codes:
+            df.set_index(['code'], inplace=True)
+            df = df.reindex(codes).fillna(0.)
+            df.reset_index(inplace=True)
+        return df
+
+    def fetch_benchmark_range(self,
+                              benchmark: int,
+                              start_date: str = None,
+                              end_date: str = None,
+                              dates: Iterable[str] = None) -> pd.DataFrame:
+
+        cond = IndexComponent.trade_date.in_(dates) if dates else IndexComponent.trade_date.between(
+            start_date,
+            end_date)
+        benchmark = _map_index_codes[benchmark]
+
+        big_table = join(IndexComponent, IndexWeight,
+                         and_(
+                             IndexComponent.trade_date == IndexWeight.trade_date,
+                             IndexComponent.indexSymbol == IndexWeight.indexSymbol,
+                             IndexComponent.symbol == IndexWeight.symbol,
+                             IndexComponent.flag == 1,
+                             IndexWeight.flag == 1
+                         )
+                         )
+
+        query = select(
+            [IndexComponent.trade_date,
+             IndexComponent.code.label("code"),
+             (IndexWeight.weight / 100.).label('weight')]).select_from(big_table). \
+            where(
+            and_(
+                cond,
+                IndexComponent.indexCode == benchmark,
+            )
+        ).distinct()
+        return pd.read_sql(query, self.engine)
+
+    def fetch_data_range(self,
+                         universe: Universe,
+                         factors: Iterable[str],
+                         start_date: str = None,
+                         end_date: str = None,
+                         dates: Iterable[str] = None,
+                         benchmark: int = None,
+                         risk_model: str = 'short',
+                         industry: str = 'sw',
+                         external_data: pd.DataFrame = None) -> Dict[str, pd.DataFrame]:
+        total_data = dict()
+        transformer = Transformer(factors)
+        factor_data = self.fetch_factor_range(universe,
+                                              transformer,
+                                              start_date,
+                                              end_date,
+                                              dates,
+                                              external_data=external_data)
+
+        if benchmark:
+            benchmark_data = self.fetch_benchmark_range(benchmark, start_date, end_date, dates)
+            total_data['benchmark'] = benchmark_data
+            factor_data = pd.merge(factor_data, benchmark_data, how='left',
+                                   on=['trade_date', 'code'])
+            factor_data['weight'] = factor_data['weight'].fillna(0.)
+
+        if risk_model:
+            excluded = list(set(total_risk_factors).intersection(transformer.dependency))
+            risk_cov, risk_exp = self.fetch_risk_model_range(universe, start_date, end_date, dates,
+                                                             risk_model,
+                                                             excluded)
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['trade_date', 'code'])
+            total_data['risk_cov'] = risk_cov
+
+        industry_info = self.fetch_industry_range(universe,
+                                                  start_date=start_date,
+                                                  end_date=end_date,
+                                                  dates=dates,
+                                                  category=industry)
+
+        factor_data = pd.merge(factor_data, industry_info, on=['trade_date', 'code'])
+        total_data['factor'] = factor_data
+        return total_data
+
 
 if __name__ == "__main__":
     db_url = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
@@ -529,6 +763,7 @@ if __name__ == "__main__":
     universe = Universe("hs300")
     start_date = '2020-01-01'
     end_date = '2020-02-21'
+    benchmark = 300
     df = sql_engine.fetch_factor("2020-02-21", factors=["BETA"], codes=["2010031963"])
     print(df)
     df = sql_engine.fetch_factor_range(universe=universe, start_date=start_date, end_date=end_date, factors=["BETA"])
@@ -539,9 +774,21 @@ if __name__ == "__main__":
     print(df)
     df = sql_engine.fetch_dx_return_range(universe, start_date=start_date, end_date=end_date)
     print(df)
+    df = sql_engine.fetch_dx_return_index("2020-10-09", index_code=benchmark)
+    print(df)
+    df = sql_engine.fetch_dx_return_index_range(start_date=start_date, end_date=end_date, index_code=benchmark)
+    print(df)
+    df = sql_engine.fetch_benchmark("2020-10-09", benchmark=benchmark)
+    print(df)
+    df = sql_engine.fetch_benchmark_range(start_date=start_date, end_date=end_date, benchmark=benchmark)
+    print(df)
     df = sql_engine.fetch_industry(ref_date="2020-10-09", codes=["2010031963"])
     print(df)
     df = sql_engine.fetch_industry_matrix(ref_date="2020-10-09", codes=["2010031963"])
+    print(df)
+    df = sql_engine.fetch_industry_matrix_range(universe=universe,
+                                                start_date=start_date,
+                                                end_date=end_date)
     print(df)
     df = sql_engine.fetch_industry_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
     print(df)

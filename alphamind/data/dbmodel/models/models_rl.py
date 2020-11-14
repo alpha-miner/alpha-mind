@@ -35,6 +35,50 @@ class _StkDailyPricePro(Base):
     is_verify = Column(INT, index=True, server_default=text("'0'"))
 
 
+class _IndexDailyPrice(Base):
+    __tablename__ = 'index_daily_price'
+    __table_args__ = (
+        Index('unique_index_daily_price_index', 'trade_date', 'security_code', 'flag', unique=True),
+    )
+
+    id = Column(INT, primary_key=True)
+    trade_date = Column(Date)
+    indexCode = Column("security_code", Text)
+    chgPct = Column("change_pct", FLOAT)
+    secShortName = Column("name", Text)
+    is_valid = Column(INT, nullable=False)
+    flag = Column(INT, index=True, server_default=text("'1'"))
+    is_verify = Column(INT, index=True, server_default=text("'0'"))
+
+
+class _Index(Base):
+    __tablename__ = "index"
+    __table_args__ = (
+        Index('unique_index_index', 'trade_date', 'isymbol', 'symbol', 'flag', unique=True),
+    )
+
+    id = Column(INT, primary_key=True)
+    trade_date = Column(Date)
+    indexSymbol = Column("isymbol", Text)
+    symbol = Column(Text)
+    weight = Column("weighing", FLOAT)
+    flag = Column(INT, index=True, server_default=text("'1'"))
+
+
+class _IndexComponent(Base):
+    __tablename__ = "index_component"
+    __table_args__ = (
+        Index('unique_index_index', 'trade_date', 'isecurity_code', 'security_code', 'flag', unique=True),
+    )
+    id = Column(INT, primary_key=True)
+    trade_date = Column(Date)
+    indexSymbol = Column("isymbol", Text)
+    symbol = Column(Text)
+    indexCode = Column("isecurity_code", Text)
+    code = Column("security_code", Text)
+    flag = Column(INT, index=True, server_default=text("'1'"))
+
+
 class _StkUniverse(Base):
     __tablename__ = 'stk_universe'
     __table_args__ = (
@@ -358,6 +402,7 @@ class _SpecificRiskShort(Base):
 
 
 Market = _StkDailyPricePro
+IndexMarket = _IndexDailyPrice
 Universe = _StkUniverse
 Industry = _SwIndustryDaily
 RiskExposure = _RiskExposure
@@ -367,3 +412,5 @@ RiskCovLong = _RiskCovLong
 SpecificRiskDay = _SpecificRiskDay
 SpecificRiskShort = _SpecificRiskShort
 SpecificRiskLong = _SpecificRiskLong
+IndexComponent = _IndexComponent
+IndexWeight = _Index
