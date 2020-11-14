@@ -57,7 +57,9 @@ class BaseUniverse(metaclass=abc.ABCMeta):
                 *more_conditions
             )
         ).order_by(UniverseTable.trade_date, UniverseTable.code)
-        return pd.read_sql(query, engine.engine)
+        df = pd.read_sql(query, engine.engine)
+        df["trade_date"] = pd.to_datetime(df["trade_date"])
+        return df
 
     def _query_statements(self, start_date: str = None, end_date: str = None, dates=None):
         return and_(
