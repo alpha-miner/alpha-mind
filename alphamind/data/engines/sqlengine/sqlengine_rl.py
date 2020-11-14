@@ -31,7 +31,7 @@ from alphamind.data.dbmodel.models.models_rl import (
     RiskExposure,
     Universe as UniverseTable,
     IndexComponent,
-    IndexWeight
+    IndexWeight,
 )
 from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.engines.utilities import _map_factors
@@ -229,10 +229,12 @@ class SqlEngine:
             )
         )
         df1 = pd.read_sql(t1, self.session.bind).dropna()
-        df2 = self.fetch_codes_range(universe, start_date, end_date, dates)
+        df1 = self._create_stats(df1, horizon, offset)
 
+        df2 = self.fetch_codes_range(universe, start_date, end_date, dates)
+        df2["trade_date"] = pd.to_datetime(df2["trade_date"])
         df = pd.merge(df1, df2, on=["trade_date", "code"])
-        df = self._create_stats(df, horizon, offset)
+
         if dates:
             df = df[df.trade_date.isin(dates)]
 
@@ -711,6 +713,43 @@ class SqlEngine:
         ).distinct()
         return pd.read_sql(query, self.engine)
 
+    def fetch_data(self,
+                   ref_date: str,
+                   factors: Iterable[str],
+                   codes: Iterable[int],
+                   benchmark: int = None,
+                   risk_model: str = 'short',
+                   industry: str = 'sw') -> Dict[str, pd.DataFrame]:
+
+        total_data = dict()
+
+        transformer = Transformer(factors)
+        factor_data = self.fetch_factor(ref_date,
+                                        transformer,
+                                        codes,
+                                        used_factor_tables=factor_tables)
+
+        if benchmark:
+            benchmark_data = self.fetch_benchmark(ref_date, benchmark)
+            total_data['benchmark'] = benchmark_data
+            factor_data = pd.merge(factor_data, benchmark_data, how='left', on=['code'])
+            factor_data['weight'] = factor_data['weight'].fillna(0.)
+
+        if risk_model:
+            excluded = list(set(total_risk_factors).intersection(transformer.dependency))
+            risk_cov, risk_exp = self.fetch_risk_model(ref_date, codes, risk_model, excluded)
+            factor_data = pd.merge(factor_data, risk_exp, how='left', on=['code'])
+            total_data['risk_cov'] = risk_cov
+
+        industry_info = self.fetch_industry(ref_date=ref_date,
+                                            codes=codes,
+                                            category=industry)
+
+        factor_data = pd.merge(factor_data, industry_info, on=['code'])
+
+        total_data['factor'] = factor_data
+        return total_data
+
     def fetch_data_range(self,
                          universe: Universe,
                          factors: Iterable[str],
@@ -721,7 +760,8 @@ class SqlEngine:
                          risk_model: str = 'short',
                          industry: str = 'sw',
                          external_data: pd.DataFrame = None) -> Dict[str, pd.DataFrame]:
-        total_data = dict()
+
+        total_data = {}
         transformer = Transformer(factors)
         factor_data = self.fetch_factor_range(universe,
                                               transformer,
@@ -757,22 +797,25 @@ class SqlEngine:
 
 
 if __name__ == "__main__":
+    from PyFin.api import makeSchedule
     db_url = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
 
     sql_engine = SqlEngine(db_url=db_url)
     universe = Universe("hs300")
     start_date = '2020-01-01'
-    end_date = '2020-02-21'
+    end_date = '2020-04-21'
     benchmark = 300
-    df = sql_engine.fetch_factor("2020-02-21", factors=["BETA"], codes=["2010031963"])
-    print(df)
-    df = sql_engine.fetch_factor_range(universe=universe, start_date=start_date, end_date=end_date, factors=["BETA"])
-    print(df)
-    df = sql_engine.fetch_codes_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
-    print(df)
-    df = sql_engine.fetch_dx_return("2020-10-09", codes=["2010031963"])
-    print(df)
-    df = sql_engine.fetch_dx_return_range(universe, start_date=start_date, end_date=end_date)
+    factors = ["EMA5D", "EMV6D"]
+    ref_dates = makeSchedule(start_date, end_date, "10b", 'china.sse')
+    # df = sql_engine.fetch_factor("2020-02-21", factors=factors, codes=["2010031963"])
+    # print(df)
+    # df = sql_engine.fetch_factor_range(universe=universe, start_date=start_date, end_date=end_date, factors=factors)
+    # print(df)
+    # df = sql_engine.fetch_codes_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
+    # print(df)
+    # df = sql_engine.fetch_dx_return("2020-10-09", codes=["2010031963"])
+    # print(df)
+    df = sql_engine.fetch_dx_return_range(universe, dates=ref_dates, horizon=9)
     print(df)
     df = sql_engine.fetch_dx_return_index("2020-10-09", index_code=benchmark)
     print(df)
@@ -804,5 +847,13 @@ if __name__ == "__main__":
                                            start_date=start_date,
                                            end_date=end_date,
                                            model_type="factor")
+    print(df)
+    df = sql_engine.fetch_data("2020-02-11", factors=factors, codes=["2010031963"], benchmark=300)
+    print(df)
+    df = sql_engine.fetch_data_range(universe,
+                                     factors=factors,
+                                     start_date=start_date,
+                                     end_date=end_date,
+                                     benchmark=300)
     print(df)
 

@@ -401,6 +401,85 @@ class _SpecificRiskShort(Base):
     SRISK = Column(FLOAT)
 
 
+# Factor tables
+
+class _FactorMomentum(Base):
+    __tablename__ = 'factor_momentum'
+    __table_args__ = (
+        Index('factor_momentum_uindex', 'trade_date', 'security_code', 'flag', unique=True),
+    )
+
+    id = Column(INT, primary_key=True)
+    code = Column("security_code", Text, nullable=False)
+    trade_date = Column(Date, nullable=False)
+    ADX14D = Column(FLOAT)
+    ADXR14D = Column(FLOAT)
+    APBMA5D = Column(FLOAT)
+    ARC50D = Column(FLOAT)
+    BBI = Column(FLOAT)
+    BIAS10D = Column(FLOAT)
+    BIAS20D = Column(FLOAT)
+    BIAS5D = Column(FLOAT)
+    BIAS60D = Column(FLOAT)
+    CCI10D = Column(FLOAT)
+    CCI20D = Column(FLOAT)
+    CCI5D = Column(FLOAT)
+    CCI88D = Column(FLOAT)
+    ChgTo1MAvg = Column(FLOAT)
+    ChgTo1YAvg = Column(FLOAT)
+    ChgTo3MAvg = Column(FLOAT)
+    ChkOsci3D10D = Column(FLOAT)
+    ChkVol10D = Column(FLOAT)
+    DEA = Column(FLOAT)
+    EMA10D = Column(FLOAT)
+    EMA120D = Column(FLOAT)
+    EMA12D = Column(FLOAT)
+    EMA20D = Column(FLOAT)
+    EMA26D = Column(FLOAT)
+    EMA5D = Column(FLOAT)
+    EMA60D = Column(FLOAT)
+    EMV14D = Column(FLOAT)
+    EMV6D = Column(FLOAT)
+    Fiftytwoweekhigh = Column(FLOAT)
+    HT_TRENDLINE = Column(FLOAT)
+    KAMA10D = Column(FLOAT)
+    MA10Close = Column(FLOAT)
+    MA10D = Column(FLOAT)
+    MA10RegressCoeff12 = Column(FLOAT)
+    MA10RegressCoeff6 = Column(FLOAT)
+    MA120D = Column(FLOAT)
+    MA20D = Column(FLOAT)
+    MA5D = Column(FLOAT)
+    MA60D = Column(FLOAT)
+    MACD12D26D = Column(FLOAT)
+    MIDPOINT10D = Column(FLOAT)
+    MIDPRICE10D = Column(FLOAT)
+    MTM10D = Column(FLOAT)
+    PLRC12D = Column(FLOAT)
+    PLRC6D = Column(FLOAT)
+    PM10D = Column(FLOAT)
+    PM120D = Column(FLOAT)
+    PM20D = Column(FLOAT)
+    PM250D = Column(FLOAT)
+    PM5D = Column(FLOAT)
+    PM60D = Column(FLOAT)
+    PMDif5D20D = Column(FLOAT)
+    PMDif5D60D = Column(FLOAT)
+    RCI12D = Column(FLOAT)
+    RCI24D = Column(FLOAT)
+    SAR = Column(FLOAT)
+    SAREXT = Column(FLOAT)
+    SMA15D = Column(FLOAT)
+    TEMA10D = Column(FLOAT)
+    TEMA5D = Column(FLOAT)
+    TRIMA10D = Column(FLOAT)
+    TRIX10D = Column(FLOAT)
+    TRIX5D = Column(FLOAT)
+    UOS7D14D28D = Column(FLOAT)
+    WMA10D = Column(FLOAT)
+    flag = Column(INT, server_default=text("'1'"))
+
+
 Market = _StkDailyPricePro
 IndexMarket = _IndexDailyPrice
 Universe = _StkUniverse
@@ -414,3 +493,5 @@ SpecificRiskShort = _SpecificRiskShort
 SpecificRiskLong = _SpecificRiskLong
 IndexComponent = _IndexComponent
 IndexWeight = _Index
+
+FactorMomentum = _FactorMomentum

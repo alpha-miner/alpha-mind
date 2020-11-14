@@ -17,8 +17,8 @@ from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import SpecificRiskDay
 from alphamind.data.dbmodel.models import SpecificRiskLong
 from alphamind.data.dbmodel.models import SpecificRiskShort
+from alphamind.data.dbmodel.models import factor_tables
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
-factor_tables = [Market, RiskExposure]
 
 
 def _map_risk_model_table(risk_model: str) -> tuple:
