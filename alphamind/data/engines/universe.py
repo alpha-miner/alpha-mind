@@ -7,7 +7,6 @@ Created on 2017-7-7
 
 import abc
 import sys
-import os
 
 import pandas as pd
 from sqlalchemy import and_
@@ -15,11 +14,7 @@ from sqlalchemy import not_
 from sqlalchemy import or_
 from sqlalchemy import select
 
-
-if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
-    from alphamind.data.dbmodel.models_rl import Universe as UniverseTable
-else:
-    from alphamind.data.dbmodel.models import Universe as UniverseTable
+from alphamind.data.dbmodel.models import Universe as UniverseTable
 
 
 class BaseUniverse(metaclass=abc.ABCMeta):

@@ -20,14 +20,14 @@ from sqlalchemy.sql import func
 
 from PyFin.api import advanceDateByCalendar
 
-from alphamind.data.dbmodel.models import FactorMaster
-from alphamind.data.dbmodel.models import IndexComponent
-from alphamind.data.dbmodel.models import IndexMarket
-from alphamind.data.dbmodel.models import Industry
-from alphamind.data.dbmodel.models import Market
-from alphamind.data.dbmodel.models import RiskExposure
-from alphamind.data.dbmodel.models import RiskMaster
-from alphamind.data.dbmodel.models import Universe as UniverseTable
+from alphamind.data.dbmodel.models.models import FactorMaster
+from alphamind.data.dbmodel.models.models import IndexComponent
+from alphamind.data.dbmodel.models.models import IndexMarket
+from alphamind.data.dbmodel.models.models import Industry
+from alphamind.data.dbmodel.models.models import Market
+from alphamind.data.dbmodel.models.models import RiskExposure
+from alphamind.data.dbmodel.models.models import RiskMaster
+from alphamind.data.dbmodel.models.models import Universe as UniverseTable
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.utilities import factor_tables
 from alphamind.data.engines.utilities import _map_factors
@@ -36,6 +36,7 @@ from alphamind.data.engines.utilities import _map_risk_model_table
 from alphamind.data.processing import factor_processing
 from alphamind.data.transformer import Transformer
 from alphamind.portfolio.riskmodel import FactorRiskModel
+
 
 risk_styles = ['BETA',
                'MOMENTUM',

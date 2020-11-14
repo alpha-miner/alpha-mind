@@ -5,13 +5,10 @@ Created on 2020-10-11
 @author: cheng.li
 """
 
-import os
-from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Tuple
 from typing import Union
-
 
 import numpy as np
 import pandas as pd
@@ -21,26 +18,25 @@ from sqlalchemy import (
     and_,
     join,
     select,
+    outerjoin
 )
 
 from PyFin.api import advanceDateByCalendar
 
-from alphamind.data.dbmodel.models_rl import (
+from alphamind.data.dbmodel.models.models_rl import (
     Market,
     Industry,
-    RiskExposure
+    RiskExposure,
+    Universe as UniverseTable
 )
-
-if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
-    from alphamind.data.dbmodel.models_rl import Universe as UniverseTable
-else:
-    from alphamind.data.dbmodel.models import Universe as UniverseTable
-
+from alphamind.data.engines.utilities import factor_tables
+from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.universe import Universe
 from alphamind.data.processing import factor_processing
 
 from alphamind.data.engines.utilities import _map_risk_model_table
 from alphamind.portfolio.riskmodel import FactorRiskModel
+from alphamind.data.transformer import Transformer
 
 
 risk_styles = ['BETA',
@@ -213,6 +209,58 @@ class SqlEngine:
                           end_date: str = None,
                           dates: Iterable[str] = None) -> pd.DataFrame:
         return universe.query(self, start_date, end_date, dates)
+
+    def fetch_factor(self,
+                     ref_date: str,
+                     factors: Iterable[object],
+                     codes: Iterable[int],
+                     warm_start: int = 0,
+                     used_factor_tables=None) -> pd.DataFrame:
+        if isinstance(factors, Transformer):
+            transformer = factors
+        else:
+            transformer = Transformer(factors)
+
+        dependency = transformer.dependency
+
+        if used_factor_tables:
+            factor_cols = _map_factors(dependency, used_factor_tables)
+        else:
+            factor_cols = _map_factors(dependency, factor_tables)
+
+        start_date = advanceDateByCalendar('china.sse', ref_date, str(-warm_start) + 'b').strftime(
+            '%Y-%m-%d')
+        end_date = ref_date
+
+        big_table = Market
+        joined_tables = set()
+        joined_tables.add(Market.__table__.name)
+
+        for t in set(factor_cols.values()):
+            if t.__table__.name not in joined_tables:
+                big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                         Market.code == t.code))
+
+                joined_tables.add(t.__table__.name)
+
+        query = select(
+            [Market.trade_date, Market.code.label("code"),
+             Market.chgPct.label("chgPct"),
+             Market.secShortName.label("secShortName")] + list(
+                factor_cols.keys())) \
+            .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
+                                               Market.code.in_(codes)))
+        df = pd.read_sql(query, self.engine) \
+            .replace([-np.inf, np.inf], np.nan) \
+            .sort_values(['trade_date', 'code']) \
+            .set_index('trade_date')
+        res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
+
+        res['chgPct'] = df.chgPct
+        res['secShortName'] = df['secShortName']
+        res = res.loc[ref_date:ref_date, :]
+        res.index = list(range(len(res)))
+        return res
 
     def fetch_industry(self,
                        ref_date: str,
@@ -405,6 +453,8 @@ if __name__ == "__main__":
     universe = Universe("hs300")
     start_date = '2020-09-29'
     end_date = '2020-10-10'
+    df = sql_engine.fetch_factor("2020-02-21", factors=["BETA"], codes=["2010031963"])
+    print(df)
     df = sql_engine.fetch_codes_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
     print(df)
     df = sql_engine.fetch_dx_return("2020-10-09", codes=["2010031963"])

@@ -29,6 +29,7 @@ class _StkDailyPricePro(Base):
     trade_date = Column(Date)
     code = Column("security_code", Text)
     chgPct = Column("change_pct", FLOAT)
+    secShortName = Column("name", Text)
     is_valid = Column(INT, nullable=False)
     flag = Column(INT, index=True, server_default=text("'1'"))
     is_verify = Column(INT, index=True, server_default=text("'0'"))

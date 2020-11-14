@@ -14,7 +14,7 @@ from Cython.Build import cythonize
 from distutils.extension import Extension
 import numpy as np
 
-VERSION = "0.2.1"
+VERSION = "0.2.3"
 
 if platform.system() != "Windows":
     import multiprocessing

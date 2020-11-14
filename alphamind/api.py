@@ -5,14 +5,14 @@ Created on 2017-8-16
 @author: cheng.li
 """
 
+from alphamind.data.engines.sqlengine import SqlEngine
+from alphamind.data.engines.sqlengine import risk_styles
+from alphamind.data.engines.sqlengine import industry_styles
+from alphamind.data.engines.sqlengine import macro_styles
 from alphamind.analysis.factoranalysis import er_portfolio_analysis
 from alphamind.analysis.factoranalysis import factor_analysis
 from alphamind.analysis.quantileanalysis import er_quantile_analysis
 from alphamind.analysis.quantileanalysis import quantile_analysis
-from alphamind.data.engines.sqlengine import SqlEngine
-from alphamind.data.engines.sqlengine import industry_styles
-from alphamind.data.engines.sqlengine import macro_styles
-from alphamind.data.engines.sqlengine import risk_styles
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.utilities import industry_list
 from alphamind.data.neutralize import neutralize
