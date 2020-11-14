@@ -306,10 +306,11 @@ class SqlEngine:
                          ))
 
         query = select(
-            [RiskExposure.code, special_risk_table.SRISK.label('srisk')] + risk_exposure_cols) \
+            [RiskExposure.code.label("code"), special_risk_table.SRISK.label('srisk')] + risk_exposure_cols) \
             .select_from(big_table).where(
             and_(RiskExposure.trade_date == ref_date,
-                 RiskExposure.code.in_(codes)
+                 RiskExposure.code.in_(codes),
+                 RiskExposure.flag == 1
                  ))
 
         risk_exp = pd.read_sql(query, self.engine).dropna()
@@ -324,6 +325,77 @@ class SqlEngine:
             factor_loading = new_risk_exp.loc[:, factor_names]
             idsync = new_risk_exp['srisk'] * new_risk_exp['srisk'] / 10000
             return FactorRiskModel(factor_cov, factor_loading, idsync), risk_cov, risk_exp
+
+    def fetch_risk_model_range(self,
+                               universe: Universe,
+                               start_date: str = None,
+                               end_date: str = None,
+                               dates: Iterable[str] = None,
+                               risk_model: str = 'short',
+                               excluded: Iterable[str] = None,
+                               model_type: str = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
+        cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
+        cond = risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(
+            start_date,
+            end_date)
+        query = select([risk_cov_table.trade_date,
+                        risk_cov_table.FactorID,
+                        risk_cov_table.Factor]
+                       + cov_risk_cols).where(
+            cond
+        )
+        risk_cov = pd.read_sql(query, self.engine).sort_values(['trade_date', 'FactorID'])
+
+        if not excluded:
+            excluded = []
+
+        risk_exposure_cols = [RiskExposure.__table__.columns[f] for f in total_risk_factors if
+                              f not in set(excluded)]
+        cond = universe._query_statements(start_date, end_date, dates)
+        big_table = join(RiskExposure, UniverseTable,
+                         and_(
+                             RiskExposure.trade_date == UniverseTable.trade_date,
+                             RiskExposure.code == UniverseTable.code,
+                             RiskExposure.flag == 1,
+                             cond
+                         )
+                         )
+
+        big_table = join(special_risk_table,
+                         big_table,
+                         and_(
+                             RiskExposure.code == special_risk_table.code,
+                             RiskExposure.trade_date == special_risk_table.trade_date,
+                         ))
+
+        query = select(
+            [RiskExposure.trade_date,
+             RiskExposure.code.label("code"),
+             special_risk_table.SRISK.label('srisk')] + risk_exposure_cols).select_from(big_table) \
+            .distinct()
+
+        risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).dropna()
+
+        if not model_type:
+            return risk_cov, risk_exp
+        elif model_type == 'factor':
+            new_risk_cov = risk_cov.set_index('Factor')
+            new_risk_exp = risk_exp.set_index('code')
+
+            risk_cov_groups = new_risk_cov.groupby('trade_date')
+            risk_exp_groups = new_risk_exp.groupby('trade_date')
+
+            models = dict()
+            for ref_date, cov_g in risk_cov_groups:
+                exp_g = risk_exp_groups.get_group(ref_date)
+                factor_names = cov_g.index.tolist()
+                factor_cov = cov_g.loc[factor_names, factor_names] / 10000.
+                factor_loading = exp_g.loc[:, factor_names]
+                idsync = exp_g['srisk'] * exp_g['srisk'] / 10000
+                models[ref_date] = FactorRiskModel(factor_cov, factor_loading, idsync)
+        return pd.Series(models), risk_cov, risk_exp
 
 
 if __name__ == "__main__":
@@ -345,3 +417,19 @@ if __name__ == "__main__":
     print(df)
     df = sql_engine.fetch_industry_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
     print(df)
+    df = sql_engine.fetch_risk_model("2020-02-21", codes=["2010031963"])
+    print(df)
+    df = sql_engine.fetch_risk_model("2020-02-21", codes=["2010031963"], model_type="factor")
+    print(df)
+    start_date = '2020-01-01'
+    end_date = '2020-02-21'
+    df = sql_engine.fetch_risk_model_range(universe=universe,
+                                           start_date=start_date,
+                                           end_date=end_date)
+    print(df)
+    df = sql_engine.fetch_risk_model_range(universe=universe,
+                                           start_date=start_date,
+                                           end_date=end_date,
+                                           model_type="factor")
+    print(df)
+

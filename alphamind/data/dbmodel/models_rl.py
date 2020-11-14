@@ -156,6 +156,7 @@ class _RiskExposure(Base):
     AERODEF = Column(INT)
     Conglomerates = Column(INT)
     COUNTRY = Column(INT)
+    flag = Column(INT, index=True, server_default=text("'1'"))
 
 
 class _RiskCovDay(Base):

@@ -12,20 +12,6 @@ from typing import Iterable
 if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
     from alphamind.data.dbmodel.models import Categories
     from alphamind.data.dbmodel.models import Market
-    from alphamind.data.dbmodel.models import RiskCovDay
-    from alphamind.data.dbmodel.models import RiskCovLong
-    from alphamind.data.dbmodel.models import RiskCovShort
-    from alphamind.data.dbmodel.models import RiskExposure
-    from alphamind.data.dbmodel.models import SpecificRiskDay
-    from alphamind.data.dbmodel.models import SpecificRiskLong
-    from alphamind.data.dbmodel.models import SpecificRiskShort
-    from alphamind.data.dbmodel.models import Uqer
-    from alphamind.data.engines.industries import INDUSTRY_MAPPING
-
-    factor_tables = [Market, RiskExposure, Uqer, Categories]
-else:
-    from alphamind.data.dbmodel.models import Categories
-    from alphamind.data.dbmodel.models import Market
     from alphamind.data.dbmodel.models_rl import RiskCovDay
     from alphamind.data.dbmodel.models_rl import RiskCovLong
     from alphamind.data.dbmodel.models_rl import RiskCovShort
@@ -33,6 +19,20 @@ else:
     from alphamind.data.dbmodel.models_rl import SpecificRiskDay
     from alphamind.data.dbmodel.models_rl import SpecificRiskLong
     from alphamind.data.dbmodel.models_rl import SpecificRiskShort
+    from alphamind.data.dbmodel.models import Uqer
+    from alphamind.data.engines.industries import INDUSTRY_MAPPING
+
+    factor_tables = [Market, RiskExposure, Uqer, Categories]
+else:
+    from alphamind.data.dbmodel.models import Categories
+    from alphamind.data.dbmodel.models import Market
+    from alphamind.data.dbmodel.models import RiskCovDay
+    from alphamind.data.dbmodel.models import RiskCovLong
+    from alphamind.data.dbmodel.models import RiskCovShort
+    from alphamind.data.dbmodel.models import RiskExposure
+    from alphamind.data.dbmodel.models import SpecificRiskDay
+    from alphamind.data.dbmodel.models import SpecificRiskLong
+    from alphamind.data.dbmodel.models import SpecificRiskShort
     from alphamind.data.dbmodel.models import Uqer
     from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
