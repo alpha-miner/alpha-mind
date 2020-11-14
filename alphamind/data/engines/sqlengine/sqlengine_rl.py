@@ -239,7 +239,9 @@ class SqlEngine:
         for t in set(factor_cols.values()):
             if t.__table__.name not in joined_tables:
                 big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
-                                                         Market.code == t.code))
+                                                         Market.code == t.code,
+                                                         Market.flag == 1,
+                                                         t.flag == 1))
 
                 joined_tables.add(t.__table__.name)
 
@@ -249,7 +251,8 @@ class SqlEngine:
              Market.secShortName.label("secShortName")] + list(
                 factor_cols.keys())) \
             .select_from(big_table).where(and_(Market.trade_date.between(start_date, end_date),
-                                               Market.code.in_(codes)))
+                                               Market.code.in_(codes),
+                                               Market.flag == 1))
         df = pd.read_sql(query, self.engine) \
             .replace([-np.inf, np.inf], np.nan) \
             .sort_values(['trade_date', 'code']) \
@@ -258,9 +261,82 @@ class SqlEngine:
 
         res['chgPct'] = df.chgPct
         res['secShortName'] = df['secShortName']
+        res.index = pd.to_datetime(res.index)
         res = res.loc[ref_date:ref_date, :]
         res.index = list(range(len(res)))
         return res
+
+    def fetch_factor_range(self,
+                           universe: Universe,
+                           factors: Union[Transformer, Iterable[object]],
+                           start_date: str = None,
+                           end_date: str = None,
+                           dates: Iterable[str] = None,
+                           external_data: pd.DataFrame = None,
+                           used_factor_tables=None) -> pd.DataFrame:
+
+        if isinstance(factors, Transformer):
+            transformer = factors
+        else:
+            transformer = Transformer(factors)
+
+        dependency = transformer.dependency
+
+        if used_factor_tables:
+            factor_cols = _map_factors(dependency, used_factor_tables)
+        else:
+            factor_cols = _map_factors(dependency, factor_tables)
+
+        big_table = Market
+        joined_tables = set()
+        joined_tables.add(Market.__table__.name)
+
+        for t in set(factor_cols.values()):
+            if t.__table__.name not in joined_tables:
+                if dates is not None:
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.in_(dates),
+                                                             Market.flag == 1,
+                                                             t.flag == 1))
+                else:
+                    big_table = outerjoin(big_table, t, and_(Market.trade_date == t.trade_date,
+                                                             Market.code == t.code,
+                                                             Market.trade_date.between(start_date,
+                                                                                       end_date),
+                                                             Market.flag == 1,
+                                                             t.flag == 1))
+                joined_tables.add(t.__table__.name)
+
+        universe_df = universe.query(self, start_date, end_date, dates)
+
+        query = select(
+            [Market.trade_date,
+             Market.code.label("code"),
+             Market.chgPct.label("chgPct"),
+             Market.secShortName.label("secShortName")] + list(
+                factor_cols.keys())) \
+            .select_from(big_table).where(
+            and_(
+                Market.code.in_(universe_df.code.unique().tolist()),
+                Market.trade_date.in_(dates) if dates is not None else Market.trade_date.between(
+                    start_date, end_date)
+            )
+        ).distinct()
+        df = pd.read_sql(query, self.engine).replace([-np.inf, np.inf], np.nan)
+
+        if external_data is not None:
+            df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
+
+        df.sort_values(['trade_date', 'code'], inplace=True)
+        df.set_index('trade_date', inplace=True)
+        res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
+
+        res['chgPct'] = df.chgPct
+        res['secShortName'] = df['secShortName']
+        res = res.reset_index()
+        return pd.merge(res, universe_df[['trade_date', 'code']], how='inner').drop_duplicates(
+            ['trade_date', 'code'])
 
     def fetch_industry(self,
                        ref_date: str,
@@ -451,9 +527,11 @@ if __name__ == "__main__":
 
     sql_engine = SqlEngine(db_url=db_url)
     universe = Universe("hs300")
-    start_date = '2020-09-29'
-    end_date = '2020-10-10'
+    start_date = '2020-01-01'
+    end_date = '2020-02-21'
     df = sql_engine.fetch_factor("2020-02-21", factors=["BETA"], codes=["2010031963"])
+    print(df)
+    df = sql_engine.fetch_factor_range(universe=universe, start_date=start_date, end_date=end_date, factors=["BETA"])
     print(df)
     df = sql_engine.fetch_codes_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
     print(df)
@@ -471,8 +549,6 @@ if __name__ == "__main__":
     print(df)
     df = sql_engine.fetch_risk_model("2020-02-21", codes=["2010031963"], model_type="factor")
     print(df)
-    start_date = '2020-01-01'
-    end_date = '2020-02-21'
     df = sql_engine.fetch_risk_model_range(universe=universe,
                                            start_date=start_date,
                                            end_date=end_date)
