@@ -14,6 +14,8 @@ if not SKIP_ENGINE_TESTS:
         DATA_ENGINE_URI = os.environ['DB_URI']
     except KeyError:
         DATA_ENGINE_URI = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
+else:
+    DATA_ENGINE_URI = None
 
 
 if __name__ == '__main__':
