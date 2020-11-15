@@ -39,5 +39,6 @@ else:
     from alphamind.data.dbmodel.models.models import FactorMaster
     from alphamind.data.dbmodel.models.models import IndexComponent
     from alphamind.data.dbmodel.models.models import RiskMaster
+    from alphamind.data.dbmodel.models.models import Uqer
 
-    factor_tables = [Market, RiskExposure]
+    factor_tables = [Market, RiskExposure, Uqer]
