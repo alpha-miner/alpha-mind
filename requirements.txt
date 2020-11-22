@@ -15,4 +15,5 @@ scikit-learn
 scipy
 simpleutils
 sqlalchemy
+statsmodels
 xgboost
