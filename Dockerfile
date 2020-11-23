@@ -1,9 +1,7 @@
 FROM wegamekinglc/python:3.7-slim-stretch-aliyun
 
 LABEL maintainer = "scrappedprince.li@gmail.com"
-
-RUN apt-get update && apt-get install git cmake build-essential gfortran -y
-
+RUN apt-get update && apt-get install git cmake build-essential gfortran default-libmysqlclient-dev -y
 COPY ./alphamind /alphamind
 COPY ./notebooks /notebooks
 

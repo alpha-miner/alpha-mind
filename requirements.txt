@@ -7,6 +7,7 @@ ecos
 jupyter
 jupyterlab
 matplotlib
+mysqlclient
 numba
 numpy
 pandas
@@ -17,3 +18,4 @@ simpleutils
 sqlalchemy
 statsmodels
 xgboost
+xlsxwriter
