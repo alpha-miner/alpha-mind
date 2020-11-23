@@ -135,6 +135,12 @@ python setup.py install
 
 2. `docker run -it -p 8080:8080 --name alpha-mind alpha-mind`
 
+#### 提示
+
+环境变量的配置在`./entrypoint.sh`中，包括：
+
+* `DB_VENDOR`: 如果使用mysql，请设置为`rl`;
+* `DB_URI`: 数据库的连接串。
 
 * *注意事项*: 
 1. 在Linux系统上,请确保gcc版本大于4.8;
