@@ -22,8 +22,10 @@ if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
     from alphamind.data.dbmodel.models.models_rl import IndexWeight
 
     from alphamind.data.dbmodel.models.models_rl import FactorMomentum
+    from alphamind.data.dbmodel.models.models_rl import FactorValuationEstimation
+    from alphamind.data.dbmodel.models.models_rl import FactorVolatilityValue
 
-    factor_tables = [Market, RiskExposure, FactorMomentum]
+    factor_tables = [Market, RiskExposure, FactorMomentum, FactorValuationEstimation, FactorVolatilityValue]
 else:
     from alphamind.data.dbmodel.models.models import Market
     from alphamind.data.dbmodel.models.models import IndexMarket

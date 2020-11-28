@@ -31,8 +31,8 @@ class _StkDailyPricePro(Base):
     chgPct = Column("change_pct", FLOAT)
     secShortName = Column("name", Text)
     is_valid = Column(INT, nullable=False)
-    flag = Column(INT, index=True, server_default=text("'1'"))
-    is_verify = Column(INT, index=True, server_default=text("'0'"))
+    flag = Column(INT)
+    is_verify = Column(INT)
 
 
 class _IndexDailyPrice(Base):
@@ -47,8 +47,8 @@ class _IndexDailyPrice(Base):
     chgPct = Column("change_pct", FLOAT)
     secShortName = Column("name", Text)
     is_valid = Column(INT, nullable=False)
-    flag = Column(INT, index=True, server_default=text("'1'"))
-    is_verify = Column(INT, index=True, server_default=text("'0'"))
+    flag = Column(INT)
+    is_verify = Column(INT)
 
 
 class _Index(Base):
@@ -62,7 +62,7 @@ class _Index(Base):
     indexSymbol = Column("isymbol", Text)
     symbol = Column(Text)
     weight = Column("weighing", FLOAT)
-    flag = Column(INT, index=True, server_default=text("'1'"))
+    flag = Column(INT)
 
 
 class _IndexComponent(Base):
@@ -76,7 +76,7 @@ class _IndexComponent(Base):
     symbol = Column(Text)
     indexCode = Column("isecurity_code", Text)
     code = Column("security_code", Text)
-    flag = Column(INT, index=True, server_default=text("'1'"))
+    flag = Column(INT)
 
 
 class _StkUniverse(Base):
@@ -125,8 +125,8 @@ class _StkUniverse(Base):
     zz1000 = Column(INT, server_default=text("'0'"))
     zz500 = Column(INT, server_default=text("'0'"))
     zz800 = Column(INT, server_default=text("'0'"))
-    flag = Column(INT, index=True, server_default=text("'1'"))
-    is_verify = Column(INT, index=True, server_default=text("'0'"))
+    flag = Column(INT)
+    is_verify = Column(INT)
 
 
 class _SwIndustryDaily(Base):
@@ -149,7 +149,7 @@ class _SwIndustryDaily(Base):
     industry_name3 = Column(Text)
     Industry_code4 = Column(Text)
     Industry_name4 = Column(Text)
-    flag = Column(INT, server_default=text("'1'"))
+    flag = Column(INT)
     is_verify = Column(INT)
 
 
@@ -201,7 +201,7 @@ class _RiskExposure(Base):
     AERODEF = Column(INT)
     Conglomerates = Column(INT)
     COUNTRY = Column(INT)
-    flag = Column(INT, index=True, server_default=text("'1'"))
+    flag = Column(INT)
 
 
 class _RiskCovDay(Base):
@@ -477,7 +477,101 @@ class _FactorMomentum(Base):
     TRIX5D = Column(FLOAT)
     UOS7D14D28D = Column(FLOAT)
     WMA10D = Column(FLOAT)
-    flag = Column(INT, server_default=text("'1'"))
+    flag = Column(INT)
+
+
+class _FactorValuationEstimation(Base):
+    __tablename__ = 'factor_valuation_estimation'
+
+    id = Column(INT, primary_key=True)
+    code = Column("security_code", Text, nullable=False)
+    trade_date = Column(Date, nullable=False)
+    BMInduAvgOnSW1 = Column(FLOAT)
+    BMInduSTDOnSW1 = Column(FLOAT)
+    BookValueToIndu = Column(FLOAT)
+    CEToPTTM = Column(FLOAT)
+    DivYieldTTM = Column(FLOAT)
+    EPTTM = Column(FLOAT)
+    LogTotalAssets = Column(FLOAT)
+    LogofMktValue = Column(FLOAT)
+    LogofNegMktValue = Column(FLOAT)
+    MktValue = Column(FLOAT)
+    MrktCapToCorFreeCashFlow = Column(FLOAT)
+    OptIncToEnterpriseValueTTM = Column(FLOAT)
+    PBAvgOnSW1 = Column(FLOAT)
+    PBIndu = Column(FLOAT)
+    PBStdOnSW1 = Column(FLOAT)
+    PCFAvgOnSW1 = Column(FLOAT)
+    PCFIndu = Column(FLOAT)
+    PCFStdOnSW1 = Column(FLOAT)
+    PCFToNetCashflowTTM = Column(FLOAT)
+    PCFToOptCashflowTTM = Column(FLOAT)
+    PEAvgOnSW1 = Column(FLOAT)
+    PECutTTM = Column(FLOAT)
+    PEG3YTTM = Column(FLOAT)
+    PEG5YTTM = Column(FLOAT)
+    PEIndu = Column(FLOAT)
+    PEStdOnSW1 = Column(FLOAT)
+    PETTM = Column(FLOAT)
+    PEToAvg1M = Column(FLOAT)
+    PEToAvg1Y = Column(FLOAT)
+    PEToAvg3M = Column(FLOAT)
+    PEToAvg6M = Column(FLOAT)
+    PSAvgOnSW1 = Column(FLOAT)
+    PSIndu = Column(FLOAT)
+    PSStdOnSW1 = Column(FLOAT)
+    PSTTM = Column(FLOAT)
+    RevToMrktRatioTTM = Column(FLOAT)
+    TotalAssetsToEnterpriseValue = Column(FLOAT)
+    TotalMrktToEBIDAOnSW1 = Column(FLOAT)
+    TotalMrktToEBIDAOnSW1TTM = Column(FLOAT)
+    TotalMrktToEBIDATTM = Column(FLOAT)
+    TotalMrktToEBIDATTMRev = Column(FLOAT)
+    flag = Column(INT)
+
+
+class _FactorVolatilityValue(Base):
+    __tablename__ = 'factor_volatility_value'
+
+    id = Column(INT, primary_key=True)
+    code = Column("security_code", Text, nullable=False)
+    trade_date = Column(Date, nullable=False)
+    Alpha120D = Column(FLOAT)
+    Alpha20D = Column(FLOAT)
+    Alpha60D = Column(FLOAT)
+    Beta120D = Column(FLOAT)
+    Beta20D = Column(FLOAT)
+    Beta252D = Column(FLOAT)
+    Beta60D = Column(FLOAT)
+    DDNCR12M = Column(FLOAT)
+    DDNSR12M = Column(FLOAT)
+    DVRAT = Column(FLOAT)
+    DailyReturnSTD252D = Column(FLOAT)
+    GainLossVarianceRatio120D = Column(FLOAT)
+    GainLossVarianceRatio20D = Column(FLOAT)
+    GainLossVarianceRatio60D = Column(FLOAT)
+    GainVariance120D = Column(FLOAT)
+    GainVariance20D = Column(FLOAT)
+    GainVariance60D = Column(FLOAT)
+    IR120D = Column(FLOAT)
+    IR20D = Column(FLOAT)
+    IR60D = Column(FLOAT)
+    Kurtosis120D = Column(FLOAT)
+    Kurtosis20D = Column(FLOAT)
+    Kurtosis60D = Column(FLOAT)
+    LossVariance120D = Column(FLOAT)
+    LossVariance20D = Column(FLOAT)
+    LossVariance60D = Column(FLOAT)
+    Sharpe120D = Column(FLOAT)
+    Sharpe20D = Column(FLOAT)
+    Sharpe60D = Column(FLOAT)
+    TreynorRatio120D = Column(FLOAT)
+    TreynorRatio20D = Column(FLOAT)
+    TreynorRatio60D = Column(FLOAT)
+    Variance120D = Column(FLOAT)
+    Variance20D = Column(FLOAT)
+    Variance60D = Column(FLOAT)
+    flag = Column(INT)
 
 
 Market = _StkDailyPricePro
@@ -495,3 +589,5 @@ IndexComponent = _IndexComponent
 IndexWeight = _Index
 
 FactorMomentum = _FactorMomentum
+FactorValuationEstimation = _FactorValuationEstimation
+FactorVolatilityValue = _FactorVolatilityValue
