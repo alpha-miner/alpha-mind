@@ -267,7 +267,7 @@ class SqlEngine:
                     IndexMarket.flag == 1
                 )
             )
-            df2 = pd.read_sql(query, self.session.bind).dropna()
+            df2 = pd.read_sql(query, self.session.bind).dropna().drop_duplicates(["trade_date"])
             df2 = self._create_stats(df2, horizon, offset, no_code=True).set_index("trade_date")
             df['dx'] = df['dx'].values - df2.loc[df.index]['dx'].values
 
@@ -305,7 +305,7 @@ class SqlEngine:
             )
         )
 
-        df = pd.read_sql(query, self.session.bind).dropna()
+        df = pd.read_sql(query, self.session.bind).dropna().drop_duplicates(["trade_date", "code"])
         df = self._create_stats(df, horizon, offset)
 
         if dates:
@@ -369,6 +369,7 @@ class SqlEngine:
         df = pd.read_sql(query, self.engine) \
             .replace([-np.inf, np.inf], np.nan) \
             .sort_values(['trade_date', 'code']) \
+            .drop_duplicates(["trade_date", "code"]) \
             .set_index('trade_date')
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
@@ -433,15 +434,16 @@ class SqlEngine:
             and_(
                 Market.code.in_(universe_df.code.unique().tolist()),
                 Market.trade_date.in_(dates) if dates is not None else Market.trade_date.between(
-                    start_date, end_date)
+                    start_date, end_date),
+                Market.flag == 1
             )
         ).distinct()
-        df = pd.read_sql(query, self.engine).replace([-np.inf, np.inf], np.nan)
+        df = pd.read_sql(query, self.engine).replace([-np.inf, np.inf], np.nan).drop_duplicates(["trade_date", "code"])
 
         if external_data is not None:
             df = pd.merge(df, external_data, on=['trade_date', 'code']).dropna()
 
-        df.sort_values(['trade_date', 'code'], inplace=True)
+        df = df.sort_values(["trade_date", "code"]).drop_duplicates(subset=["trade_date", "code"])
         df.set_index('trade_date', inplace=True)
         res = transformer.transform('code', df).replace([-np.inf, np.inf], np.nan)
 
@@ -566,7 +568,7 @@ class SqlEngine:
                  RiskExposure.flag == 1
                  ))
 
-        risk_exp = pd.read_sql(query, self.engine).dropna()
+        risk_exp = pd.read_sql(query, self.engine).dropna().drop_duplicates(subset=["code"])
 
         if not model_type:
             return risk_cov, risk_exp
@@ -630,7 +632,8 @@ class SqlEngine:
              special_risk_table.SRISK.label('srisk')] + risk_exposure_cols).select_from(big_table) \
             .distinct()
 
-        risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']).dropna()
+        risk_exp = pd.read_sql(query, self.engine).sort_values(['trade_date', 'code']) \
+            .dropna().drop_duplicates(["trade_date", "code"])
         risk_exp["trade_date"] = pd.to_datetime(risk_exp["trade_date"])
 
         if not model_type:
@@ -713,7 +716,7 @@ class SqlEngine:
                 )
             ).distinct()
 
-        df = pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine).drop_duplicates(subset=["code"])
 
         if codes:
             df.set_index(['code'], inplace=True)
@@ -752,7 +755,7 @@ class SqlEngine:
                 IndexComponent.indexCode == benchmark,
             )
         ).distinct()
-        df = pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine).drop_duplicates(["trade_date", "code"])
         df["trade_date"] = pd.to_datetime(df["trade_date"])
         return df
 
@@ -841,7 +844,8 @@ class SqlEngine:
 
 if __name__ == "__main__":
     from PyFin.api import makeSchedule
-    db_url = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
+    # db_url = "mysql+mysqldb://reader:Reader#2020@121.37.138.1:13317/vision?charset=utf8"
+    db_url = "mysql+mysqldb://dxrw:dxRW20_2@121.37.138.1:13317/dxtest?charset=utf8"
 
     sql_engine = SqlEngine(db_url=db_url)
     universe = Universe("hs300")
@@ -854,14 +858,14 @@ if __name__ == "__main__":
     print(ref_dates)
     # df = sql_engine.fetch_factor("2020-02-21", factors=factors, codes=["2010031963"])
     # print(df)
-    df = sql_engine.fetch_factor_range(universe=universe, dates=ref_dates, factors=factors)
-    print(df)
-    df = sql_engine.fetch_codes_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
-    print(df)
+    # df = sql_engine.fetch_factor_range(universe=universe, dates=ref_dates, factors=factors)
+    # print(df)
+    # df = sql_engine.fetch_codes_range(start_date=start_date, end_date=end_date, universe=Universe("hs300"))
+    # print(df)
     # df = sql_engine.fetch_dx_return("2020-10-09", codes=["2010031963"],  benchmark=benchmark)
     # print(df)
-    df = sql_engine.fetch_dx_return_range(universe, dates=ref_dates, horizon=9, offset=1, benchmark=benchmark)
-    print(df)
+    # df = sql_engine.fetch_dx_return_range(universe, dates=ref_dates, horizon=9, offset=1, benchmark=benchmark)
+    # print(df)
     # df = sql_engine.fetch_dx_return_index("2020-10-09", index_code=benchmark)
     # print(df)
     # df = sql_engine.fetch_dx_return_index_range(start_date=start_date, end_date=end_date, index_code=benchmark, horizon=9, offset=1)
@@ -882,8 +886,8 @@ if __name__ == "__main__":
     # print(df)
     # df = sql_engine.fetch_risk_model("2020-02-21", codes=["2010031963"])
     # print(df)
-    df = sql_engine.fetch_risk_model("2020-02-21", codes=["2010031963"], model_type="factor")
-    print(df)
+    # df = sql_engine.fetch_risk_model("2020-02-21", codes=["2010031963"], model_type="factor")
+    # print(df)
     df = sql_engine.fetch_risk_model_range(universe=universe,
                                            start_date=start_date,
                                            end_date=end_date)
@@ -895,9 +899,9 @@ if __name__ == "__main__":
     # print(df)
     # df = sql_engine.fetch_data("2020-02-11", factors=factors, codes=["2010031963"], benchmark=300)
     # print(df)
-    df = sql_engine.fetch_data_range(universe,
-                                     factors=factors,
-                                     dates=ref_dates,
-                                     benchmark=benchmark)["factor"]
-    print(df)
+    # df = sql_engine.fetch_data_range(universe,
+    #                                  factors=factors,
+    #                                  dates=ref_dates,
+    #                                  benchmark=benchmark)["factor"]
+    # print(df)
 
