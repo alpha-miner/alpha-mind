@@ -103,6 +103,9 @@ class SqlEngine:
             except KeyError:
                 self._factor_tables = []
 
+        self._factor_tables += [Table(name, metadata, autoload=True, autoload_with=self._engine)
+                                for name in ["stk_daily_price_pro", "risk_exposure"] if name not in factor_tables]
+
         self.ln_func = func.ln
 
     def __del__(self):
