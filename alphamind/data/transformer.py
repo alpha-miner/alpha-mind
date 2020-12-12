@@ -74,7 +74,7 @@ class Transformer(object):
                                               self.expressions,
                                               self.names,
                                               group_name,
-                                              dropna=False)
+                                              bool_dropna=False)
             return transformed_data
         else:
             return pd.DataFrame()
