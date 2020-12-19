@@ -69,10 +69,10 @@ def mean_variance_builder(er: np.ndarray,
         risk_exposure = risk_model['factor_loading']
         if cov is None:
             risk = cvxpy.sum_squares(cvxpy.multiply(cvxpy.sqrt(special_risk), w)) \
-                   + cvxpy.quad_form((w.T * risk_exposure).T, risk_cov)
+                   + cvxpy.quad_form((w.T @ risk_exposure).T, risk_cov)
         else:
             risk = cvxpy.quad_form(w, cov)
-        objective = cvxpy.Minimize(-w.T * er + 0.5 * lam * risk)
+        objective = cvxpy.Minimize(-w.T @ er + 0.5 * lam * risk)
         prob = cvxpy.Problem(objective)
         prob.solve(solver='ECOS', feastol=1e-9, abstol=1e-9, reltol=1e-9)
 

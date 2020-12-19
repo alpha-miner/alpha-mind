@@ -485,7 +485,7 @@ def fetch_predict_phase(engine,
 
     ret = dict()
     ret['x_names'] = transformer.names
-    ret['predict'] = {'x': pd.DataFrame(ne_x, columns=transformer.names), 'code': codes,
+    ret['predict'] = {'x': pd.DataFrame(ne_x, columns=transformer.names, index=codes), 'code': codes,
                       'y': ne_y.flatten()}
 
     return ret

@@ -107,7 +107,7 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
 安装需要直接clone或者下载源代码安装，具体流程为：
 
-1. 克隆项目到本地
+克隆项目到本地
 ```
 git clone https://github.com/alpha-miner/alpha-mind.git
 cd alpha-mind
@@ -119,15 +119,28 @@ git submodule update
 cd ../..
 ```
 
-2. 参照上节内容，编译好依赖的子项目。
+### SOURCE
 
-3. 确保环境变量'VS90COMNTOOLS'的值为安装的VS的Comntools下的地址，如'\vs2015\Common7\Tools\'
+1. 参照上节内容，编译好依赖的子项目。
 
-4. 回到项目的根目录下运行：
+2. 回到项目的根目录下运行：
 
 ```python
 python setup.py install
 ```
+
+### Docker
+
+1. `docker build -t alpha-mind:latest -f Dockerfile .`
+
+2. `docker run -it -p 8080:8080 --name alpha-mind alpha-mind`
+
+#### 提示
+
+环境变量的配置在`./entrypoint.sh`中，包括：
+
+* `DB_VENDOR`: 如果使用mysql，请设置为`rl`;
+* `DB_URI`: 数据库的连接串。
 
 * *注意事项*: 
 1. 在Linux系统上,请确保gcc版本大于4.8;

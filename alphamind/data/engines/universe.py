@@ -47,10 +47,19 @@ class BaseUniverse(metaclass=abc.ABCMeta):
         pass
 
     def query(self, engine, start_date: str = None, end_date: str = None, dates=None):
-        query = select([UniverseTable.trade_date, UniverseTable.code]).where(
-            self._query_statements(start_date, end_date, dates)
+        if hasattr(UniverseTable, "flag"):
+            more_conditions = [UniverseTable.flag == 1]
+        else:
+            more_conditions = []
+        query = select([UniverseTable.trade_date, UniverseTable.code.label("code")]).where(
+            and_(
+                self._query_statements(start_date, end_date, dates),
+                *more_conditions
+            )
         ).order_by(UniverseTable.trade_date, UniverseTable.code)
-        return pd.read_sql(query, engine.engine)
+        df = pd.read_sql(query, engine.engine)
+        df["trade_date"] = pd.to_datetime(df["trade_date"])
+        return df
 
     def _query_statements(self, start_date: str = None, end_date: str = None, dates=None):
         return and_(

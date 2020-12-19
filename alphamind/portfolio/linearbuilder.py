@@ -105,7 +105,7 @@ def linear_builder(er: np.ndarray,
                            current_risk_exposure <= risk_ubound.flatten(),
                            norm1(w - current_position) <= turn_over_target]
 
-            objective = Minimize(-w.T * er)
+            objective = Minimize(-w.T @ er)
             prob = Problem(objective, constraints)
             prob.solve(solver='ECOS', feastol=1e-10, abstol=1e-10, reltol=1e-10)
 

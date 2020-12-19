@@ -104,7 +104,7 @@ def er_portfolio_analysis(er: np.ndarray,
                                             risk_target=(risk_lbound, risk_ubound),
                                             turn_over_target=turn_over_target,
                                             current_position=current_position)
-        if status != 'optimal':
+        if status not in ("optimal", "optimal_inaccurate"):
             raise ValueError('linear programming optimizer in status: {0}'.format(status))
 
     elif method == 'rank':

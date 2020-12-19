@@ -1,15 +1,21 @@
-arrow >= 0.10.0
-cython >= 0.25.2
-cvxpy >= 1.0.3
-deprecated >= 1.1.0
-ecos >= 2.0.4
-finance-python >= 0.5.7
-numba >= 0.33.0
-numpy >= 1.12.1
-pandas >= 0.19.2
-psycopg2 >= 2.7.1
-scikit-learn >= 0.18.1
-scipy >= 0.19.0
-simpleutils >= 0.1.2
-sqlalchemy >= 1.1.14
-xgboost >= 0.90.0
+arrow
+cython
+cvxpy
+cvxopt
+deprecated
+ecos
+jupyter
+jupyterlab
+matplotlib
+mysqlclient
+numba
+numpy
+pandas
+psycopg2-binary
+scikit-learn
+scipy
+simpleutils
+sqlalchemy
+statsmodels
+xgboost
+xlsxwriter
