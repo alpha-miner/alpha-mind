@@ -17,7 +17,6 @@ from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import SpecificRiskDay
 from alphamind.data.dbmodel.models import SpecificRiskLong
 from alphamind.data.dbmodel.models import SpecificRiskShort
-from alphamind.data.dbmodel.models import factor_tables
 from alphamind.data.engines.industries import INDUSTRY_MAPPING
 
 
@@ -38,8 +37,8 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
     to_keep = factors.copy()
     for f in factors:
         for t in used_factor_tables:
-            if f in t.__table__.columns:
-                factor_cols[t.__table__.columns[f]] = t
+            if f in t.columns:
+                factor_cols[t.columns[f].name] = t
                 to_keep.remove(f)
                 break
 
