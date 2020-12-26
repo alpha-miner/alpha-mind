@@ -21,15 +21,15 @@ from sqlalchemy.sql import func
 
 from PyFin.api import advanceDateByCalendar
 
-from alphamind.data.dbmodel.models.models import metadata
-from alphamind.data.dbmodel.models.models import FactorMaster
-from alphamind.data.dbmodel.models.models import IndexComponent
-from alphamind.data.dbmodel.models.models import IndexMarket
-from alphamind.data.dbmodel.models.models import Industry
-from alphamind.data.dbmodel.models.models import Market
-from alphamind.data.dbmodel.models.models import RiskExposure
-from alphamind.data.dbmodel.models.models import RiskMaster
-from alphamind.data.dbmodel.models.models import Universe as UniverseTable
+from alphamind.data.dbmodel.models.postgres import metadata
+from alphamind.data.dbmodel.models.postgres import FactorMaster
+from alphamind.data.dbmodel.models.postgres import IndexComponent
+from alphamind.data.dbmodel.models.postgres import IndexMarket
+from alphamind.data.dbmodel.models.postgres import Industry
+from alphamind.data.dbmodel.models.postgres import Market
+from alphamind.data.dbmodel.models.postgres import RiskExposure
+from alphamind.data.dbmodel.models.postgres import RiskMaster
+from alphamind.data.dbmodel.models.postgres import Universe as UniverseTable
 from alphamind.data.engines.universe import Universe
 from alphamind.data.engines.utilities import _map_factors
 from alphamind.data.engines.utilities import _map_industry_category

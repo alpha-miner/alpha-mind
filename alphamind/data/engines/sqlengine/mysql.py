@@ -27,7 +27,7 @@ from sqlalchemy import (
 
 from PyFin.api import advanceDateByCalendar
 
-from alphamind.data.dbmodel.models.models_rl import (
+from alphamind.data.dbmodel.models.mysql import (
     metadata,
     Market,
     IndexMarket,
