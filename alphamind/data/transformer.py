@@ -52,7 +52,7 @@ def factor_translator(factor_pool):
         raise ValueError('{0} is not in valid format as factors'.format(factor_pool))
 
 
-class Transformer(object):
+class Transformer:
 
     def __init__(self,
                  expressions):
