@@ -123,7 +123,6 @@ class XGBTrainer(create_model_base('xgboost')):
                  **kwargs):
         super().__init__(features=features, fit_target=fit_target)
         self.params = {
-            'silent': 1,
             'objective': objective,
             'max_depth': max_depth,
             'eta': learning_rate,
