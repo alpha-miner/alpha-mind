@@ -32,19 +32,19 @@ def linear_builder(er: np.ndarray,
         cons_matrix = None
 
     if not turn_over_target or current_position is None:
-        prob = LPOptimizer(cons_matrix, lbound, ubound, -er)
+        prob = LPOptimizer(-er, cons_matrix, lbound, ubound)
 
         if prob.status() == "optimal" or prob.status() == 'optimal_inaccurate':
             return prob.status(), prob.feval(), prob.x_value()
         else:
             raise PortfolioBuilderException(prob.status())
     elif turn_over_target:
-        prob = L1LPOptimizer(cons_matrix=cons_matrix,
+        prob = L1LPOptimizer(objective=-er,
+                             cons_matrix=cons_matrix,
                              current_pos=current_position,
                              target_turn_over=turn_over_target,
                              lbound=lbound,
-                             ubound=ubound,
-                             objective=-er)
+                             ubound=ubound)
 
         if prob.status() == 'optimal' or prob.status() == 'optimal_inaccurate':
             return prob.status(), prob.feval(), prob.x_value()
