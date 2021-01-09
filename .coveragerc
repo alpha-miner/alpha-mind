@@ -1,2 +1,3 @@
 [run]
+source=alphamind
 omit=alphamind/tests/*
