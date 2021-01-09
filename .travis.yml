@@ -47,12 +47,6 @@ install:
   - pip install cvxpy
   - pip install xgboost==0.90
   - pip install portfolio-optimizer
-  - export CWD=$PWD
-  - cd /usr/src/gtest
-  - sudo cmake CMakeLists.txt
-  - sudo make
-  - sudo cp *.a /usr/lib
-  - cd $CWD
 script:
   - export NUMBA_DISABLE_JIT=1
   - coverage run alphamind/tests/test_suite.py
