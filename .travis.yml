@@ -3,10 +3,10 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
 # command to install dependencies
 sudo: enabled
-dist: xenial
-group: travis_lts
+dist: bionic
 addons:
   apt:
     packages:
