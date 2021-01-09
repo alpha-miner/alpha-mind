@@ -19,8 +19,8 @@ install:
   - pip install coveralls --ignore-installed
 script:
   - export NUMBA_DISABLE_JIT=1
-  - coverage run alphamind/tests/test_suite.py
-  - coverage report
-  - coverage html
+  - coverage run --rcfile=./.coveragerc alphamind/tests/test_suite.py
+  - coverage report --rcfile=./.coveragerc -i
+  - coverage html --rcfile=./.coveragerc -i
 after_success:
   - coveralls
