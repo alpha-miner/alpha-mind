@@ -11,6 +11,7 @@ mysqlclient
 numba
 numpy
 pandas
+portfolio-optimizer
 psycopg2-binary
 scikit-learn
 scipy
