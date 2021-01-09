@@ -10,43 +10,13 @@ dist: bionic
 addons:
   apt:
     packages:
-      - gcc
-      - gfortran
       - g++
-      - libgtest-dev
-      - git
-      - cmake
-      - openjdk-8-jdk
       - coinor-cbc
       - coinor-libcbc-dev
 install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  # Useful for debugging any issues with conda
-  - conda info -a
-  # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment
-  - conda install numba
+  - pip install -r requirements.txt
   - pip install coverage
-  - pip install -U numpy
-  - pip install scipy
-  - pip install pandas
-  - pip install scikit-learn
-  - pip install cython
-  - pip install sqlalchemy
-  - pip install psycopg2-binary
-  - pip install arrow
-  - pip install simpleutils --ignore-installed
   - pip install coveralls --ignore-installed
-  - pip install finance-python --ignore-installed
-  - pip install deprecated --ignore-installed
-  - pip install cvxpy
-  - pip install xgboost==0.90
-  - pip install portfolio-optimizer
 script:
   - export NUMBA_DISABLE_JIT=1
   - coverage run alphamind/tests/test_suite.py

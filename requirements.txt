@@ -4,6 +4,7 @@ cvxpy
 cvxopt
 deprecated
 ecos
+finance-python
 jupyter
 jupyterlab
 matplotlib
