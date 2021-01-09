@@ -46,6 +46,7 @@ install:
   - pip install deprecated --ignore-installed
   - pip install cvxpy
   - pip install xgboost==0.90
+  - pip install portfolio-optimizer
   - export CWD=$PWD
   - cd /usr/src/gtest
   - sudo cmake CMakeLists.txt
