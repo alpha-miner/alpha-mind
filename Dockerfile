@@ -1,11 +1,11 @@
 FROM wegamekinglc/python:3.7-slim-stretch-aliyun
 
 LABEL maintainer = "scrappedprince.li@gmail.com"
-RUN apt-get update && apt-get install git cmake build-essential gfortran default-libmysqlclient-dev -y
+RUN apt-get update && apt-get install build-essential default-libmysqlclient-dev -y
 
 WORKDIR /
 COPY ./requirements.txt /requirements.txt
-RUN pip install numpy==1.19.1 -i https://pypi.douban.com/simple
+RUN pip install numpy cython -i https://pypi.douban.com/simple
 RUN pip install -r /requirements.txt -i https://pypi.douban.com/simple
 RUN pip install finance-python>=0.8.1 -i https://pypi.douban.com/simple
 
