@@ -7,7 +7,7 @@ Created on 2020-11-14
 
 import os
 
-if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
+if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
     from alphamind.data.engines.sqlengine.mysql import SqlEngine
     from alphamind.data.engines.sqlengine.mysql import total_risk_factors
     from alphamind.data.engines.sqlengine.mysql import industry_styles
