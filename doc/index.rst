@@ -3,18 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-alpha - mind
-======================================
+多因子回测框架
+====================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: 目录
 
-   introduction.rst
+   src/changelog
+   src/introduction
 
-索引
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
