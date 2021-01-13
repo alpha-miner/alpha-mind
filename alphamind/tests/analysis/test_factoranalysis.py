@@ -15,7 +15,9 @@ from alphamind.data.neutralize import neutralize
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
-from alphamind.portfolio.constraints import Constraints
+from alphamind.portfolio.constraints import (
+    Constraints,
+)
 
 
 class TestFactorAnalysis(unittest.TestCase):

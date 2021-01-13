@@ -20,6 +20,19 @@
 
 **Alpha - Mind** 是基于 **Python** 开发的股票多因子研究框架。
 
+## TODO list
+
+**alpha-mind**的开发经过长期的暂停之后，将重启。下面的列表会给出一组现在规划中的功能或者改进：
+
+- [x] 增加对于数据后端MySQL的支持；
+- [ ] 增加对于数据后端CSV文件的支持，并且提供一份样例文件供用户测试使用；
+- [x] 删除所有的c++相关代码，方便alpha-mind的安装；
+- [ ] 在windows以及linux平台提供可以直接pip安装的安装包；
+- [ ] 完整的文档；
+- [ ] alpha模型增加超参数调优的功能；
+- [ ] alpha模型增加多期预测能力；
+- [ ] 优化器增加多期优化的能力。
+
 ## 依赖
 
 该项目主要有两个主要的github外部依赖：
@@ -28,21 +41,7 @@
 
 * [xgboost](https://github.com/dmlc/xgboost)： 该项目是alpha - mind中一些机器模型的基础库。
 
-这两个库都已经使用git子模块的方式打包到alpha-mind代码库中。
-
-工具依赖包括：
-
-* [cmake](https://cmake.org/)
-
-* [Visual Studio 2015](https://visualstudio.microsoft.com)（仅Windows依赖，Visual Studio 2015以上应该也可以工作，但未做测试）
-
-* [gfortran]()（仅Linux依赖）
-
-在Linux上（例如：Ubuntu）可以使用如下指令完成依赖的安装：
-
-```bash
-$ sudo apt-get install git cmake build-essential gfortran -y
-```
+这两个库都可以直接使用pip进行安装。
 
 ## 功能
 
@@ -66,70 +65,23 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 同时还依赖于一个工具包
 * [Finance-Python](https://github.com/alpha-miner/Finance-Python)
 
-## 编译依赖
-
-* Windows
-
-  在Windows上完整安装，需要有C++编译器(例如msvc)
-  
-  具体可按照如下流程配置(以VS2015为例)：
-  
-  1. 安装VS2015 社区版，在微软官网可以免费下载。 
-  2. 安装CMake, 可以从[官网](https://cmake.org/download/)下载二进制安装文件，如"Windows win64-x64 ZIP"，解压缩后环境变量的设置可以参见[此文](https://blog.csdn.net/liyuebit/article/details/77092723)
-     
-     - 可以按照文中的例子，尝试使用如下CMake命令编译一个HelloWorld项目。
-     ```bash
-     cmake -G "Visual Studio 14 2015 Win64"
-     ```
-     - 将MSBuild的路径(默认是"C:\Program Files (x86)\MSBuild\14.0\Bin"")加入环境变量中。
-  
-  3. 在项目子目录"\alphamind\pfopt"下使用如下命令进行更新，确保所需文件都已经拷贝到本地。
-     ```
-     git submodule init
-     git submodule update
-     ```
-     
-  4. 在项目根目录下双击批处理文件"build_windows_dependencies.bat"或者通过命令行执行	
-     ```bash
-     build_windows_dependencies.bat
-     ```
-     随后一系列依赖项目会自动编译。可能有若干警告，但没有错误。
-
-* Linux
-
-  在linux上，需要c++编译器（例如g++）以及fortran编译器（例如gfortran):
-    
-    ```bash
-    build_linux_dependencies.sh
-    ```
-
 ## 安装
 
 安装需要直接clone或者下载源代码安装，具体流程为：
 
 克隆项目到本地
-```
-git clone https://github.com/alpha-miner/alpha-mind.git
-cd alpha-mind
-git submodule init
-git submodule update
-cd alphamind/pfopt
-git submodule init
-git submodule update
-cd ../..
+
+```shell
+$ git clone https://github.com/alpha-miner/alpha-mind.git
 ```
 
-### SOURCE
+然后直接使用一下命令安装
 
-1. 参照上节内容，编译好依赖的子项目。
-
-2. 回到项目的根目录下运行：
-
-```python
-python setup.py install
+```shell
+$ python setup.py install
 ```
 
-### Docker
+### 使用Docker运行
 
 1. `docker build -t alpha-mind:latest -f Dockerfile .`
 
@@ -141,10 +93,6 @@ python setup.py install
 
 * `DB_VENDOR`: 如果使用mysql，请设置为`rl`;
 * `DB_URI`: 数据库的连接串。
-
-* *注意事项*: 
-1. 在Linux系统上,请确保gcc版本大于4.8;
-2. 在libs下面提供了依赖的一些库的二进制文件。linux版本的是在一台具有两个intel cpu的docker虚机上面编译完成的。如果需要实现最佳的性能，建议用户在目标机器上编译相关依赖的库。依赖的库源码地址：[portfolio-optimizer](https://github.com/alpha-miner/portfolio-optimizer)
 
 ## 数据源
 

@@ -25,7 +25,6 @@ from alphamind.data.dbmodel.models import Market
 from alphamind.data.dbmodel.models import RiskCovShort
 from alphamind.data.dbmodel.models import RiskExposure
 from alphamind.data.dbmodel.models import Universe as UniverseTable
-from alphamind.data.dbmodel.models import Uqer
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe
 from alphamind.tests.test_suite import DATA_ENGINE_URI

@@ -1,4 +1,2 @@
 include MANIFEST.in
 include .coveragerc
-recursive-include libs/include *.*
-recursive-include libs/lib/linux *.*

@@ -53,7 +53,7 @@ if __name__ == '__main__':
     from alphamind.tests.execution.test_thresholdexecutor import TestThresholdExecutor
     from alphamind.tests.execution.test_targetvolexecutor import TestTargetVolExecutor
     from alphamind.tests.execution.test_pipeline import TestExecutionPipeline
-    from alphamind.tests.cython.test_optimizers import TestOptimizers
+    from alphamind.tests.portfolio.test_optimizers import TestOptimizers
 
     runner = TestRunner([TestNeutralize,
                          TestStandardize,

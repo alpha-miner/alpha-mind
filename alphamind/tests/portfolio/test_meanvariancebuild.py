@@ -52,11 +52,9 @@ class TestMeanVarianceBuild(unittest.TestCase):
         cov += ids_var
 
         bm = np.array([0., 0., 0.])
-        lbound = np.array([-np.inf, -np.inf, -np.inf])
-        ubound = np.array([np.inf, np.inf, np.inf])
 
         model = dict(cov=cov, factor_cov=None, factor_loading=None, idsync=None)
-        status, _, x = mean_variance_builder(er, model, bm, lbound, ubound, None, None, lam=1)
+        status, _, x = mean_variance_builder(er, model, bm, None, None, None, None, lam=1)
         np.testing.assert_array_almost_equal(x, np.linalg.inv(cov) @ er)
 
     def test_mean_variance_builder_without_constraints_with_factor_model(self):

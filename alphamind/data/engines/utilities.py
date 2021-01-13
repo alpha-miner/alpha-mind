@@ -48,7 +48,7 @@ def _map_factors(factors: Iterable[str], used_factor_tables) -> Dict:
     return factor_cols
 
 
-if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "rl":
+if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
     def _map_industry_category(category: str) -> str:
         if category == 'sw':
             return '申万行业分类(2014)'
