@@ -62,9 +62,6 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 * pandas
 * scipy
 
-同时还依赖于一个工具包
-* [Finance-Python](https://github.com/alpha-miner/Finance-Python)
-
 ## 安装
 
 安装需要直接clone或者下载源代码安装，具体流程为：
