@@ -14,3 +14,6 @@ Alpha_Mind.egg-info/*
 alphamind/cython/*.so
 alphamind/examples/*.xlsx
 alphamind/examples/*.csv
+doc/_build
+doc/build
+settings.json

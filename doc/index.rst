@@ -11,5 +11,6 @@
    :caption: 目录
 
    src/changelog
+   src/whatisit
    src/introduction
 
