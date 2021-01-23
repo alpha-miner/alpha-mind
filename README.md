@@ -37,9 +37,9 @@
 
 该项目主要有两个主要的github外部依赖：
 
-* [portfolio - optimizer](https://github.com/alpha-miner/portfolio-optimizer)：该项目是相同作者编写的用于资产组合配置的优化器工具包；
+* [Finance-Python](https://github.com/alpha-miner/finance-python)
 
-* [xgboost](https://github.com/dmlc/xgboost)： 该项目是alpha - mind中一些机器模型的基础库。
+* [portfolio - optimizer](https://github.com/alpha-miner/portfolio-optimizer)：该项目是相同作者编写的用于资产组合配置的优化器工具包；
 
 这两个库都可以直接使用pip进行安装。
 
