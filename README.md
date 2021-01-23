@@ -37,9 +37,9 @@
 
 该项目主要有两个主要的github外部依赖：
 
-* [portfolio - optimizer](https://github.com/alpha-miner/portfolio-optimizer)：该项目是相同作者编写的用于资产组合配置的优化器工具包；
+* [Finance-Python](https://github.com/alpha-miner/finance-python)
 
-* [xgboost](https://github.com/dmlc/xgboost)： 该项目是alpha - mind中一些机器模型的基础库。
+* [portfolio - optimizer](https://github.com/alpha-miner/portfolio-optimizer)：该项目是相同作者编写的用于资产组合配置的优化器工具包；
 
 这两个库都可以直接使用pip进行安装。
 
@@ -61,9 +61,6 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 * cvxpy
 * pandas
 * scipy
-
-同时还依赖于一个工具包
-* [Finance-Python](https://github.com/alpha-miner/Finance-Python)
 
 ## 安装
 
@@ -93,62 +90,4 @@ $ python setup.py install
 
 * `DB_VENDOR`: 如果使用mysql，请设置为`rl`;
 * `DB_URI`: 数据库的连接串。
-
-## 数据源
-
-我们在工具包中也提供了一个数据源的参考实现。这个数据源的参考实现来自于``通联数据``提供的股票因子数据和风险模型数据等，具体细节可以参考：[优矿](https://uqer.io)。
-
-该数据源使用RMDBS，供参考的数据库可以是Postgresql。在工具包中我们已经提供了命令行工具，帮助用户一键配置好数据库。步骤如下：
-
-下面的步骤以Ubuntun上Postgresql为例子：
-
-* 安装数据库软件
-  
-  请前往[PostgreSQL官网](https://www.postgresql.org/)，根据指导，下载安装PostgreSQL数据库。
-
-* 新建数据库
-
-  在安装完成的数据库中新建``Database``，例如名字：``alpha``。**注意这个数据需要使用``utf8``作为编码**。
-
-* 一键配置数据库
-
-  在命令行中运行：
-
-  ```bash
-  alphadmind initdb --url postgresql+psycopg2://user:pwd@host/alpha
-  ```
-
-  其中：
-
-  * ``user``：数据库用户名
-  * ``pwd``：用户密码
-  * ``host``：数据库服务器地址
-
-  如果成功，会有类似的输出：
-
-  ```
-  2017-06-29 14:48:36,678 - ALPHA_MIND - INFO - DB: postgresql+psycopg2://user:pwd@host/alpha
-  2017-06-29 14:48:37,515 - ALPHA_MIND - INFO - DB: initialization finished.
-  ```
-
-* Windows
-
-  对于Windows使用者，命令行工具alphamind并不能直接使用，这个时候可以使用变通的办法，进入源码alphamind/bin目录下：
-
-  ```bash
-  python alphadmind initdb --url postgresql+psycopg2://user:pwd@host/alpha
-  ```
-  
-  可以达到一样的效果。
-  
-* 数据库更新
-
-  在目录``scripts`` 下有[airflow]()脚本文件``update_uqer_data.py``可以用来做每天的数据更新。使用之前除了要配置好airflow服务器之外，需要更新脚本中以下两行：
-
-  ```
-  _ = uqer.Client(token='')
-  engine = sqlalchemy.create_engine('')
-  ```
-
-  其中token需要填入有效的通联数据认证信息；engine需要填入上面指定的数据库地址。
-
+* `FACTOR_TABLES`: 使用的因子表
