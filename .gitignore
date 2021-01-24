@@ -17,3 +17,4 @@ alphamind/examples/*.csv
 doc/_build
 doc/build
 settings.json
+doc/source/_build
