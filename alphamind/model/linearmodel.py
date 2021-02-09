@@ -6,7 +6,7 @@ Created on 2017-5-10
 """
 
 import numpy as np
-from PyFin.api import pyFinAssert
+from simpleutils.asserts import require
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import LinearRegression as LinearRegressionImpl
 from sklearn.linear_model import LogisticRegression as LogisticRegressionImpl
@@ -41,9 +41,9 @@ class ConstLinearModel(create_model_base()):
                  fit_target=None):
         super().__init__(features=features, fit_target=fit_target)
         if features is not None and weights is not None:
-            pyFinAssert(len(features) == len(weights),
-                        ValueError,
-                        "length of features is not equal to length of weights")
+            require(len(features) == len(weights),
+                    ValueError,
+                    "length of features is not equal to length of weights")
         if weights:
             self.impl = ConstLinearModelImpl(np.array([weights[name] for name in self.features]))
 

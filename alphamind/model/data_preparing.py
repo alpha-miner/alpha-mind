@@ -12,12 +12,12 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from simpleutils.asserts import require
 from PyFin.DateUtilities import Period
 from PyFin.api import BizDayConventions
 from PyFin.api import DateGeneration
 from PyFin.api import advanceDateByCalendar
 from PyFin.api import makeSchedule
-from PyFin.api import pyFinAssert
 
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.sqlengine import total_risk_factors
@@ -339,8 +339,8 @@ def fetch_train_phase(engine,
                   neutralized_risk)
 
     if dates[-1] == dt.datetime.strptime(ref_date, '%Y-%m-%d'):
-        pyFinAssert(len(dates) >= 2, ValueError,
-                    "No previous data for training for the date {0}".format(ref_date))
+        require(len(dates) >= 2, ValueError,
+                "No previous data for training for the date {0}".format(ref_date))
         end = dates[-2]
         start = dates[-batch - 1] if batch <= len(dates) - 1 else dates[0]
     else:

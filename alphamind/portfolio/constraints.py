@@ -16,7 +16,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from PyFin.api import pyFinAssert
+from simpleutils.asserts import require
 from deprecated import deprecated
 
 
@@ -44,13 +44,13 @@ class BoundaryImpl(object):
         self._validation()
 
     def _validation(self):
-        pyFinAssert(
+        require(
             self.b_type in [BoundaryType.ABSOLUTE, BoundaryType.RELATIVE, BoundaryType.MAXABSREL,
                             BoundaryType.MINABSREL],
             ValueError,
             "Boundary Type {0} is not recognized".format(self.b_type))
 
-        pyFinAssert(
+        require(
             self.direction == BoundaryDirection.LOWER or self.direction == BoundaryDirection.UPPER,
             ValueError,
             "Boundary direction {0} is not recognized".format(self.direction))
@@ -81,8 +81,8 @@ class BoundaryImpl(object):
                 abs_bound = center + abs_threshold
                 return min(rel_bound, abs_bound)
         else:
-            pyFinAssert(center >= 0., ValueError,
-                        "relative bounds only support positive back bone value")
+            require(center >= 0., ValueError,
+                    "relative bounds only support positive back bone value")
             return self.val * center
 
 
@@ -96,7 +96,7 @@ class BoxBoundary(object):
 
     def bounds(self, center):
         l_b, u_b = self.lower(center), self.upper(center)
-        pyFinAssert(l_b <= u_b, ValueError, "lower bound should be lower then upper bound")
+        require(l_b <= u_b, ValueError, "lower bound should be lower then upper bound")
         return l_b, u_b
 
 
@@ -140,8 +140,8 @@ class LinearConstraints(object):
         self.cons_mat = cons_mat
         self.backbone = backbone
 
-        pyFinAssert(cons_mat.shape[0] == len(backbone) if backbone is not None else True,
-                    "length of back bond should be same as number of rows of cons_mat")
+        require(cons_mat.shape[0] == len(backbone) if backbone is not None else True,
+                "length of back bond should be same as number of rows of cons_mat")
 
     def risk_targets(self) -> Tuple[np.ndarray, np.ndarray]:
         lower_bounds = []

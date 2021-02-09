@@ -8,8 +8,8 @@ Created on 2017-8-23
 import copy
 
 import pandas as pd
+from simpleutils.asserts import require
 from PyFin.Analysis.SecurityValueHolders import SecurityValueHolder
-from PyFin.api import pyFinAssert
 from PyFin.api import transform as transform_impl
 
 
@@ -24,11 +24,11 @@ def factor_translator(factor_pool):
     elif isinstance(factor_pool, dict):
         dependency = set()
         for k, v in factor_pool.items():
-            pyFinAssert(isinstance(k, str), ValueError,
-                        'factor_name {0} should be string.'.format(k))
-            pyFinAssert(isinstance(v, SecurityValueHolder) or isinstance(v, str),
-                        ValueError,
-                        'expression {0} should be a value hodler or a string.'.format(v))
+            require(isinstance(k, str), ValueError,
+                    'factor_name {0} should be string.'.format(k))
+            require(isinstance(v, SecurityValueHolder) or isinstance(v, str),
+                    ValueError,
+                    'expression {0} should be a value hodler or a string.'.format(v))
 
             if isinstance(v, str):
                 dependency = dependency.union([v])
