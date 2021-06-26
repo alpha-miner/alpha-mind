@@ -64,12 +64,14 @@ alpha - mind 提供了多因子研究中常用的工具链，包括：
 
 ## 安装
 
+有个详细的安装说明，在install目录中，有比较详细的
+
 安装需要直接clone或者下载源代码安装，具体流程为：
 
 克隆项目到本地
 
 ```shell
-$ git clone https://github.com/alpha-miner/alpha-mind.git
+$ git clone https://github.com/rongliang-tech/alpha-mind.git
 ```
 
 然后直接使用一下命令安装
