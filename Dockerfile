@@ -1,11 +1,11 @@
-FROM wegamekinglc/python:3.7-slim-stretch-aliyun
+FROM continuumio/anaconda3:2021.05
 
 LABEL maintainer = "scrappedprince.li@gmail.com"
-RUN apt-get update && apt-get install build-essential default-libmysqlclient-dev -y
+RUN apt-get update && apt-get install build-essential default-libmysqlclient-dev coinor-cbc coinor-libcbc-dev -y
+ENV COIN_INSTALL_DIR /usr
 
 WORKDIR /
-COPY ./requirements.txt /requirements.txt
-RUN pip install numpy cython -i https://pypi.douban.com/simple
+COPY ./requirements_docker.txt /requirements.txt
 RUN pip install -r /requirements.txt -i https://pypi.douban.com/simple
 RUN pip install finance-python>=0.8.1 -i https://pypi.douban.com/simple
 
