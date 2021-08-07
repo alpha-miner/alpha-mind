@@ -672,8 +672,7 @@ class SqlEngine:
         transformer = Transformer(factors)
         factor_data = self.fetch_factor(ref_date,
                                         transformer,
-                                        codes,
-                                        used_factor_tables=factor_tables)
+                                        codes)
 
         if benchmark:
             benchmark_data = self.fetch_benchmark(ref_date, benchmark)
