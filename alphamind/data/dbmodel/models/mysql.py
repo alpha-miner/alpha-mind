@@ -253,6 +253,7 @@ class _RiskCovDay(Base):
     AERODEF = Column(FLOAT)
     Conglomerates = Column(FLOAT)
     COUNTRY = Column(FLOAT)
+    flag = Column(INT)
 
 
 class _RiskCovLong(Base):
@@ -305,6 +306,7 @@ class _RiskCovLong(Base):
     AERODEF = Column(FLOAT)
     Conglomerates = Column(FLOAT)
     COUNTRY = Column(FLOAT)
+    flag = Column(INT)
 
 
 class _RiskCovShort(Base):
@@ -357,6 +359,7 @@ class _RiskCovShort(Base):
     AERODEF = Column(FLOAT)
     Conglomerates = Column(FLOAT)
     COUNTRY = Column(FLOAT)
+    flag = Column(INT)
 
 
 class _SpecificRiskDay(Base):

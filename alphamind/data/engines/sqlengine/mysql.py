@@ -598,9 +598,12 @@ class SqlEngine:
 
         risk_cov_table, special_risk_table = _map_risk_model_table(risk_model)
         cov_risk_cols = [risk_cov_table.__table__.columns[f] for f in total_risk_factors]
-        cond = risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(
+        cond = and_(
+            risk_cov_table.trade_date.in_(dates) if dates else risk_cov_table.trade_date.between(
             start_date,
-            end_date)
+            end_date),
+            risk_cov_table.flag == 1
+        )
         query = select([risk_cov_table.trade_date,
                         risk_cov_table.FactorID,
                         risk_cov_table.Factor]
@@ -623,14 +626,15 @@ class SqlEngine:
                              RiskExposure.flag == 1,
                              cond
                          )
-                         )
+                    )
 
         big_table = join(special_risk_table,
                          big_table,
                          and_(
                              RiskExposure.code == special_risk_table.code,
                              RiskExposure.trade_date == special_risk_table.trade_date,
-                         ))
+                         )
+                    )
 
         query = select(
             [RiskExposure.trade_date,
