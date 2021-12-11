@@ -86,6 +86,10 @@ $ python setup.py install
 
 2. `docker run -it -p 8080:8080 --name alpha-mind alpha-mind`
 
+默认打开浏览器之后，进入: 127.0.0.1/lab 输入登录密码: `rongliang2021`
+
+可以自定义初始密码， 参考：[jupyter生成密码](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html#preparing-a-hashed-password)
+
 #### 提示
 
 环境变量的配置在`./entrypoint.sh`中，包括：
