@@ -374,6 +374,7 @@ class _SpecificRiskDay(Base):
     exchangeCD = Column(Text)
     secShortName = Column(Text)
     SRISK = Column(FLOAT)
+    flag = Column(INT)
 
 
 class _SpecificRiskLong(Base):
@@ -388,6 +389,7 @@ class _SpecificRiskLong(Base):
     exchangeCD = Column(Text)
     secShortName = Column(Text)
     SRISK = Column(FLOAT)
+    flag = Column(INT)
 
 
 class _SpecificRiskShort(Base):
@@ -402,6 +404,7 @@ class _SpecificRiskShort(Base):
     exchangeCD = Column(Text)
     secShortName = Column(Text)
     SRISK = Column(FLOAT)
+    flag = Column(INT)
 
 
 # Factor tables

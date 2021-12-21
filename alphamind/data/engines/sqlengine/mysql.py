@@ -549,7 +549,10 @@ class SqlEngine:
         query = select([risk_cov_table.FactorID,
                         risk_cov_table.Factor]
                        + cov_risk_cols).where(
-            risk_cov_table.trade_date == ref_date
+            and_(
+                risk_cov_table.trade_date == ref_date,
+                risk_cov_table.flag == 1
+            )
         )
         risk_cov = pd.read_sql(query, self.engine).sort_values('FactorID')
 
@@ -563,7 +566,8 @@ class SqlEngine:
                          special_risk_table,
                          and_(
                              RiskExposure.code == special_risk_table.code,
-                             RiskExposure.trade_date == special_risk_table.trade_date
+                             RiskExposure.trade_date == special_risk_table.trade_date,
+                             special_risk_table.flag == 1
                          ))
 
         query = select(
@@ -580,6 +584,7 @@ class SqlEngine:
             return risk_cov, risk_exp
         elif model_type == 'factor':
             factor_names = risk_cov.Factor.tolist()
+            factor_names = list(set(factor_names).difference(excluded)) if excluded else factor_names
             new_risk_cov = risk_cov.set_index('Factor')
             factor_cov = new_risk_cov.loc[factor_names, factor_names] / 10000.
             new_risk_exp = risk_exp.set_index('code')
@@ -633,6 +638,7 @@ class SqlEngine:
                          and_(
                              RiskExposure.code == special_risk_table.code,
                              RiskExposure.trade_date == special_risk_table.trade_date,
+                             special_risk_table.flag == 1
                          )
                     )
 
@@ -752,7 +758,7 @@ class SqlEngine:
                              IndexComponent.flag == 1,
                              IndexWeight.flag == 1
                          )
-                         )
+                    )
 
         query = select(
             [IndexComponent.trade_date,
