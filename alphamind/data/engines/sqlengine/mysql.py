@@ -263,7 +263,7 @@ class SqlEngine:
                 Market.code.in_(codes.code.unique().tolist()),
                 Market.flag == 1
             )
-        )
+        ).order_by(Market.trade_date, Market.code)
         df1 = pd.read_sql(t1, self.session.bind).dropna()
         df1 = self._create_stats(df1, horizon, offset)
 
@@ -281,7 +281,7 @@ class SqlEngine:
                     IndexMarket.indexCode == benchmark,
                     IndexMarket.flag == 1
                 )
-            )
+            ).order_by(IndexMarket.trade_date, IndexMarket.indexCode)
             df2 = pd.read_sql(query, self.session.bind).dropna().drop_duplicates(["trade_date"])
             df2 = self._create_stats(df2, horizon, offset, no_code=True).set_index("trade_date")
             df['dx'] = df['dx'].values - df2.loc[df.index]['dx'].values
@@ -318,7 +318,7 @@ class SqlEngine:
                 IndexMarket.indexCode == index_code,
                 IndexMarket.flag == 1
             )
-        )
+        ).order_by(IndexMarket.trade_date, IndexMarket.indexCode)
 
         df = pd.read_sql(query, self.session.bind).dropna().drop_duplicates(["trade_date", "code"])
         df = self._create_stats(df, horizon, offset)
