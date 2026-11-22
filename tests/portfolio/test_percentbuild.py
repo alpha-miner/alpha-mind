@@ -1,0 +1,66 @@
+"""
+Created on 2017-5-4
+
+@author: cheng.li
+"""
+
+import numpy as np
+from scipy.stats import rankdata
+
+from alphamind.portfolio.percentbuilder import percent_build
+
+
+class TestPercentBuild:
+    def setup_method(self):
+        self.n_samples = 3000
+        self.p_included = 0.1
+        self.n_groups = 30
+        self.n_portfolios = range(1, 10)
+        self.n_mask = 100
+
+    def test_percent_build(self):
+        n_include = int(self.n_samples * self.p_included)
+        for n_portfolio in self.n_portfolios:
+            x = np.random.randn(self.n_samples, n_portfolio)
+            calc_weights = percent_build(x, self.p_included)
+            expected_weights = np.zeros((len(x), n_portfolio))
+            masks = (-x).argsort(axis=0).argsort(axis=0) < n_include
+            for j in range(x.shape[1]):
+                expected_weights[masks[:, j], j] = 1.0
+            np.testing.assert_array_almost_equal(calc_weights, expected_weights)
+
+    def test_percent_build_with_group(self):
+        for n_portfolio in self.n_portfolios:
+            x = np.random.randn(self.n_samples, n_portfolio)
+            groups = np.random.randint(self.n_groups, size=self.n_samples)
+            calc_weights = percent_build(x, self.p_included, groups)
+            grouped_ordering = np.empty_like(x)
+            grouped_count = np.empty_like(x)
+            for group in np.unique(groups):
+                mask = groups == group
+                grouped_ordering[mask] = np.apply_along_axis(rankdata, 0, -x[mask])
+                grouped_count[mask] = mask.sum()
+            expected_weights = np.zeros((len(x), n_portfolio))
+            n_include = (grouped_count * self.p_included).astype(int)
+            masks = grouped_ordering <= n_include
+            for j in range(x.shape[1]):
+                expected_weights[masks[:, j], j] = 1.0
+            np.testing.assert_array_almost_equal(calc_weights, expected_weights)
+
+    def test_percent_build_with_masks(self):
+        for n_portfolio in self.n_portfolios:
+            x = np.random.randn(self.n_samples, n_portfolio)
+            choices = np.random.choice(self.n_samples, self.n_mask, replace=False)
+            masks = np.full(self.n_samples, True, dtype=bool)
+            masks[choices] = False
+            calc_weights = percent_build(x, self.p_included, masks=masks)
+            expected_weights = np.zeros((len(x), n_portfolio))
+            filtered_index = np.arange(len(x))[masks]
+            filtered_x = x[masks]
+            big_boolen = np.full(x.shape, False, dtype=bool)
+            n_included = int(self.p_included * len(x))
+            chosen = (-filtered_x).argsort(axis=0).argsort(axis=0) < n_included
+            big_boolen[filtered_index] = chosen
+            for j in range(x.shape[1]):
+                expected_weights[big_boolen[:, j], j] = 1.0
+            np.testing.assert_array_almost_equal(calc_weights, expected_weights)

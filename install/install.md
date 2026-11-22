@@ -1,80 +1,51 @@
-## Alpha-Mind 安装指南
+# Alpha-Mind 安装指南
 
-### 一、安装环境
+## 环境要求
 
-#### mysql驱动
+- Python 3.9 或更新版本；
+- [uv](https://docs.astral.sh/uv/)；
+- 使用真实数据库时，需要可访问的 MySQL 或 PostgreSQL 服务。
 
-`Alpha-Mind`使用过程中调用的因子数据保存在数据库中，因此，`Alpha-Mind`的运行环境需要安装适当的数据库驱动。这里我们选择使用`mysql`。
+核心计算和文件读写不需要单独安装 C/C++ 编译器；PyArrow、ConnectorX、calc-flow、DAL 和 cvxpy 均通过项目依赖安装。
 
-`mysql`驱动官网下载地址：
-
-https://dev.mysql.com/downloads/
-
-进入官网下载网址后，可以看到以下页面：
-
-![](001.png)
-
-点击`Connector/Python`，进入`Python`驱动下载页面：
-
-![]()![002](002.png)
-
-进入页面后：
-
-- 选择正确的操作系统
-- 选择正确的操作系统版本
-- 选择合适的版本进行下载
-
-下载并安装数据库驱动
-
-#### 编译器
-
-`Alpha-Mind`依赖的一些包，如`ecos`需要编译安装模式，所以，`Alpha-Mind`运行安装的环境需要有C编译器。
-
-- Windows环境
-  请安装Virual Studio 2015以上的版本
-
-- Linux环境
-
-  ```bash
-  yum -y install gcc
-  yum -y install gcc-c++
-  ```
-
-  或者
-
-  ```bash
-  apt-get install gcc
-  apt-get install gcc-c++
-  ```
-
-
-
-### 二、安装
-
-在安装环境准备充分后，执行以下命令，开始安装`Alpha-Mind`开发包
+## 使用 uv 安装
 
 ```bash
-pip install Alpha-Mind
+git clone https://github.com/alpha-miner/alpha-mind.git
+cd alpha-mind
+uv sync --group dev
 ```
 
-如果网络环境不好，可以选择国内的镜像，例如阿里云镜像
+安装到现有项目：
 
 ```bash
-pip install Alpha-Mind -i https://mirrors.aliyun.com/pypi/simple
+uv add alpha-mind
 ```
 
-#### 环境变量设置
+构建 wheel 和源码包：
 
-`Alpha-Mind`安装完成以后，需要正确设置环境变量，才能正常工作：
+```bash
+uv build
+```
 
-- **DB_VENDOR**: 数据库类型，这里可以设置为`mysql`：
+## 数据库配置
 
-  `DB_VENDOR=mysql`
+`DB_VENDOR` 可选择 `mysql`；不设置时默认使用 PostgreSQL 模型。
 
-- **DB_URI**: 数据库连接配置
+```bash
+export DB_VENDOR=mysql
+export DB_URI='mysql+pymysql://user:password@localhost:3306/alpha?charset=utf8'
+export FACTOR_TABLES='factor_momentum,factor_valuation_estimation'
+```
 
-  `DB_URI=mysql+mysqldb://rlUser:123456@10.16.50.12:3306/rl?charset=utf8`
+数据库读取由 ConnectorX 完成并直接返回 Arrow。密码等敏感信息应通过安全的密钥管理方式注入，不要写入源代码或提交到版本库。
 
-- **FACTOR_TABLES**: 因子数据表名称，用`,`分割，例如：
+## 验证
 
-  `FACTOR_TABLES=factor_momentum,factor_power_volume,factor_basic_derivation`
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+```
+
+默认测试使用本地文件数据库。需要运行真实数据库集成测试时，再设置 `ALPHAMIND_TEST_DATABASE=1`。

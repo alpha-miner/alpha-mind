@@ -1,99 +1,100 @@
-# Alpha - Mind
+# Alpha-Mind
 
-<table>
-<tr>
-  <td>Python version</td>
-  <td><img src="https://img.shields.io/badge/python-3.6-blue.svg"/> </td>
-  </tr>
-<tr>
-<tr>
-  <td>Build Status</td>
-  <td>
-    <img src="https://travis-ci.org/alpha-miner/alpha-mind.svg" alt="travis build status" />
-  </td>
-</tr>
-<tr>
-  <td>Coverage</td>
-  <td><img src="https://coveralls.io/repos/github/alpha-miner/alpha-mind/badge.svg?branch=master" alt="coverage" /></td>
-</tr>
-</table>
+Alpha-Mind 是一个使用 Apache Arrow 作为统一表格数据协议的多因子研究与组合构建框架。
 
-**Alpha - Mind** 是基于 **Python** 开发的股票多因子研究框架。
+## 技术栈
 
-## TODO list
+- **Arrow**：所有跨模块表格数据均使用 `pyarrow.Table`。
+- **Parquet / Arrow IPC / CSV**：统一由 `read_table` 和 `write_table` 读写。
+- **ConnectorX**：从 MySQL、PostgreSQL 和 SQLite 直接读取 Arrow。
+- **calc-flow-python**：因子表达式、截面/时序计算、滚动收益与分析聚合。
+- **dal-python**：交易日判断、日期偏移与调仓日程。
+- **cvxpy**：线性、换手约束、均值方差和目标波动率优化。
+- **uv + Hatchling**：现代 Python 包结构与可复现依赖锁定。
 
-**alpha-mind**的开发经过长期的暂停之后，将重启。下面的列表会给出一组现在规划中的功能或者改进：
-
-- [x] 增加对于数据后端MySQL的支持；
-- [ ] 增加对于数据后端CSV文件的支持，并且提供一份样例文件供用户测试使用；
-- [x] 删除所有的c++相关代码，方便alpha-mind的安装；
-- [x] 在windows以及linux平台提供可以直接pip安装的安装包；
-- [ ] 完整的文档；
-- [ ] alpha模型增加超参数调优的功能；
-- [ ] alpha模型增加多期预测能力；
-- [ ] 优化器增加多期优化的能力。
-
-## 依赖
-
-该项目主要有两个主要的github外部依赖：
-
-* [Finance-Python](https://github.com/alpha-miner/finance-python)
-
-* [portfolio - optimizer](https://github.com/alpha-miner/portfolio-optimizer)：该项目是相同作者编写的用于资产组合配置的优化器工具包；
-
-这两个库都可以直接使用pip进行安装。
-
-## 功能
-
-alpha - mind 提供了多因子研究中常用的工具链，包括：
-
-* 数据清洗
-* alpha 模型
-* 风险模型
-* 组合优化
-* 执行器
-
-所有的模块都设计了完整的测试用例以尽可能保证正确性。同时，所有的数值模型开发中都对性能给予了足够高的关注，参考了优秀的第三方工具以保证性能：
-
-* numpy
-* numba
-* cvxopt
-* cvxpy
-* pandas
-* scipy
+支持 Python 3.9 及更新版本，CI 覆盖 Python 3.9 和 3.13。
 
 ## 安装
 
-有个详细的安装说明，在install目录中，有比较详细的
-
-安装需要直接clone或者下载源代码安装，具体流程为：
-
-克隆项目到本地
-
-```shell
-$ git clone https://github.com/rongliang-tech/alpha-mind.git
+```bash
+git clone https://github.com/alpha-miner/alpha-mind.git
+cd alpha-mind
+uv sync --group dev
 ```
 
-然后直接使用一下命令安装
+作为依赖安装：
 
-```shell
-$ python setup.py install
+```bash
+uv add alpha-mind
 ```
 
-### 使用Docker运行
+## Arrow 与 Parquet
 
-1. `docker build -t alpha-mind:latest -f Dockerfile .`
+```python
+import datetime as dt
+import pyarrow as pa
+from alphamind.data import read_parquet, write_parquet
 
-2. `docker run -it -p 8080:8080 --name alpha-mind alpha-mind`
+factors = pa.table(
+    {
+        "trade_date": [dt.date(2026, 1, 5)],
+        "code": ["000001"],
+        "value": [1.25],
+    }
+)
+write_parquet(factors, "factors.parquet")
+assert read_parquet("factors.parquet")["code"].to_pylist() == ["000001"]
+```
 
-默认打开浏览器之后，进入: 127.0.0.1/lab 输入登录密码: `rongliang2021`
+## calc-flow 因子表达式
 
-可以自定义初始密码， 参考：[jupyter生成密码](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html#preparing-a-hashed-password)
+```python
+import pyarrow as pa
+from alphamind.data import Transformer
+from alphamind.formula import CSQuantiles, LAST, SHIFT
 
-#### 提示
+expressions = {
+    "raw": LAST("EMA5D"),
+    "lag_1": SHIFT("EMA5D", 1),
+    "cross_section": CSQuantiles("EMA5D"),
+}
+transformer = Transformer(expressions)
+result = transformer.transform("code", arrow_table)
+```
 
-环境变量的配置在`./entrypoint.sh`中，包括：
+`arrow_table` 必须包含 `code`；时序或截面表达式还需要 `trade_date`。结果始终为 Arrow 表。
 
-* `DB_VENDOR`: 如果使用mysql，请设置为`rl`;
-* `DB_URI`: 数据库的连接串。
-* `FACTOR_TABLES`: 使用的因子表
+## MySQL 数据模型
+
+```python
+from alphamind.api import ArrowSQLRepository, SqlEngine
+from alphamind.data.dbmodel.models.mysql import FactorMomentum
+
+url = "mysql+pymysql://user:password@localhost/alpha"
+engine = SqlEngine(url, factor_tables=["factor_momentum"])
+factors = engine.fetch_factor("2026-01-06", ["EMA5D"], ["000001"])
+
+repository = ArrowSQLRepository(db_url=url)
+repository.write(FactorMomentum, factors, mode="upsert")
+```
+
+ORM 覆盖行情、指数、股票池、行业、因子/风险元数据、风险暴露、协方差、特质风险和收益等实体。读取由 ConnectorX 执行；SQLAlchemy 仅负责模型、DDL 与写入。
+
+## 优化器
+
+`LPOptimizer`、`L1LPOptimizer`、`QuadraticOptimizer` 和 `TargetVolOptimizer` 均由 cvxpy 实现。默认使用 HiGHS 求解线性问题、Clarabel 求解二次与二阶锥问题，可通过 `solver` 和 `solver_options` 覆盖。
+
+## 开发与验证
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+uv build
+```
+
+运行真实数据库集成测试时，设置 `DB_URI` 与 `ALPHAMIND_TEST_DATABASE=1`。默认测试使用本地文件数据库，不需要外部服务。
+
+## License
+
+MIT

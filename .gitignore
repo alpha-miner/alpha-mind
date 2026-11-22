@@ -18,3 +18,9 @@ doc/_build
 doc/build
 settings.json
 doc/source/_build
+.venv/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+*.egg-info/
+src/alphamind/**/*.so

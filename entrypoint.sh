@@ -1,8 +1,10 @@
 #!/bin/sh
+set -eu
 
-export PYTHONPATH=$PYTHONPATH:/
-export DB_VENDOR="mysql"
-# export DB_URI="mysql+mysqldb://dxrw:dxRW20_2@121.37.138.1:13317/dxtest?charset=utf8"
-export DB_URI="mysql+mysqldb://reader:Reader#2020@121.37.138.1:13316/vision_product?charset=utf8"
-export FACTOR_TABLES="factor_momentum"
-jupyter lab --ip="0.0.0.0" --port=8080 --allow-root --ServerApp.token='' --ServerApp.password='sha1:f7761f682bc4:1aba35e73699fe62570573de373bf95b491022a7'
+export DB_VENDOR="${DB_VENDOR:-mysql}"
+export FACTOR_TABLES="${FACTOR_TABLES:-factor_momentum}"
+: "${DB_URI:?Set DB_URI to the database connection URL}"
+: "${JUPYTER_TOKEN:?Set JUPYTER_TOKEN for the notebook server}"
+
+exec jupyter lab --ip="0.0.0.0" --port=8080 --allow-root \
+    --ServerApp.token="${JUPYTER_TOKEN}" --ServerApp.password=''
