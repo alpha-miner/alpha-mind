@@ -36,6 +36,22 @@ def _normalize_temporal(table: pa.Table) -> pa.Table:
             elif column.type != pa.timestamp("us", tz="UTC"):
                 column = pc.cast(column, pa.timestamp("us", tz="UTC"))
             table = table.set_column(index, field.name, column)
+        elif (
+            pa.types.is_binary(field.type)
+            or pa.types.is_large_binary(field.type)
+            or pa.types.is_large_string(field.type)
+        ):
+            table = table.set_column(
+                index,
+                pa.field(field.name, pa.string(), nullable=field.nullable),
+                pc.cast(table.column(index), pa.string()),
+            )
+        elif pa.types.is_decimal(field.type):
+            table = table.set_column(
+                index,
+                pa.field(field.name, pa.float64(), nullable=field.nullable),
+                pc.cast(table.column(index), pa.float64()),
+            )
     return table
 
 

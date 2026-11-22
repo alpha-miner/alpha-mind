@@ -70,3 +70,16 @@ def test_arrow_cleaning_and_numpy_boundary():
 
     assert cleaned.to_pydict() == {"x": [1.0], "y": [2.0]}
     np.testing.assert_array_equal(to_numpy(cleaned), np.array([[1.0, 2.0]]))
+
+
+def test_connectorx_binary_text_is_normalized_for_calc_flow():
+    table = pa.table(
+        {
+            "name": pa.array([b"alpha", b"beta"], type=pa.large_binary()),
+        }
+    )
+
+    result = as_arrow(table)
+
+    assert result.schema.field("name").type == pa.string()
+    assert result["name"].to_pylist() == ["alpha", "beta"]
