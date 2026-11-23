@@ -11,13 +11,12 @@ Alpha_Mind.egg-info/*
 *.nbi
 /notebooks/.ipynb_checkpoints/*
 /notebooks/machine learning/.ipynb_checkpoints/*
+/examples/parquet_demo/output/
+.package-venv/
 alphamind/cython/*.so
 alphamind/examples/*.xlsx
 alphamind/examples/*.csv
-doc/_build
-doc/build
 settings.json
-doc/source/_build
 .venv/
 .pytest_cache/
 .ruff_cache/
