@@ -14,6 +14,7 @@ from typing import Callable
 import numpy as np
 import pyarrow as pa
 
+from alphamind.analysis.calculators import calculate_turn_over
 from alphamind.data.arrow import read_parquet, write_parquet
 from alphamind.data.neutralize import neutralize
 from alphamind.data.standardize import standardize
@@ -60,6 +61,30 @@ def _calc_flow_operation(size):
     return lambda: transformer.transform("code", table)
 
 
+def _turnover_operation(size):
+    if size >= 300 and size % 300 == 0:
+        n_assets = 300
+    elif size >= 100 and size % 100 == 0:
+        n_assets = 100
+    else:
+        n_assets = 1
+    n_dates = size // n_assets
+    dates = [
+        dt.datetime(2020, 1, 1) + dt.timedelta(days=index)
+        for index in range(n_dates)
+        for _ in range(n_assets)
+    ]
+    codes = [f"{index:06d}" for index in range(n_assets)] * n_dates
+    table = pa.table(
+        {
+            "trade_date": dates,
+            "code": codes,
+            "weight": np.random.default_rng(42).normal(size=size) / n_assets,
+        }
+    )
+    return lambda: calculate_turn_over(table)
+
+
 def _parquet_operation(size):
     table = pa.table(
         {
@@ -84,6 +109,7 @@ WORKLOADS: dict[str, Callable[[int], Callable[[], object]]] = {
     "rank_build": _rank_operation,
     "percent_build": _percent_operation,
     "calc_flow": _calc_flow_operation,
+    "turnover": _turnover_operation,
     "parquet": _parquet_operation,
 }
 

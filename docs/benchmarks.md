@@ -1,6 +1,6 @@
 # 基准测试与定时任务
 
-基准测试命令提供可复现的微基准，覆盖预处理、排名组合、calc-flow 和 Parquet I/O。结果同时输出 JSON 和 Markdown。
+基准测试命令提供可复现的微基准，覆盖预处理、排名组合、全历史换手、calc-flow 和 Parquet I/O。结果同时输出 JSON 和 Markdown。
 
 ## 本地运行
 
@@ -28,7 +28,7 @@ uv run alphamind-benchmarks \
   --output benchmark-results
 ```
 
-可用 `--case`：`winsorize`、`standardize`、`neutralize`、`rank_build`、`percent_build`、`calc_flow`、`parquet`。
+可用 `--case`：`winsorize`、`standardize`、`neutralize`、`rank_build`、`percent_build`、`calc_flow`、`turnover`、`parquet`。
 
 ## 参数
 
