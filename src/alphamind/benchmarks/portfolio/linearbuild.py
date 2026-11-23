@@ -22,6 +22,7 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
 
     er = np.random.randn(n_samples)
     risk_exp = np.random.randn(n_samples, n_risks)
+    risk_exp = np.concatenate([risk_exp, np.ones((n_samples, 1))], axis=1)
     bm = np.random.rand(n_samples)
     bm /= bm.sum()
 
@@ -49,7 +50,7 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
         res = linprog(c, A_eq=a_eq, b_eq=b_eq, bounds=bounds, options={"maxiter": 10000})
     benchmark_model_time = dt.datetime.now() - start
     print("{0:20s}: {1}".format("Benchmark model (scipy)", benchmark_model_time))
-    np.testing.assert_array_almost_equal(x, res["x"])
+    np.testing.assert_almost_equal(v, res.fun)
 
 
 if __name__ == "__main__":

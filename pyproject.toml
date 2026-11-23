@@ -56,7 +56,8 @@ packages = ["src/alphamind"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-ra"
+addopts = "-ra --strict-config --strict-markers"
+markers = ["integration: tests that require an external database service"]
 
 [tool.ruff]
 target-version = "py39"
@@ -68,4 +69,10 @@ extend-exclude = ["notebooks"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.coverage.run]
+branch = true
+relative_files = true
 source = ["alphamind"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

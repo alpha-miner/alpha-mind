@@ -456,6 +456,8 @@ class SqlEngineBase:
         columns = [table.FactorID, table.Factor] + [
             table.__table__.columns[name] for name in self.total_risk_factors
         ]
+        if ref_date is None:
+            columns.insert(0, table.trade_date)
         if ref_date is not None:
             condition = table.trade_date == ref_date
         else:
@@ -637,7 +639,9 @@ class SqlEngineBase:
         return drop_duplicates(self._read(query), ["trade_date", "code"])
 
     def fetch_trade_status(self, ref_date, codes, offset=0):
-        target_date = advanceDateByCalendar("china.sse", ref_date, f"{offset}b")
+        target_date = advanceDateByCalendar("china.sse", ref_date, f"{offset}b").strftime(
+            "%Y-%m-%d"
+        )
         market = self.models.Market
         query = (
             select(market.trade_date, market.code.label("code"), market.isOpen.label("is_open"))
@@ -658,7 +662,7 @@ class SqlEngineBase:
         if dates is not None:
             start_date, end_date = dates[0], dates[-1]
         universe_data = self.fetch_codes_range(universe, start_date, end_date, dates)
-        target_end = advanceDateByCalendar("china.sse", end_date, f"{offset}b")
+        target_end = advanceDateByCalendar("china.sse", end_date, f"{offset}b").strftime("%Y-%m-%d")
         market = self.models.Market
         query = select(market.trade_date, market.code.label("code"), market.isOpen).where(
             and_(
@@ -670,7 +674,7 @@ class SqlEngineBase:
         data = self._read(query)
         query_sql = f"""
             SELECT trade_date, code,
-                   LEAD("isOpen", {offset}) OVER (PARTITION BY code ORDER BY trade_date) AS is_open
+                   LEAD("is_open", {offset}) OVER (PARTITION BY code ORDER BY trade_date) AS is_open
             FROM input
         """
         result = cf.compute(data, lambda input_table: input_table.sql(query_sql))

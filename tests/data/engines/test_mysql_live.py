@@ -15,6 +15,7 @@ from alphamind.formula import SHIFT, CSRank
 MYSQL_URI = os.environ.get("ALPHAMIND_MYSQL_URI")
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(MYSQL_URI is None, reason="requires ALPHAMIND_MYSQL_URI")
 def test_mysql_live_arrow_pipeline():
     url = MYSQL_URI

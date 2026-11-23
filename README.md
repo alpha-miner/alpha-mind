@@ -12,7 +12,7 @@ Alpha-Mind 是一个使用 Apache Arrow 作为统一表格数据协议的多因�
 - **cvxpy**：线性、换手约束、均值方差和目标波动率优化。
 - **uv + Hatchling**：现代 Python 包结构与可复现依赖锁定。
 
-支持 Python 3.9 及更新版本，CI 覆盖 Python 3.9 和 3.13。
+支持 Python 3.9 及更新版本，CI 验证 Python 3.9–3.13，并运行 MySQL 8.4 集成测试。
 
 ## 安装
 
@@ -89,9 +89,11 @@ ORM 覆盖行情、指数、股票池、行业、因子/风险元数据、风险
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run pytest
+uv run pytest --cov=alphamind --cov-report=term-missing
 uv build
 ```
+
+覆盖率统计包含分支路径，最低要求为 80%。
 
 运行真实数据库集成测试时，设置 `DB_URI` 与 `ALPHAMIND_TEST_DATABASE=1`。默认测试使用本地文件数据库，不需要外部服务。
 

@@ -12,6 +12,15 @@ import numpy as np
 from alphamind.settlement.simplesettle import simple_settle
 
 
+def _settle_portfolios(weights, ret_series, groups=None):
+    return np.array(
+        [
+            simple_settle(weights[:, index], ret_series, groups)["er"].to_pylist()
+            for index in range(weights.shape[1])
+        ]
+    )
+
+
 def benchmark_simple_settle(n_samples: int, n_portfolios: int, n_loops: int) -> None:
     print("-" * 60)
     print("Starting simple settle benchmarking")
@@ -26,7 +35,7 @@ def benchmark_simple_settle(n_samples: int, n_portfolios: int, n_loops: int) -> 
 
     start = dt.datetime.now()
     for _ in range(n_loops):
-        calc_ret = simple_settle(weights, ret_series)
+        calc_ret = _settle_portfolios(weights, ret_series).ravel()
     impl_model_time = dt.datetime.now() - start
 
     print("{0:20s}: {1}".format("Implemented model", impl_model_time))
@@ -59,7 +68,7 @@ def benchmark_simple_settle_with_group(
 
     start = dt.datetime.now()
     for _ in range(n_loops):
-        calc_ret = simple_settle(weights, ret_series, groups=groups)
+        calc_ret = _settle_portfolios(weights, ret_series, groups=groups)
     impl_model_time = dt.datetime.now() - start
 
     print("{0:20s}: {1}".format("Implemented model", impl_model_time))
@@ -69,9 +78,10 @@ def benchmark_simple_settle_with_group(
     for _ in range(n_loops):
         ret_mat = weights * ret_series
         exp_ret = np.array([ret_mat[groups == group].sum(axis=0) for group in np.unique(groups)])
+        exp_ret = np.vstack([exp_ret, exp_ret.sum(axis=0)])
     benchmark_model_time = dt.datetime.now() - start
 
-    np.testing.assert_array_almost_equal(calc_ret, exp_ret)
+    np.testing.assert_array_almost_equal(calc_ret.T, exp_ret)
 
     print("{0:20s}: {1}".format("Benchmark model", benchmark_model_time))
 

@@ -133,6 +133,8 @@ class Expression:
 
     def _binary(self, other, op, reflected=False):
         other = _expression(other)
+        if other.op == "literal" and isinstance(other.args[0], int):
+            other = Literal(float(other.args[0]))
         return Expression(op, (other, self) if reflected else (self, other))
 
     def __add__(self, other):

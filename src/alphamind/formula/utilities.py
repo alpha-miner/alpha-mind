@@ -19,5 +19,6 @@ def encode_formula(formula):
 
 
 def decode_formula(str_repr):
-    formula = decode(str_repr)
-    return formula
+    if isinstance(str_repr, dict):
+        str_repr = str_repr["desc"]
+    return decode(str_repr)

@@ -22,5 +22,7 @@ doc/source/_build
 .pytest_cache/
 .ruff_cache/
 htmlcov/
+.coverage*
+coverage.xml
 *.egg-info/
 src/alphamind/**/*.so

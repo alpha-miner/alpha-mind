@@ -8,6 +8,7 @@ Created on 2020-11-14
 import os
 
 __all__ = [
+    "Base",
     "FactorMaster",
     "HaltList",
     "IndexComponent",
@@ -31,6 +32,7 @@ __all__ = [
 
 if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
     from alphamind.data.dbmodel.models.mysql import (
+        Base,
         FactorMaster,
         HaltList,
         IndexComponent,
@@ -53,6 +55,7 @@ if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
     )
 else:
     from alphamind.data.dbmodel.models.postgres import (
+        Base,
         FactorMaster,
         HaltList,
         IndexComponent,
