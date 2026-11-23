@@ -12,7 +12,7 @@ Alpha-Mind 是一个使用 Apache Arrow 作为统一表格数据协议的多因�
 - **cvxpy**：线性、换手约束、均值方差和目标波动率优化。
 - **uv + Hatchling**：现代 Python 包结构与可复现依赖锁定。
 
-支持 Python 3.9 及更新版本，CI 验证 Python 3.9–3.13，并运行 MySQL 8.4 集成测试。
+支持 Python 3.9 及更新版本，CI 验证 Python 3.9–3.13，并运行 MySQL 8.4 与 PostgreSQL 16 集成测试。
 
 ## 安装
 
@@ -64,7 +64,7 @@ result = transformer.transform("code", arrow_table)
 
 `arrow_table` 必须包含 `code`；时序或截面表达式还需要 `trade_date`。结果始终为 Arrow 表。
 
-## MySQL 数据模型
+## MySQL 与 PostgreSQL 数据模型
 
 ```python
 from alphamind.api import ArrowSQLRepository, SqlEngine
@@ -78,7 +78,7 @@ repository = ArrowSQLRepository(db_url=url)
 repository.write(FactorMomentum, factors, mode="upsert")
 ```
 
-ORM 覆盖行情、指数、股票池、行业、因子/风险元数据、风险暴露、协方差、特质风险和收益等实体。读取由 ConnectorX 执行；SQLAlchemy 仅负责模型、DDL 与写入。
+ORM 覆盖行情、指数、股票池、行业、因子/风险元数据、风险暴露、协方差、特质风险和收益等实体。读取由 ConnectorX 执行；SQLAlchemy 仅负责模型、DDL 与写入。PostgreSQL 使用 `alphamind.data.engines.sqlengine.postgres.SqlEngine`，支持同样的 Arrow 查询、动态因子表和仓储 upsert。
 
 ## 优化器
 
@@ -93,9 +93,11 @@ uv run pytest --cov=alphamind --cov-report=term-missing
 uv build
 ```
 
-覆盖率统计包含分支路径，最低要求为 80%。
+覆盖率统计包含分支路径，最低要求为 90%。
 
-运行真实数据库集成测试时，设置 `DB_URI` 与 `ALPHAMIND_TEST_DATABASE=1`。默认测试使用本地文件数据库，不需要外部服务。
+基准测试通过 `uv run alphamind-benchmarks --output benchmark-results` 运行，生成 JSON 数据和 Markdown 摘要。GitHub Actions 每天定时执行完整套件，也支持手动触发并保留 30 天结果。
+
+运行真实数据库集成测试时，分别通过 `ALPHAMIND_MYSQL_URI` 和 `ALPHAMIND_POSTGRES_URI` 提供连接 URI。未设置时对应测试会跳过，其余测试使用本地文件数据库，不需要外部服务。
 
 ## License
 

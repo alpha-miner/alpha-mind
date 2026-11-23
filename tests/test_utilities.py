@@ -2,8 +2,14 @@ import numpy as np
 import pytest
 
 from alphamind.utilities import (
+    agg_abssum,
+    agg_mean,
+    agg_sqrsum,
+    agg_std,
+    agg_sum,
     aggregate,
     array_index,
+    copy_value,
     decode,
     encode,
     group_mapping,
@@ -11,6 +17,7 @@ from alphamind.utilities import (
     list_eq,
     map_freq,
     require,
+    scale_value,
     set_value,
     simple_abssum,
     simple_mean,
@@ -42,10 +49,13 @@ def test_group_helpers_preserve_original_positions():
     np.testing.assert_array_equal(boundaries, [1, 3, 5])
     np.testing.assert_array_equal(order, [1, 3, 0, 2, 4])
     np.testing.assert_array_equal(group_mapping(groups), [1, 0, 1, 0, 2])
+    np.testing.assert_array_equal(group_mapping.py_func(groups), [1, 0, 1, 0, 2])
 
-    matrix = np.zeros((2, 2))
-    set_value(matrix, np.array([[0, 1], [1, 0]]), 3.0)
-    np.testing.assert_array_equal(matrix, [[3.0, 3.0], [3.0, 3.0]])
+    levels = np.array([[0, 1], [1, 0]])
+    for function in (set_value, set_value.py_func):
+        matrix = np.zeros((2, 2))
+        function(matrix, levels, 3.0)
+        np.testing.assert_array_equal(matrix, [[3.0, 3.0], [3.0, 3.0]])
 
 
 @pytest.mark.parametrize(
@@ -65,15 +75,17 @@ def test_group_helpers_preserve_original_positions():
 )
 def test_simple_numpy_reductions(function, axis, expected):
     values = np.array([[1.0, -2.0], [3.0, 4.0]])
-    np.testing.assert_allclose(function(values, axis=axis), expected)
+    for implementation in (function, function.py_func):
+        np.testing.assert_allclose(implementation(values, axis=axis), expected)
 
 
 @pytest.mark.parametrize(
     "function", [simple_sum, simple_abssum, simple_sqrsum, simple_mean, simple_std]
 )
 def test_simple_reductions_reject_unknown_axis(function):
-    with pytest.raises(ValueError, match="axis value is not supported"):
-        function(np.ones((2, 2)), axis=2)
+    for implementation in (function, function.py_func):
+        with pytest.raises(ValueError, match="axis value is not supported"):
+            implementation(np.ones((2, 2)), axis=2)
 
 
 @pytest.fixture
@@ -95,15 +107,28 @@ def grouped_values():
 )
 def test_group_aggregates(grouped_values, operation, expected):
     groups, values = grouped_values
+    implementations = {
+        "sum": agg_sum,
+        "abssum": agg_abssum,
+        "sqrsum": agg_sqrsum,
+        "mean": agg_mean,
+        "std": agg_std,
+    }
     np.testing.assert_allclose(aggregate(groups, values, operation), expected)
+    np.testing.assert_allclose(implementations[operation].py_func(groups, values), expected)
 
 
 def test_transform_maps_or_scales_group_values(grouped_values):
     groups, values = grouped_values
     sums = aggregate(groups, values, "sum")
     np.testing.assert_allclose(transform(groups, values, "sum"), sums[groups])
+    np.testing.assert_allclose(copy_value.py_func(groups, sums), sums[groups])
     np.testing.assert_allclose(
         transform(groups, values, "scale", scale=2.0),
+        values / (aggregate(groups, values, "abssum")[groups] / 2.0),
+    )
+    np.testing.assert_allclose(
+        scale_value.py_func(groups, aggregate(groups, values, "abssum"), values, 2.0),
         values / (aggregate(groups, values, "abssum")[groups] / 2.0),
     )
     np.testing.assert_allclose(
@@ -116,8 +141,9 @@ def test_transform_maps_or_scales_group_values(grouped_values):
 
 
 def test_array_index_and_serialization_round_trip():
-    np.testing.assert_array_equal(
-        array_index(np.array([10, 20, 30]), np.array([30, 10, 20])), [2, 0, 1]
-    )
+    labels = np.array([10, 20, 30])
+    items = np.array([30, 10, 20])
+    np.testing.assert_array_equal(array_index(labels, items), [2, 0, 1])
+    np.testing.assert_array_equal(array_index.py_func(labels, items), [2, 0, 1])
     value = {"expression": "x + 1", "versions": [3, 9, 13]}
     assert decode(encode(value)) == value

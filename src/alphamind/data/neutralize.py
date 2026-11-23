@@ -53,7 +53,7 @@ def neutralize(
     else:
         try:
             b = ls_fit(x, y, weights)
-        except np.linalg.linalg.LinAlgError:
+        except np.linalg.LinAlgError:
             b = ls_fit_pinv(x, y, weights)
 
         res = ls_res(x, y, b)
@@ -72,7 +72,7 @@ def _sub_step(x, y, w, curr_idx, res) -> Tuple[np.ndarray, np.ndarray]:
     curr_x, curr_y, curr_w = x[curr_idx], y[curr_idx], w[curr_idx]
     try:
         b = ls_fit(curr_x, curr_y, curr_w)
-    except np.linalg.linalg.LinAlgError:
+    except np.linalg.LinAlgError:
         b = ls_fit_pinv(curr_x, curr_y, curr_w)
     res[curr_idx] = ls_res(curr_x, curr_y, b)
     return curr_x, b

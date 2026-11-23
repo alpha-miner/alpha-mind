@@ -24,5 +24,6 @@ doc/source/_build
 htmlcov/
 .coverage*
 coverage.xml
+benchmark-results/
 *.egg-info/
 src/alphamind/**/*.so

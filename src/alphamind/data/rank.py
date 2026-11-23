@@ -36,7 +36,7 @@ def percentile(x: np.ndarray, groups: Optional[np.ndarray] = None) -> np.ndarray
         x = x.reshape((-1, 1))
 
     if groups is not None:
-        res = np.zeros(x.shape, dtype=int)
+        res = np.zeros(x.shape, dtype=float)
         index_diff, order = utils.groupby(groups)
 
         start = 0
@@ -44,7 +44,7 @@ def percentile(x: np.ndarray, groups: Optional[np.ndarray] = None) -> np.ndarray
             curr_idx = order[start : diff_loc + 1]
             curr_values = x[curr_idx]
             length = len(curr_values) - 1.0 if len(curr_values) > 1 else 1.0
-            res[curr_idx] = (rankdata(curr_values).astype(float) - 1.0) / length
+            res[curr_idx] = ((rankdata(curr_values).astype(float) - 1.0) / length).reshape((-1, 1))
             start = diff_loc + 1
         return res
     else:

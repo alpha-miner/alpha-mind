@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [master]
   pull_request:
 
 permissions:
@@ -43,8 +44,22 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: alpha
+          POSTGRES_PASSWORD: alpha
+          POSTGRES_DB: alpha
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U alpha -d alpha"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     env:
       ALPHAMIND_MYSQL_URI: mysql+pymysql://root:root@127.0.0.1:3306/alpha
+      ALPHAMIND_POSTGRES_URI: postgresql+psycopg2://alpha:alpha@127.0.0.1:5432/alpha
     strategy:
       fail-fast: false
       matrix:
@@ -104,3 +119,4 @@ jobs:
           uv pip install --python .package-venv/bin/python dist/*.whl
           .package-venv/bin/python -c "import alphamind; import alphamind.api"
           .package-venv/bin/alphamind --help
+          .package-venv/bin/alphamind-benchmarks --help

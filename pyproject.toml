@@ -43,6 +43,7 @@ notebooks = ["jupyterlab>=3", "matplotlib>=3.6", "xlsxwriter>=3"]
 
 [project.scripts]
 alphamind = "alphamind.bin.cli:main"
+alphamind-benchmarks = "alphamind.benchmarks.runner:main"
 
 [dependency-groups]
 dev = ["pytest>=7", "pytest-cov>=4", "ruff>=0.4"]
@@ -74,5 +75,5 @@ relative_files = true
 source = ["alphamind"]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 90
 show_missing = true

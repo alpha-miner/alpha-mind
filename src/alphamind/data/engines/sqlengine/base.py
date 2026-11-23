@@ -88,6 +88,11 @@ class SqlEngineBase:
     def _map_index(self, benchmark):
         return self.index_codes.get(benchmark, benchmark)
 
+    @staticmethod
+    def _calendar_boundary(column, ref_date, period):
+        value = advanceDateByCalendar("china.sse", ref_date, period)
+        return value if isinstance(column.type, sa.DateTime) else value.date()
+
     def fetch_factors_meta(self):
         return self._read(select(self.models.FactorMaster))
 
@@ -143,10 +148,10 @@ class SqlEngineBase:
         post_process=None,
         benchmark=None,
     ):
-        end_date = expiry_date or advanceDateByCalendar(
-            "china.sse", ref_date, f"{1 + horizon + offset}b"
-        ).strftime("%Y-%m-%d")
         market = self.models.Market
+        end_date = expiry_date or self._calendar_boundary(
+            market.trade_date, ref_date, f"{1 + horizon + offset}b"
+        )
         query = (
             select(market.trade_date, market.code.label("code"), market.chgPct.label("chgPct"))
             .where(
@@ -181,10 +186,10 @@ class SqlEngineBase:
         return result.select(["code", "dx"])
 
     def fetch_dx_return_index(self, ref_date, index_code, expiry_date=None, horizon=0, offset=0):
-        end_date = expiry_date or advanceDateByCalendar(
-            "china.sse", ref_date, f"{1 + horizon + offset}b"
-        ).strftime("%Y-%m-%d")
         market = self.models.IndexMarket
+        end_date = expiry_date or self._calendar_boundary(
+            market.trade_date, ref_date, f"{1 + horizon + offset}b"
+        )
         index_code = self._map_index(index_code)
         query = (
             select(market.trade_date, market.indexCode.label("code"), market.chgPct.label("chgPct"))
@@ -214,10 +219,8 @@ class SqlEngineBase:
         if dates is not None:
             start_date, end_date = dates[0], dates[-1]
         universe_data = self.fetch_codes_range(universe, start_date, end_date, dates)
-        query_end = advanceDateByCalendar(
-            "china.sse", end_date, f"{1 + horizon + offset}b"
-        ).strftime("%Y-%m-%d")
         market = self.models.Market
+        query_end = self._calendar_boundary(market.trade_date, end_date, f"{1 + horizon + offset}b")
         codes = pc.unique(universe_data["code"]).to_pylist()
         query = (
             select(market.trade_date, market.code.label("code"), market.chgPct.label("chgPct"))
@@ -244,10 +247,8 @@ class SqlEngineBase:
     ):
         if dates is not None:
             start_date, end_date = dates[0], dates[-1]
-        query_end = advanceDateByCalendar(
-            "china.sse", end_date, f"{1 + horizon + offset}b"
-        ).strftime("%Y-%m-%d")
         market = self.models.IndexMarket
+        query_end = self._calendar_boundary(market.trade_date, end_date, f"{1 + horizon + offset}b")
         index_code = self._map_index(index_code)
         query = (
             select(market.trade_date, market.indexCode.label("code"), market.chgPct.label("chgPct"))
@@ -323,8 +324,8 @@ class SqlEngineBase:
 
     def fetch_factor(self, ref_date, factors, codes, warm_start=0):
         transformer = factors if isinstance(factors, Transformer) else Transformer(factors)
-        start_date = advanceDateByCalendar("china.sse", ref_date, f"-{warm_start}b").strftime(
-            "%Y-%m-%d"
+        start_date = self._calendar_boundary(
+            self.models.Market.trade_date, ref_date, f"-{warm_start}b"
         )
         data = self._factor_query(
             transformer, codes=codes, start_date=start_date, end_date=ref_date
@@ -639,10 +640,8 @@ class SqlEngineBase:
         return drop_duplicates(self._read(query), ["trade_date", "code"])
 
     def fetch_trade_status(self, ref_date, codes, offset=0):
-        target_date = advanceDateByCalendar("china.sse", ref_date, f"{offset}b").strftime(
-            "%Y-%m-%d"
-        )
         market = self.models.Market
+        target_date = self._calendar_boundary(market.trade_date, ref_date, f"{offset}b")
         query = (
             select(market.trade_date, market.code.label("code"), market.isOpen.label("is_open"))
             .where(
@@ -662,9 +661,11 @@ class SqlEngineBase:
         if dates is not None:
             start_date, end_date = dates[0], dates[-1]
         universe_data = self.fetch_codes_range(universe, start_date, end_date, dates)
-        target_end = advanceDateByCalendar("china.sse", end_date, f"{offset}b").strftime("%Y-%m-%d")
         market = self.models.Market
-        query = select(market.trade_date, market.code.label("code"), market.isOpen).where(
+        target_end = self._calendar_boundary(market.trade_date, end_date, f"{offset}b")
+        query = select(
+            market.trade_date, market.code.label("code"), market.isOpen.label("is_open")
+        ).where(
             and_(
                 market.trade_date.between(start_date, target_end),
                 market.code.in_(pc.unique(universe_data["code"]).to_pylist()),
