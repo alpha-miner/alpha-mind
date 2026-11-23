@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
+import pyarrow.parquet as pq
 
 from alphamind.analysis.calculators import calculate_turn_over
 from alphamind.analysis.perfanalysis import perf_attribution_by_pos
@@ -43,9 +44,15 @@ def save(table: pa.Table, output: Path, relative_path: str) -> Path:
 
 
 def sections(table: pa.Table):
-    for trade_date in sorted(pc.unique(table["trade_date"]).to_pylist()):
-        section = table.filter(pc.equal(table["trade_date"], trade_date))
-        yield trade_date, section.sort_by("code")
+    ordered = table.sort_by([("trade_date", "ascending"), ("code", "ascending")])
+    if ordered.num_rows == 0:
+        return
+    dates = ordered["trade_date"].combine_chunks()
+    values = pc.cast(dates, pa.int64()).to_numpy(zero_copy_only=False)
+    starts = np.concatenate(([0], np.flatnonzero(values[1:] != values[:-1]) + 1))
+    ends = np.concatenate((starts[1:], [ordered.num_rows]))
+    for start, end in zip(starts, ends):
+        yield dates[start].as_py(), ordered.slice(start, end - start)
 
 
 def create_inputs(output: Path) -> pa.Table:
@@ -150,7 +157,10 @@ def process_features(output: Path) -> pa.Table:
 
 
 def train_and_predict(output: Path) -> pa.Table:
-    processed = read_parquet(output / "features/processed.parquet")
+    processed = read_parquet(
+        output / "features/processed.parquet",
+        columns=["trade_date", "code", "dx"] + FEATURES,
+    )
     dates = sorted(pc.unique(processed["trade_date"]).to_pylist())
     latest_date = dates[-1]
     train = processed.filter(pc.not_equal(processed["trade_date"], latest_date))
@@ -175,7 +185,10 @@ def train_and_predict(output: Path) -> pa.Table:
 
 
 def run_file_backtest(output: Path) -> pa.Table:
-    processed = read_parquet(output / "features/processed.parquet")
+    processed = read_parquet(
+        output / "features/processed.parquet",
+        columns=["trade_date", "code", "dx"] + FEATURES,
+    )
     pipeline = ExecutionPipeline([ThresholdExecutor(turn_over_threshold=0.02, is_relative=False)])
     positions = []
     performance = []
@@ -215,12 +228,18 @@ def run_file_backtest(output: Path) -> pa.Table:
 
 
 def optimize_latest(output: Path) -> pa.Table:
-    latest_date = max(read_parquet(output / "features/processed.parquet")["trade_date"].to_pylist())
-    exposure = read_parquet(output / "input/risk_exposure.parquet")
-    exposure = exposure.filter(pc.equal(exposure["trade_date"], latest_date)).sort_by("code")
-    predictions = read_parquet(output / "model/predictions.parquet").sort_by("code")
-    research = read_parquet(output / "input/research.parquet")
-    latest = research.filter(pc.equal(research["trade_date"], latest_date)).sort_by("code")
+    dates = read_parquet(output / "features/processed.parquet", columns=["trade_date"])
+    latest_date = pc.max(dates["trade_date"]).as_py()
+    filters = [("trade_date", "=", latest_date)]
+    exposure = read_parquet(output / "input/risk_exposure.parquet", filters=filters).sort_by("code")
+    predictions = read_parquet(output / "model/predictions.parquet", filters=filters).sort_by(
+        "code"
+    )
+    latest = read_parquet(
+        output / "input/research.parquet",
+        columns=["trade_date", "code", "benchmark_weight", "industry", "dx"],
+        filters=filters,
+    ).sort_by("code")
     covariance = read_parquet(output / "input/factor_covariance.parquet")
     specific = read_parquet(output / "input/specific_risk.parquet")
     risk_model = FactorRiskModel(covariance, exposure, specific)
@@ -273,9 +292,12 @@ def optimize_latest(output: Path) -> pa.Table:
 
 def analyze_results(output: Path) -> None:
     executed = read_parquet(output / "portfolio/executed.parquet")
-    processed = read_parquet(output / "features/processed.parquet")
     latest_date = executed["trade_date"][0].as_py()
-    latest = processed.filter(pc.equal(processed["trade_date"], latest_date)).sort_by("code")
+    latest = read_parquet(
+        output / "features/processed.parquet",
+        columns=["trade_date", "code", "dx"] + FEATURES,
+        filters=[("trade_date", "=", latest_date)],
+    ).sort_by("code")
     quantiles = quantile_analysis(
         latest.select(FEATURES),
         np.array([0.6, 0.4]),
@@ -317,15 +339,13 @@ def analyze_results(output: Path) -> None:
 
 
 def write_manifest(output: Path) -> pa.Table:
-    paths = sorted(output.rglob("*.parquet"))
+    artifacts = [
+        path for path in sorted(output.rglob("*.parquet")) if path.name != "manifest.parquet"
+    ]
     manifest = pa.table(
         {
-            "artifact": [
-                str(path.relative_to(output)) for path in paths if path.name != "manifest.parquet"
-            ],
-            "rows": [
-                read_parquet(path).num_rows for path in paths if path.name != "manifest.parquet"
-            ],
+            "artifact": [str(path.relative_to(output)) for path in artifacts],
+            "rows": [pq.ParquetFile(path).metadata.num_rows for path in artifacts],
         }
     )
     save(manifest, output, "manifest.parquet")

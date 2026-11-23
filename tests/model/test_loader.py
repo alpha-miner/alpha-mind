@@ -4,6 +4,9 @@ Created on 2017-9-5
 @author: cheng.li
 """
 
+import subprocess
+import sys
+
 import numpy as np
 
 from alphamind.data.arrow import from_numpy
@@ -30,3 +33,12 @@ class TestLoader:
         assert model.features == new_model.features
 
         assert model.trained_time == new_model.trained_time
+
+
+def test_linear_model_import_does_not_eagerly_import_xgboost():
+    code = (
+        "import sys\n"
+        "from alphamind.model import LinearRegression\n"
+        "assert 'xgboost' not in sys.modules\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)

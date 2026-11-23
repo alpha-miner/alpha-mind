@@ -11,7 +11,6 @@ import datetime as dt
 import numpy as np
 from packaging.version import Version
 from sklearn import __version__ as sklearn_version
-from xgboost import __version__ as xgbboot_version
 
 from alphamind.data.arrow import to_numpy
 from alphamind.data.transformer import Transformer
@@ -112,7 +111,9 @@ def create_model_base(party_name=None):
                 if self._lib_name == "sklearn":
                     model_desc[self._lib_name + "_version"] = sklearn_version
                 elif self._lib_name == "xgboost":
-                    model_desc[self._lib_name + "_version"] = xgbboot_version
+                    from xgboost import __version__ as xgboost_version
+
+                    model_desc[self._lib_name + "_version"] = xgboost_version
                 else:
                     raise ValueError(
                         "3rd party lib name ({0}) is not recognized".format(self._lib_name)
@@ -126,7 +127,9 @@ def create_model_base(party_name=None):
                 if cls._lib_name == "sklearn":
                     current_version = sklearn_version
                 elif cls._lib_name == "xgboost":
-                    current_version = xgbboot_version
+                    from xgboost import __version__ as xgboost_version
+
+                    current_version = xgboost_version
                 else:
                     raise ValueError(
                         "3rd party lib name ({0}) is not recognized".format(cls._lib_name)
