@@ -20,13 +20,13 @@ uv run python examples/parquet_demo/demo.py --output /tmp/alpha-mind-parquet-dem
 | `create_inputs` | 生成研究面板、风险暴露、协方差、特质方差和交易日程 |
 | `calculate_features` | 用 calc-flow 计算排名、百分位、3 日均值和 1 日滞后 |
 | `process_features` | 每个交易日分别去极值、标准化、SIZE 中性化并再标准化 |
-| `train_and_predict` | 用前 7 个有效截面训练线性回归，预测最后 1 个截面 |
-| `run_file_backtest` | 8 期排名组合、阈值执行、收益和换手 |
+| `train_and_predict` | 用前 251 个有效截面训练线性回归，预测最后 1 个截面 |
+| `run_file_backtest` | 252 期排名组合，每期选取 50 只证券，执行阈值控制并计算收益和换手 |
 | `optimize_latest` | 构造因子风险模型，求解带总权重和 SIZE 约束的均值方差组合 |
 | `analyze_results` | 四分组收益、行业结算、证券级风险归因和日度组合归因 |
 | `write_manifest` | 汇总所有功能产物的路径和行数 |
 
-合成数据有 10 个交易日和 12 只证券；3 日窗口使前两个日期不进入后续训练与回测。
+合成数据有 254 个交易日和 300 只证券；3 日窗口使前两个日期不进入后续训练与回测，因此实际回测包含 252 个交易日和 75,600 条持仓记录。
 
 ## 生成的 20 个功能产物
 
@@ -65,11 +65,17 @@ root = "/tmp/alpha-mind-parquet-demo"
 manifest = read_parquet(f"{root}/manifest.parquet")
 optimized = read_parquet(f"{root}/portfolio/optimized.parquet")
 returns = read_parquet(f"{root}/backtest/returns.parquet")
+positions = read_parquet(f"{root}/backtest/positions.parquet")
 attribution = read_parquet(f"{root}/analysis/return_attribution.parquet")
 
 assert manifest.num_rows == 20
+assert optimized.num_rows == 300
 assert abs(pc.sum(optimized["weight"]).as_py() - 1.0) < 1e-8
-assert returns.num_rows == 8
+assert returns.num_rows == 252
+selected = positions.filter(pc.greater(positions["weight"], 0.0))
+counts = selected.group_by("trade_date").aggregate([("weight", "count")])
+assert counts.num_rows == 252
+assert set(counts["weight_count"].to_pylist()) == {50}
 assert attribution.num_rows == 1
 ```
 
@@ -91,6 +97,6 @@ assert attribution.num_rows == 1
 uv run pytest tests/examples/test_parquet_demo.py -q
 ```
 
-测试通过子进程执行用户实际运行的命令，并验证文件清单、权重和、回测期数与归因字段。
+测试通过子进程执行用户实际运行的命令，并验证文件清单、资产规模、优化权重和、252 期回测、每期 50 只持仓与归因字段。
 
 相关文档：[Setup](../../docs/setup.md)、[因子表达式](../../docs/factor-expressions.md)、[组合构建](../../docs/portfolio-construction.md)、[绩效归因](../../docs/performance-attribution.md)。

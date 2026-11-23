@@ -13,7 +13,7 @@ from alphamind.analysis.perfanalysis import perf_attribution_by_pos
 from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.analysis.riskanalysis import risk_analysis
 from alphamind.data.arrow import column_values, read_parquet, to_numpy, with_column, write_parquet
-from alphamind.data.calendar import makeSchedule
+from alphamind.data.calendar import advanceDateByCalendar, makeSchedule
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.transformer import Transformer
@@ -31,7 +31,11 @@ from alphamind.portfolio.riskmodel import FactorRiskModel
 from alphamind.settlement.simplesettle import simple_settle
 
 FEATURES = ["momentum", "value"]
-CODES = np.array([f"{index:06d}" for index in range(1, 13)])
+N_ASSETS = 300
+N_BACKTEST_DAYS = 252
+WARMUP_DAYS = 2
+N_SELECTED = 50
+CODES = np.array([f"{index:06d}" for index in range(1, N_ASSETS + 1)])
 
 
 def save(table: pa.Table, output: Path, relative_path: str) -> Path:
@@ -45,13 +49,17 @@ def sections(table: pa.Table):
 
 
 def create_inputs(output: Path) -> pa.Table:
-    dates = makeSchedule("2026-01-05", "2026-01-16", "1b", "china.sse")
+    start_date = "2026-01-05"
+    end_date = advanceDateByCalendar(
+        "china.sse", start_date, f"{N_BACKTEST_DAYS + WARMUP_DAYS - 1}b"
+    )
+    dates = makeSchedule(start_date, end_date.strftime("%Y-%m-%d"), "1b", "china.sse")
     n_dates = len(dates)
     n_assets = len(CODES)
     rng = np.random.default_rng(20261123)
     asset_index = np.arange(n_assets)
-    industries = np.array(["Bank"] * 4 + ["Auto"] * 4 + ["Health"] * 4)
-    beta = np.tile(1.0 + 0.04 * (asset_index - 5.5), n_dates)
+    industries = np.tile(np.array(["Bank", "Auto", "Health"]), n_assets // 3)
+    beta = np.tile(1.0 + 0.2 * np.linspace(-1.0, 1.0, n_assets), n_dates)
     size = np.tile(np.linspace(-1.0, 1.0, n_assets), n_dates)
     returns = rng.normal(0.001, 0.015, size=(n_dates, n_assets))
     close = (10.0 + asset_index)[None, :] * np.cumprod(1.0 + returns, axis=0)
@@ -173,7 +181,7 @@ def run_file_backtest(output: Path) -> pa.Table:
     performance = []
     for trade_date, section in sections(processed):
         expected_return = to_numpy(section, FEATURES, dtype=float) @ np.array([0.6, 0.4])
-        weights = rank_build(expected_return, use_rank=6).flatten().astype(float)
+        weights = rank_build(expected_return, use_rank=N_SELECTED).flatten().astype(float)
         weights /= weights.sum()
         target = pa.table(
             {
