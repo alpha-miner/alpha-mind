@@ -9,8 +9,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-from alphamind.analysis.calculators import calculate_turn_over
-from alphamind.analysis.perfanalysis import perf_attribution_by_pos
+from alphamind.analysis.perfanalysis import aggregate_attribution
 from alphamind.analysis.quantileanalysis import quantile_analysis
 from alphamind.analysis.riskanalysis import risk_analysis
 from alphamind.data.arrow import column_values, read_parquet, to_numpy, with_column, write_parquet
@@ -131,7 +130,22 @@ def calculate_features(output: Path) -> pa.Table:
     for name in transformer.names:
         features = features.append_column(name, transformed[name])
     features = features.filter(pc.is_valid(features["close_ma_3"]))
-    save(features, output, "features/calculated.parquet")
+    save(
+        features.select(
+            [
+                "trade_date",
+                "code",
+                "momentum",
+                "value",
+                "close_ma_3",
+                "close_lag_1",
+                "SIZE",
+                "dx",
+            ]
+        ),
+        output,
+        "features/calculated.parquet",
+    )
     return features
 
 
@@ -152,7 +166,11 @@ def process_features(output: Path) -> pa.Table:
             result = with_column(result, name, processed[:, index])
         processed_sections.append(result)
     processed = pa.concat_tables(processed_sections)
-    save(processed, output, "features/processed.parquet")
+    save(
+        processed.select(["trade_date", "code", "dx"] + FEATURES),
+        output,
+        "features/processed.parquet",
+    )
     return processed
 
 
@@ -220,7 +238,9 @@ def run_file_backtest(output: Path) -> pa.Table:
         pipeline.update({"return": portfolio_return})
     positions_table = pa.concat_tables(positions)
     performance_table = pa.concat_tables(performance)
-    turnover = calculate_turn_over(positions_table)
+    turnover = performance_table.select(["trade_date", "turn_over"]).rename_columns(
+        ["trade_date", "weight"]
+    )
     save(positions_table, output, "backtest/positions.parquet")
     save(performance_table, output, "backtest/returns.parquet")
     save(turnover, output, "backtest/turnover.parquet")
@@ -332,7 +352,7 @@ def analyze_results(output: Path) -> None:
     )
     risks = executed.select(["trade_date", "code", "BETA", "SIZE"])
     explained, exposure = risk_analysis(active, returns, risks)
-    attribution = perf_attribution_by_pos(active, returns, risks)
+    attribution = aggregate_attribution(explained)
     save(explained, output, "analysis/security_attribution.parquet")
     save(exposure, output, "analysis/risk_contributions.parquet")
     save(attribution, output, "analysis/return_attribution.parquet")

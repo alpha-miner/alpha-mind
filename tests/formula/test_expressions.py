@@ -172,3 +172,33 @@ def test_ordered_transformer_validates_schema_and_empty_inputs():
         Transformer(["x"]).transform(
             "code", sample_table().append_column("__alpha_factor_0", pa.array([1] * 8))
         )
+
+
+def test_multiple_simple_shifts_use_sql_window_path_with_sorted_output():
+    dates = [dt.date(2026, 1, day) for day in (5, 6, 7)]
+    table = pa.table(
+        {
+            "trade_date": [dates[1], dates[0], dates[2], dates[0], dates[2], dates[1]],
+            "code": ["B", "A", "A", "B", "B", "A"],
+            "x": [4.0, 1.0, 5.0, 2.0, 6.0, 3.0],
+            "raw_value": [40.0, 10.0, 50.0, 20.0, 60.0, 30.0],
+        }
+    )
+
+    result = Transformer(
+        {
+            "x_lag_1": SHIFT("x", 1),
+            "x_lag_2": SHIFT("x", 2),
+            "value_lag_1": SHIFT("raw_value", 1),
+        }
+    ).transform("code", table)
+
+    assert result["x_lag_1"].to_pylist() == [None, None, 1.0, 2.0, 3.0, 4.0]
+    assert result["x_lag_2"].to_pylist() == [None, None, None, None, 1.0, 2.0]
+    assert result["value_lag_1"].to_pylist() == [None, None, 10.0, 20.0, 30.0, 40.0]
+
+
+def test_nested_shift_remains_on_temporal_expression_path():
+    result = Transformer({"nested": SHIFT(MA(2, "x"), 1)}).transform("code", sample_table())
+
+    assert result["nested"].to_pylist() == [None, None, None, None, 2.0, 3.0, 4.0, 5.0]

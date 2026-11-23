@@ -74,6 +74,17 @@ uv run pytest tests/data/engines -q
 
 推送 master 和 Pull Request 都会触发。并发组会取消同一分支或 PR 中已过时的运行。
 
+## Notebooks
+
+27 本 notebook 均使用本地确定性数据和当前 Arrow API。安装执行依赖并逐本运行：
+
+```bash
+uv sync --frozen --group dev --extra notebooks
+uv run python scripts/execute_notebooks.py
+```
+
+CI 的 Notebooks 任务会在 Python 3.13 上使用真实 Jupyter kernel 执行全部代码单元。修改公开 API 时，应同步更新 notebook 并运行该命令。
+
 ## 构建与安装检查
 
 ```bash

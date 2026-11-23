@@ -67,6 +67,7 @@ result = transformer.transform("code", read_parquet("source.parquet"))
 - [机器学习模型](docs/machine-learning.md)
 - [策略回测](docs/strategy-backtesting.md)
 - [基准测试](docs/benchmarks.md)
+- [可执行 notebooks](notebooks/README.md)
 - [开发、测试与覆盖率](docs/development.md)
 
 完整目录见 [文档首页](docs/README.md)，API 索引见 [API Reference](docs/api-reference.md)。

@@ -77,7 +77,7 @@ from alphamind.analysis.perfanalysis import perf_attribution_by_pos
 attribution = perf_attribution_by_pos(active_positions, return_table, risk_exposure)
 ```
 
-该函数在 `risk_analysis` 基础上按 `trade_date` 汇总，每行一个交易日，各贡献列之和等于组合净收益。结果可直接保存为 Parquet。
+该函数在 `risk_analysis` 基础上按 `trade_date` 汇总，每行一个交易日，各贡献列之和等于组合净收益。结果可直接保存为 Parquet。已有证券级 `explained` 表时，使用 `aggregate_attribution(explained)` 直接聚合，避免重复执行风险拆解。
 
 ## 回测结果的基本校验
 

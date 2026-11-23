@@ -28,7 +28,7 @@ uv run alphamind-benchmarks \
   --output benchmark-results
 ```
 
-可用 `--case`：`winsorize`、`standardize`、`neutralize`、`rank_build`、`percent_build`、`calc_flow`、`turnover`、`parquet`。
+可用 `--case`：`winsorize`、`standardize`、`neutralize`、`rank_build`、`percent_build`、`calc_flow`、`calc_flow_shift`、`turnover`、`parquet`。
 
 ## 参数
 
