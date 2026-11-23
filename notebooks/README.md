@@ -53,4 +53,4 @@ uv run jupyter lab notebooks
 - [Example 12 - Machine Learning Model Prediction](<Example 12 - Machine Learning Model Prediction.ipynb>)
 - [Example 13 - Evaluation within Industry Groups](<Example 13 - Evaluation within Industry Groups.ipynb>)
 
-文件名保留历史编号，便于已有链接继续定位；内容已统一迁移到当前计算和优化后端。
+文件名保留历史编号，便于已有链接继续定位；原始 Markdown 说明、代码注释和完整教学步骤均保留，计算实现迁移到当前后端。
