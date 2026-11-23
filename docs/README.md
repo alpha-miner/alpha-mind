@@ -8,6 +8,8 @@
 2. [Setup 与 Parquet 示例](setup.md)：安装、运行示例、输入 schema 与输出说明。
 3. [Arrow 与文件](arrow-data.md)：统一读写入口、类型规范与 Parquet 下推。
 
+27 本可执行专题示例见 [Notebook 索引](../notebooks/README.md)。
+
 ## 数据与计算
 
 - [交易日与调仓日程](calendar.md)

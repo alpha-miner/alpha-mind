@@ -2,6 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pyarrow.compute as pc
 import pytest
 
@@ -27,6 +28,7 @@ def test_parquet_demo_runs_end_to_end(tmp_path):
     processed = read_parquet(tmp_path / "features/processed.parquet")
     assert research.num_rows == 254 * 300
     assert processed.num_rows == 252 * 300
+    assert processed.column_names == ["trade_date", "code", "dx", "momentum", "value"]
 
     optimized = read_parquet(tmp_path / "portfolio/optimized.parquet")
     assert optimized.num_rows == 300
@@ -35,6 +37,8 @@ def test_parquet_demo_runs_end_to_end(tmp_path):
     backtest = read_parquet(tmp_path / "backtest/returns.parquet")
     assert backtest.num_rows == 252
     assert pc.sum(backtest["leverage"]).as_py() == pytest.approx(252.0)
+    turnover = read_parquet(tmp_path / "backtest/turnover.parquet")
+    np.testing.assert_allclose(turnover["weight"].to_pylist(), backtest["turn_over"].to_pylist())
 
     positions = read_parquet(tmp_path / "backtest/positions.parquet")
     selected = positions.filter(pc.greater(positions["weight"], 0.0))

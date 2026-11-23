@@ -113,8 +113,8 @@ from alphamind.portfolio.constraints import (
 bounds = create_box_bounds(
     ["total", "SIZE"],
     BoundaryType.ABSOLUTE,
-    l_val=[1.0, -0.05],
-    u_val=[1.0, 0.05],
+    l_val=[0.0, -0.05],
+    u_val=[0.0, 0.05],
 )
 exposure = pa.table({"total": np.ones(n_assets), "SIZE": size})
 constraints = LinearConstraints(bounds, exposure, backbone=benchmark)

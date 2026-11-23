@@ -102,6 +102,19 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  notebooks:
+    name: Notebooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --frozen --group dev --extra notebooks
+      - run: uv run python scripts/execute_notebooks.py
+
   package:
     name: Package
     runs-on: ubuntu-latest

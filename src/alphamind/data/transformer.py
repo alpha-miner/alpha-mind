@@ -5,11 +5,43 @@ Created on 2017-8-23
 @author: cheng.li
 """
 
+import re
+
 import calc_flow as cf
 import pyarrow as pa
 
 from alphamind.data.arrow import as_arrow, drop_nulls, empty_table
 from alphamind.formula.expressions import Expression
+
+
+def _quote_identifier(name):
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _is_simple_shift(expression):
+    return (
+        isinstance(expression, Expression)
+        and expression.op == "shift"
+        and expression.args[0].op == "column"
+    )
+
+
+def _compute_simple_shifts(table, group_name, expressions):
+    projections = []
+    for temporary, expression in expressions:
+        column = expression.args[0].args[0]
+        periods = expression.args[1]
+        projections.append(
+            f"LAG({_quote_identifier(column)}, {periods}) OVER ("
+            f"PARTITION BY {_quote_identifier(group_name)} "
+            f'ORDER BY "trade_date") AS {_quote_identifier(temporary)}'
+        )
+    query = (
+        "SELECT "
+        + ", ".join(projections)
+        + f' FROM input ORDER BY "trade_date", {_quote_identifier(group_name)}'
+    )
+    return cf.compute(table, lambda input_table: input_table.sql(query))
 
 
 def factor_translator(factor_pool):
@@ -110,18 +142,41 @@ class Transformer:
         if set(temporary_names).intersection(table.column_names):
             raise ValueError("Input contains reserved factor column names")
 
-        def build(input_table):
-            features = {}
-            for temporary, expression in zip(temporary_names, self.expressions):
-                features[temporary] = (
-                    expression.bind(input_table)
-                    if isinstance(expression, Expression)
-                    else input_table[expression]
-                )
-            return input_table.with_columns(features).select(*temporary_names)
+        simple_shifts = []
+        remaining = []
+        sql_compatible = all(
+            re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) for name in table.column_names
+        )
+        for temporary, expression in zip(temporary_names, self.expressions):
+            if sql_compatible and _is_simple_shift(expression):
+                simple_shifts.append((temporary, expression))
+            else:
+                remaining.append((temporary, expression))
 
-        if source is None:
-            result = cf.compute(table, build)
-        else:
-            result = build(source).collect(table)
-        return pa.Table.from_arrays([result[name] for name in temporary_names], names=self.names)
+        result_columns = {}
+        if remaining:
+            temporary = [name for name, _ in remaining]
+
+            def build(input_table):
+                features = {}
+                for name, expression in remaining:
+                    features[name] = (
+                        expression.bind(input_table)
+                        if isinstance(expression, Expression)
+                        else input_table[expression]
+                    )
+                return input_table.with_columns(features).select(*temporary)
+
+            if source is None:
+                result = cf.compute(table, build)
+            else:
+                result = build(source).collect(table)
+            result_columns.update({name: result[name] for name in temporary})
+
+        if simple_shifts:
+            shifted = _compute_simple_shifts(table, group_name, simple_shifts)
+            result_columns.update({name: shifted[name] for name, _ in simple_shifts})
+
+        return pa.Table.from_arrays(
+            [result_columns[name] for name in temporary_names], names=self.names
+        )

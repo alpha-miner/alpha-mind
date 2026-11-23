@@ -20,7 +20,7 @@ from alphamind.data.neutralize import neutralize
 from alphamind.data.standardize import standardize
 from alphamind.data.transformer import Transformer
 from alphamind.data.winsorize import winsorize_normal
-from alphamind.formula import MA, CSRank
+from alphamind.formula import MA, SHIFT, CSRank
 from alphamind.portfolio.percentbuilder import percent_build
 from alphamind.portfolio.rankbuilder import rank_build
 
@@ -58,6 +58,20 @@ def _calc_flow_operation(size):
         }
     )
     transformer = Transformer({"mean": MA(5, "x"), "rank": CSRank("x")})
+    return lambda: transformer.transform("code", table)
+
+
+def _calc_flow_shift_operation(size):
+    half = (size + 1) // 2
+    dates = [dt.datetime(2020, 1, 1) + dt.timedelta(days=index) for index in range(half)]
+    table = pa.table(
+        {
+            "trade_date": [value for value in dates for _ in range(2)][:size],
+            "code": (["A", "B"] * half)[:size],
+            "x": np.random.default_rng(42).normal(size=size),
+        }
+    )
+    transformer = Transformer({"lag": SHIFT("x", 1)})
     return lambda: transformer.transform("code", table)
 
 
@@ -109,6 +123,7 @@ WORKLOADS: dict[str, Callable[[int], Callable[[], object]]] = {
     "rank_build": _rank_operation,
     "percent_build": _percent_operation,
     "calc_flow": _calc_flow_operation,
+    "calc_flow_shift": _calc_flow_shift_operation,
     "turnover": _turnover_operation,
     "parquet": _parquet_operation,
 }

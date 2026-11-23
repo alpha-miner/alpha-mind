@@ -77,7 +77,7 @@
 | `alphamind.analysis.crosssetctions` | `cross_section_analysis`、`cs_impl` |
 | `alphamind.analysis.calculators` | `calculate_turn_over` |
 | `alphamind.analysis.riskanalysis` | `risk_analysis` |
-| `alphamind.analysis.perfanalysis` | `perf_attribution_by_pos` |
+| `alphamind.analysis.perfanalysis` | `perf_attribution_by_pos`、`aggregate_attribution` |
 | `alphamind.settlement.simplesettle` | `simple_settle` |
 
 注意 `crosssetctions` 是当前源码中的历史拼写。详见 [因子分析](factor-analysis.md) 和 [绩效归因](performance-attribution.md)。
