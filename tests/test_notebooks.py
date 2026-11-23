@@ -1,10 +1,12 @@
 import ast
 import json
-import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 NOTEBOOKS = sorted((ROOT / "notebooks").glob("*.ipynb"))
+ORIGINAL_CONTENT = json.loads(
+    (ROOT / "tests" / "fixtures" / "notebook_original_content.json").read_text(encoding="utf-8")
+)
 
 
 def test_all_notebooks_have_current_executable_python_cells():
@@ -38,25 +40,15 @@ def test_notebook_index_covers_every_notebook():
 
 def test_original_notebook_markdown_and_code_comments_are_preserved():
     for path in NOTEBOOKS:
-        original = json.loads(
-            subprocess.check_output(["git", "show", f"7b7361c:notebooks/{path.name}"], text=True)
-        )
+        original = ORIGINAL_CONTENT[path.name]
         current = json.loads(path.read_text(encoding="utf-8"))
-        original_markdown = [
-            "".join(cell["source"]) for cell in original["cells"] if cell["cell_type"] == "markdown"
-        ]
+        original_markdown = original["markdown"]
         current_markdown = [
             "".join(cell["source"]) for cell in current["cells"] if cell["cell_type"] == "markdown"
         ]
         assert current_markdown == original_markdown, path.name
 
-        original_comments = [
-            line.rstrip()
-            for cell in original["cells"]
-            if cell["cell_type"] == "code"
-            for line in "".join(cell["source"]).splitlines()
-            if line.lstrip().startswith("#")
-        ]
+        original_comments = original["code_comments"]
         current_code = "\n".join(
             "".join(cell["source"]) for cell in current["cells"] if cell["cell_type"] == "code"
         )
