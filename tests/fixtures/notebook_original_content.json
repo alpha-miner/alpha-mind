@@ -1,0 +1,424 @@
+{
+  "Example 1 - Factor IC analysis.ipynb": {
+    "code_comments": [
+      "        # const linear model",
+      "# %%time"
+    ],
+    "markdown": [
+      "* 请在环境变量中设置`DB_URI`指向数据库"
+    ]
+  },
+  "Example 10 - Quadratic Optimizer Comparison with CVXOPT.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* 请在环境变量中设置`DB_URI`指向数据库",
+      "# Data Preparing\n--------------------------",
+      "# Optimizing Weights\n-------------------------------------",
+      "# Performace Timing\n-------------------------"
+    ]
+  },
+  "Example 11 - Long Short Strategy Model.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* 请在环境变量中设置`DB_URI`指向数据库"
+    ]
+  },
+  "Example 12 - Machine Learning Model Prediction.ipynb": {
+    "code_comments": [
+      "    ## naive model",
+      "    ## regression model"
+    ],
+    "markdown": [
+      "* 本例展示如何在alpha-mind中使用机器学习模型\n\n* 请在环境变量中设置`DB_URI`指向数据库",
+      "## 数据配置\n------------",
+      "我们使用当期的`[\"EMA5D\", \"EMV6D\"]`因子，来尝试预测未来大概一个月以后的收益。\n\n* 训练的股票池为`hs300`;；\n* 因子都经过中性化以及标准化等预处理；\n* 对于线性模型，我们以10个工作日为一个时间间隔，用过去8期的数据作为训练用特征。",
+      "## 模型预测\n-----------",
+      "## 模型对比 （线性回归模型 v.s. Naive - 常数线性模型）\n------------------",
+      "## 模型时间序列\n-------------------------",
+      "通过比较在测试集的结果，我们观察如下两个模型的表现：\n\n* Naive Model：简单的使用因子上期值作为当期值的预测；\n* 线性回归模型：利用过去四期的因子值回归后得到模型，然后用这个模型预测当期值；",
+      "在这个例子中，线性回归模型的IC值略微高于Naive模型。",
+      "## 回测（ simple long short strategy）\n--------------------------"
+    ]
+  },
+  "Example 13 - Evaluation within Industry Groups.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* 使用行业内的排序，进行因子测试；与回归版本，以及原始因子值版本进行比较。本部分参考自《QEPM》 p.p 117\n* 请在环境变量中设置`DB_URI`指向数据库",
+      "# 参数设定\n--------------",
+      "# 样例因子\n--------------------\n\n我们下面分三种方法，分别考查这几种方法在避免行业集中上面的效果：\n\n* 使用原始因子的排序；\n* 使用原始因子在行业内的排序；\n* 使用原始因子在行业哑变量上回归后得到的残差排序。",
+      "## 1. 原始因子排序\n--------------------",
+      "对于原始因子，如果我们不做任何行业上面的处理，发现我们选定的alpha因子`CFO2EV`较大的股票集中于银行和大金融板块。",
+      "## 2. 行业内排序因子\n----------------------",
+      "这里我们使用调整后的申万行业分类作为行业标签：",
+      "使用行业内的排序，则行业分布会比较平均。",
+      "## 3. 使用回归将因子行业中性\n--------------------------------",
+      "还有一种思路，使用线性回归，以行业为哑变量，使用回归后的残差作为因子的替代值，做到行业中性：",
+      "我们发现这种方法的效果并不是很好。调整的幅度并不是很大，同时仍然存在着集中于大金融板块的问题。",
+      "# 回测结果\n------------------",
+      "我们使用简单等权重做多前20%支股票，做空后20%的方法，考察三种方法的效果："
+    ]
+  },
+  "Example 2 - Strategy Analysis.ipynb": {
+    "code_comments": [
+      "# Back test parameter settings",
+      "# Model settings",
+      "# Constraintes settings",
+      "# Running settings",
+      "# Strategy"
+    ],
+    "markdown": [
+      "* 请在环境变量中设置`DB_URI`指向数据库"
+    ]
+  },
+  "Example 3 - Multi Weight Gap Comparison.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "> 请在环境变量中设置`DB_URI`指向数据库"
+    ]
+  },
+  "Example 4 - Single Factor Analysis.ipynb": {
+    "code_comments": [
+      "# rebalance"
+    ],
+    "markdown": [
+      "* 请在环境变量中设置`DB_URI`指向数据库"
+    ]
+  },
+  "Example 5 - Style Factor Analysis.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* 方法参考自 The Barra China Equity Model (CNE5)'s 文档\n\n* 请在环境变量中设置`DB_URI`指向数据库"
+    ]
+  },
+  "Example 6 - Target Volatility Builder.ipynb": {
+    "code_comments": [
+      "# check the result"
+    ],
+    "markdown": [
+      "* 请在环境变量中设置`DB_URI`指向数据库",
+      "## 1. Single Day Analysis\n-----------------------",
+      "### Portfolio Construction\n\n* using `EPS` factor as alpha factor;\n* short selling is forbiden;\n* target of volatility for the activate weight is setting at 2.5% annually level.",
+      "## 2. Porfolio Construction: 2016 ~ 2018\n-------------------------------"
+    ]
+  },
+  "Example 7 - Portfolio Optimizer Performance.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* 比较不同组合组合优化器在不同规模问题上的性能；\n\n* 下面的结果主要比较``alphamind``和``python``中其他优化器的性能差别，我们将尽可能使用``cvxopt``中的优化器，其次选择``scipy``；\n\n* 由于``scipy``在``ashare_ex``上面性能太差，所以一般忽略``scipy``在这个股票池上的表现；\n\n* 时间单位都是毫秒。\n\n* 请在环境变量中设置`DB_URI`指向数据库",
+      "## 0. 数据准备\n------------------",
+      "## 1. 线性优化（带线性限制条件）\n---------------------------------",
+      "## 2. 线性优化（带L1限制条件）\n-----------------------",
+      "## 3. Mean - Variance 优化 （无约束）\n-----------------------",
+      "## 4. Mean - Variance 优化 （Box约束）\n---------------",
+      "## 5. Mean - Variance 优化 （Box约束以及线性约束）\n----------------",
+      "## 6. 线性优化（带二次限制条件）\n-------------------------"
+    ]
+  },
+  "Example 9 - Linear Optimizer Comparison with CVXOPT.ipynb": {
+    "code_comments": [],
+    "markdown": []
+  },
+  "Quick Start 1 - Factor Preprocess.ipynb": {
+    "code_comments": [
+      "# 假设有50只股票，每只股票有1个因子，构成一个矩阵",
+      "# 为了展示方便，取一个标准差为上下界",
+      "# 假设所有股票可分为2个组别（如行业），前25个和后25个分属不同类别",
+      "# 此时令前25个因子和后25个因子的标准差不一样",
+      "# 为了展示方便，取一个标准差为上下界",
+      "# 假设所有股票可分为2个组别（如行业），前25个和后25个分属不同类别",
+      "# 此时令前25个因子和后25个因子的标准差不一样",
+      "# 为了展示方便，取一个标准差为上下界",
+      "# 假设有30只股票，每只股票有10个因子，构成一个矩阵",
+      "# 假设每只股票对应有4个风险因子，构成一个矩阵",
+      "# 因子的风险中性化，就是原始因子对风险因子求线性回归后的残差",
+      "# 假设所有股票可分为3个组别（如行业）",
+      "# 对因子进行风险和行业中性化",
+      "# 如果令所有行业都是一样，那么将得到与 ret_neutralize_1一样的结果",
+      "# print(ret_neutralize_1)",
+      "# print(ret_neutralize_3)",
+      "# 假设有10只股票，每只股票有1个因子",
+      "# 假设所有股票可分为2个行业，前5和后5 分属于不同行业",
+      "# 假设有30只股票，每只股票有10个因子，构成一个矩阵",
+      "# 假设每只股票对应有4个风险因子，构成一个矩阵",
+      "# 假设所有股票可分为3个组别（如行业）",
+      "#ret_preprocess"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之一：因子处理介绍",
+      "alpha-mind的data文件夹提供了对于因子数据进行中性化、标准化和去极值化的函数：\n* [neutralize.py](https://github.com/alpha-miner/alpha-mind/blob/master/alphamind/data/neutralize.py)：提供了风险中性化函数*neutralize*\n* [standardize.py](https://github.com/alpha-miner/alpha-mind/blob/master/alphamind/data/standardize.py): 提供了标准化函数*standardize*和与sklearn类似的算子*Standardizer*以及*GroupStandardizer*\n* [winsorize.py](https://github.com/alpha-miner/alpha-mind/blob/master/alphamind/data/winsorize.py)：提供了去极值化的函数*winsorize_normal*\n\n标准化和去极值化函数的特别之处在于，他们还可以按组别（对应的实际问题，比如按行业）进行数据处理。\n",
+      "### 一、去极值化处理\n#### 全截面处理\n\nalpha-mind提供了*winsorize_normal*这一函数，假设数据服从正太分布，进行去极值化处理。",
+      "#### 分行业处理\n有时候需要进行分组去极值化，如按行业来分组。针对这种情况，只需要多传递一个分组参数给*winsorize_normal*。",
+      "### 二、标准化处理\n标准化函数的使用与去极值化类似,故不再重复，下文仅展示分组进行标准化处理的例子。",
+      "另外还提供了类似sklearn风格的算子*Standardizer*和*GroupedStandardizer*，使用*fit,transform*方法可以得到同样的效果。具体请参见sklearn相关的帮助以及本项目代码。",
+      "### 三、中性化处理\n#### 风险（风格）中性化",
+      "#### 风险以及行业中性化\n生成环境中一般还需要进行行业中性化，对于*neutralize*来说只需要增加一个入参，把每只股票对应的行业标签以np数组传递进去。",
+      "#### 仅行业中性\n如果只想进行行业中性化处理，那么可以令风险因子（*neutralize*的第一个入参）为全部元素为1的矩阵。下面进行一个简单测试。",
+      "行业中性化后的因子为原始因子减去行业内平均值，结果与预期一样。",
+      "### 四、预处理合成函数\nalpha-mind 还提供了一个预处理函数*factor_processing*, 集成了以上描述函数的所有功能，可以一步进行因子数据的预处理功能。\n- 入参*pre_process*需传递预处理的子函数列表，如去极值化和标准化。如果传递了风险因子的参数，中性化函数会在预处理之后自动触发。\n- 入参*post_process*指的是在中性化处理（如果有的话）或*pre_process*完成之后，还需要进行的处理。同样可以将去极值化和标准化函数作为列表传递进去。"
+    ]
+  },
+  "Quick Start 2 - Factor Rank and Quantile.ipynb": {
+    "code_comments": [
+      "# 假设有10只股票，每只股票有2个因子，构成一个矩阵",
+      "# 假设有10只股票，每只股票有1个因子",
+      "# 假设这10只股票分为两个行业,前5个和后5个分属不同类别"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之二：因子排序和分位数",
+      "alpha-mind的data文件夹提供了对于因子数据进行排序和求分位数的工具函数",
+      "### 一、因子排序： *rank*\n- 从小到大排序，返回序列值。\n- 可以进行整体排序，也可以分行业(分组)排序。",
+      "### 二、因子分位数: *quantile*\n- 根据给定组数*(n_bins)*，按从小达到的顺序进行分组，返回每个因子属于的组别。"
+    ]
+  },
+  "Quick Start 3 - Portfolio Builder.ipynb": {
+    "code_comments": [
+      "# 假设有5个标的",
+      "# 假设当前标的的权重",
+      "# 假设标的预期收益向量",
+      "# 假设标的风险因子矩阵, 仅有一个风险因子",
+      "# 约束条件",
+      "# 约束条件1 - 标的权重的上下限",
+      "# 限制条件2 - 组合风险暴露的上下限",
+      "# 限制条件3 - 仓位调整的换手率上限（下限为0，故无需设置）",
+      "# 假设有3个标的",
+      "# 假设标的预期收益向量",
+      "# 假设收益的协方差矩阵",
+      "# 假设收益的非系统性方差(Idiosyncratic Risk)",
+      "# 最终的协方差矩阵为",
+      "# 假设标的风险暴露矩阵, 有两个风险因子",
+      "# 假设基准指数的权重向量",
+      "# 约束条件",
+      "# 约束条件1 - 标的绝对权重的上下限",
+      "# 约束条件2 - 组合风险暴露的上下限",
+      "# 建立风险模型，假设直接使用标的的协方差矩阵计算组合的方差"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之三：投资组合构建",
+      "alpha-mind的portfolio文件夹提供了构建组合的工具函数。\n- 不同的构建方式实质上对应了不同的优化问题。\n- 该文件夹报告的构建方式包括线性构建、均值方差构建等。",
+      "### 线性构建： *linear_builder*\n- 目标: 在线性约束下最大化组合的预期收益率。\n- 线性约束包括\n  - 标的权重的上下限 *lbound, ubound*\n  - 组合风险暴露的上下限 *risk_target* : 函数内部会以因子矩阵乘以权重得到组合的风险暴露。 \n  - 仓位调整的换手率上限(换手率以目标权重和当前权重向量的一范数表示，即差的绝对值之和) *turn_over_target*",
+      "### 均值方差构建: *mean_variance_builder*\n- 根据经典的均值方差组合优化问题构建模型。\n- 目标函数为\n\n\n\\begin{align*}\n&\\mathop{\\arg\\max}_{\\omega} \\ \\  \\omega_a R - \\frac{1}{2} \\lambda \\sigma   \\\\\n&s.t.\\quad\n\\begin{cases}\n\\omega_L  \\le \\omega_a \\le \\omega_U  \\\\\n\\sigma_L \\le \\sigma \\le \\sigma_U\n\\end{cases}\n\\end{align*}\n\n\n\n\n其中\n- $\\omega_a$是组合的主动权重向量，如果用$\\omega$和$\\omega_b$表示组合标的绝对权重向量和基准指数的标的权重向量，那么$\\omega_a =\\omega -\\omega_b$。\n- $R$是组合标的预期收益率向量。\n- $\\lambda$是风险厌恶系数, $\\sigma$是整个组合收益率的方差。\n\n",
+      "##### 函数的参数说明和使用",
+      "*mean_variance_builder* 接受的参数有\n- 组合标的的预期收益率向量 *er* \n- 风险模型 *risk_model* (optional)\n- 基准指数的标的权重向量*bm*\n- 组合标的的权重上下限 *lbound, ubound*\n- 组合风险暴露矩阵 *risk_exposure* (optional)\n- 组合风险暴露的上下限 *risk_target* (optional)\n- 风险厌恶系数 *lam* (optional)",
+      "NOTE 1: 组合标的的权重上下限 *lbound, ubound* 是指绝对权重向量的上下限。\n- 代码中会计算主动权重上下限，即 *$\\omega_L$=lbound - $\\omega_b$*, *$\\omega_U$=ubound - $\\omega_b$*。最后会把$\\omega_b$加回到优化问题的解，得到组合标的最优权重。\n- 代码中也会计算主动收益的风险上下限， 即*risk_target_lbound - risk_exposure $\\omega_b$*, *risk_target_ubound + risk_exposure $\\omega_b$*。",
+      "NOTE 2: 为了计算组合的方差，*mean_variance_builder*接受两种输入参数：\n- 标的收益率的协方差矩阵$\\Sigma$，由此可以计算得到\n\n\\begin{equation*}\n    \\sigma = \\omega_a^T\\Sigma \\omega_a\n\\end{equation*}\n\n其中$\\Sigma$对应入参中的risk_model['cov']。\n\n- 风险模型：因子收益率的协方差矩阵$F$, 特质收益率的协方差矩阵$\\Delta$(对角矩阵)\n\\begin{equation*}\n    \\sigma = \\omega_a^T \\left(X F X^T + \\Delta \\right)  \\omega_a\n\\end{equation*}\n\n由于一般情况下风险因子的数量小于标的股票的数量，所以$\\omega_a^T X F X^T \\omega_a$的时间复杂度要小于$\\omega_a^T\\Sigma \\omega_a$， 所以第二种方法效率更高。\n\n其中， $F$对应入参中的risk_model['factor_cov'], $\\Delta$对应risk_model['idsync']，$X$对应risk_model['factor_loading']",
+      ""
+    ]
+  },
+  "Quick Start 5 - Alpha Factor Quantile Analysis.ipynb": {
+    "code_comments": [
+      "# %matplotlib inline",
+      "# 因子中性化设置",
+      "# industry_stryles为行业风格   risk_styles 为风险风格",
+      "# makeSchedule函数 用于设置调仓日的生成工作日序列",
+      "#获取数据",
+      "#fetch_factor_range 获取因子数据",
+      "#fetch_risk_model_range 获取风险模型数据",
+      "#fetch_dx_return_range 获取收益率数据",
+      "#%%time",
+      "#neutralize 因子中性化函数",
+      "# er_quantile_analysis 分位数分析函数"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之五：Alpha因子的五分位分析",
+      "## 1. 数据准备\n------------------\n\n* 股票池：中证800\n* 因子：`ETOP`\n* 调仓频率：5个交易日\n* 起始日：2010年1月1日\n* 终止日：2019年1月31日\n* 分位数：5",
+      "## 2. 分位数群组收益比较\n-----------------------"
+    ]
+  },
+  "Quick Start 6 - Formula Based Stocks Screening.ipynb": {
+    "code_comments": [
+      "# CSTopN 横截面选取Top N个值",
+      "# 选取申万一级每个行业中，ROE因子值最高的前3个",
+      "# 具体的公式化函数可以参考融量官方说明文档"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之六：公式化选股",
+      "## 1. 公式书写\n-------------------------",
+      "## 2. 获取数据\n---------------",
+      "## 3. Stock Screening\n---------------------"
+    ]
+  },
+  "Quick Start 7 - Single Factor IC Analysis.ipynb": {
+    "code_comments": [
+      "# 相关数据的获取",
+      "# 包括因子值获取、风险模型数据、股票收益率数据",
+      "# 因子中性化",
+      "# 对neutralized_styles的因子进行中性化",
+      "# 获取行业数据",
+      "# 行业IC的计算",
+      "# 行业IR的计算ic.mean/ic.std"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之七：单因子分析",
+      "## 1. 准备因子历史数据\n-----------------------",
+      "## 2. 计算历史IC序列\n----------------------",
+      "## 3. 行业内IR计算\n---------------------"
+    ]
+  },
+  "Quick Start 8 - IC Decay Calculation.ipynb": {
+    "code_comments": [
+      "# 设置因子名称，中心化因子等"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之八：IC衰减的计算",
+      "> 本例中计算EMA5D因子的IC衰减的情况",
+      "## 一、基础参数的设置",
+      "* 通过SHIFT公式化函数，对因子的进行偏移",
+      "* 基础数据的获取",
+      "* 因子中性化",
+      "* IC序列的计算",
+      "* 画出BAR图"
+    ]
+  },
+  "Quick Start 9 - Back Testing Stock Screening.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "# Alphamind新手入门之九：股票选股回测",
+      "> 在本例中，使用公式选股并进行回测",
+      "## 1. 参数设置\n----------------\n\n* 调仓频率：每周\n* 股票池  ：中证800\n* 起始日  ：2017-05-31\n* 结束日  ：2019-05-31\n* 业绩基准：沪深300",
+      "## 2. 选股公式\n-----------------------\n\n* 在每个调仓日获取`EMA5D`因子排序，最高的3支股票。",
+      "## 3. 计算过程\n----------------",
+      "* 获取因子值以及行业信息",
+      "* 因子选股并且进行获取相关股票每日收益",
+      "* 计算每日调仓结果以及收益",
+      "## 4. 表现展示\n-------------------\n\n### 4.1 日收益与回撤",
+      "* 累积收益曲线 + 回撤曲线",
+      "* 最大回撤、年化收益",
+      "### 4.2 超额收益以及alpha",
+      "### 4.3 月度收益",
+      "### 4.4 行业分布",
+      "### 4.5 换手率",
+      "* 月换手直方图"
+    ]
+  },
+  "Step By Step 01 - 入门.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "# Step By Step 01 - 入门\n----------",
+      "## 一、常用工具包\n\n在**alpha-mind**的使用中，经常会用到的工具包括：\n\n* *pandas*：主要用于表格数据处理；\n* *numpy*：高性能的向量计算工具；\n* *matplotlib*：作图工具。\n\n除此之外，我们还会用到一些比较专门的工具：\n\n* *scipy*：一些常用的数值算法；\n* *cvxpy*：优化工具包\n\n下面的代码验证以下包已经正确按照：",
+      "### 二、**alpha-mind**\n\n**alpha-mind**是标准的python工具包，可以直接从**pip**安装：\n\n```bash\n$ pip install alpha-mind\n```",
+      "可以验证alpha-mind已经安装成功，下面我们可以正式开始探索它的各种功能！"
+    ]
+  },
+  "Step By Step 02 - 数据获取.ipynb": {
+    "code_comments": [
+      "# 仅获取某日",
+      "# 获取某个时间段",
+      "# 获取沪深300成分股",
+      "# 下面的例子可以获取一个月的每日收益"
+    ],
+    "markdown": [
+      "# Step By Step 02 - 数据获取\n----------",
+      "当前**alpha-mind**的数据都通过mysql数据进行存储。为了方便用户进行数据获取，**alpha-mind**提供了一个统一的数据接口`SqlEngine`",
+      "## 一、 初始化数据接口\n\n用户可以使用一个有效的符合sqlachemy格式的数据库链接串就可以初始化`SqlEngine`:",
+      "## 二、获取数据\n\n`SqlEngine`中所有的数据获取方法都以`fetch_`为开头：",
+      "### 2.1 获取行情相关数据"
+    ]
+  },
+  "Step By Step 03 - 因子设计.ipynb": {
+    "code_comments": [
+      "# 支持直观的加、减、乘、除",
+      "# 表达式可以任意长",
+      "# 一个标准的滚动平均",
+      "# 我们以沪深300成分股为例"
+    ],
+    "markdown": [
+      "# Step By Step 03 - 因子设计\n----------\n\n任何用户在进行因子设计的时候，都会需要进行因子的变换。**alpha-mind**依托**finance-python**完成因子的组合变换，极大的提升了因子设计的效率；|",
+      "## 一、基础因子获取",
+      "## 二、四则运算",
+      "## 三、基于窗口的滚动计算\n\n金融计算必然设计时间序列处理，而时间处理方面，必然设计滚动运算。而这方面，**finance-python**也提供了完整的支持",
+      "## 四、基于截面的处理\n\n基于金融因子分析，经常需要比较个股之间的差别。这里面涉及到的就是截面的处理；比如：沪深300个股在某个指标上面的排序等：",
+      "## 五、全部的复合\n\n以上所有的运算都可以相互复合"
+    ]
+  },
+  "Step By Step 04 - 因子预处理.ipynb": {
+    "code_comments": [
+      "# 首先我们准备原始数据"
+    ],
+    "markdown": [
+      "# Step By Step 04 - 因子预处理\n--------------\n\n在因子进入产生信号之前，我们一般都需要进行因子预处理（主要包括：标准化、去极值等）",
+      "## 一、标准化",
+      "## 二、去极值",
+      "## 三、中性化\n\n这一步是最具有量化特色的处理。对于因子模型而言，我们一般都要对原始因子，基于**风险因子**进行中性化处理，只保留残差部分。",
+      "## 四、pipeline\n\n**alpha-mind** 已经提供了一个统一的processing函数，用户可以同时将多步预处理整合在一条pipeline里面。"
+    ]
+  },
+  "Step By Step 05 - 组合优化.ipynb": {
+    "code_comments": [
+      "# 假设有5个标的",
+      "# 假设当前标的的权重",
+      "# 假设标的预期收益向量",
+      "# 假设标的风险因子矩阵, 仅有一个风险因子",
+      "# 约束条件",
+      "# 约束条件1 - 标的权重的上下限",
+      "# 限制条件2 - 组合风险暴露的上下限",
+      "# 限制条件3 - 仓位调整的换手率上限（下限为0，故无需设置）",
+      "# 假设有3个标的",
+      "# 假设标的预期收益向量",
+      "# 假设收益的协方差矩阵",
+      "# 假设收益的非系统性方差(Idiosyncratic Risk)",
+      "# 最终的协方差矩阵为",
+      "# 假设标的风险暴露矩阵, 有两个风险因子",
+      "# 假设基准指数的权重向量",
+      "# 约束条件",
+      "# 约束条件1 - 标的绝对权重的上下限",
+      "# 约束条件2 - 组合风险暴露的上下限",
+      "# 建立风险模型，假设直接使用标的的协方差矩阵计算组合的方差"
+    ],
+    "markdown": [
+      "# Alphamind新手入门之三：投资组合构建",
+      "alpha-mind的portfolio文件夹提供了构建组合的工具函数。\n- 不同的构建方式实质上对应了不同的优化问题。\n- 该文件夹报告的构建方式包括线性构建、均值方差构建等。",
+      "### 线性构建： *linear_builder*\n- 目标: 在线性约束下最大化组合的预期收益率。\n- 线性约束包括\n  - 标的权重的上下限 *lbound, ubound*\n  - 组合风险暴露的上下限 *risk_target* : 函数内部会以因子矩阵乘以权重得到组合的风险暴露。 \n  - 仓位调整的换手率上限(换手率以目标权重和当前权重向量的一范数表示，即差的绝对值之和) *turn_over_target*",
+      "### 均值方差构建: *mean_variance_builder*\n- 根据经典的均值方差组合优化问题构建模型。\n- 目标函数为\n\n\n\\begin{align*}\n&\\mathop{\\arg\\max}_{\\omega} \\ \\  \\omega_a R - \\frac{1}{2} \\lambda \\sigma   \\\\\n&s.t.\\quad\n\\begin{cases}\n\\omega_L  \\le \\omega_a \\le \\omega_U  \\\\\n\\sigma_L \\le \\sigma \\le \\sigma_U\n\\end{cases}\n\\end{align*}\n\n\n\n\n其中\n- $\\omega_a$是组合的主动权重向量，如果用$\\omega$和$\\omega_b$表示组合标的绝对权重向量和基准指数的标的权重向量，那么$\\omega_a =\\omega -\\omega_b$。\n- $R$是组合标的预期收益率向量。\n- $\\lambda$是风险厌恶系数, $\\sigma$是整个组合收益率的方差。\n\n",
+      "##### 函数的参数说明和使用",
+      "*mean_variance_builder* 接受的参数有\n- 组合标的的预期收益率向量 *er* \n- 风险模型 *risk_model* (optional)\n- 基准指数的标的权重向量*bm*\n- 组合标的的权重上下限 *lbound, ubound*\n- 组合风险暴露矩阵 *risk_exposure* (optional)\n- 组合风险暴露的上下限 *risk_target* (optional)\n- 风险厌恶系数 *lam* (optional)",
+      "NOTE 1: 组合标的的权重上下限 *lbound, ubound* 是指绝对权重向量的上下限。\n- 代码中会计算主动权重上下限，即 *$\\omega_L$=lbound - $\\omega_b$*, *$\\omega_U$=ubound - $\\omega_b$*。最后会把$\\omega_b$加回到优化问题的解，得到组合标的最优权重。\n- 代码中也会计算主动收益的风险上下限， 即*risk_target_lbound - risk_exposure $\\omega_b$*, *risk_target_ubound + risk_exposure $\\omega_b$*。",
+      "NOTE 2: 为了计算组合的方差，*mean_variance_builder*接受两种输入参数：\n- 标的收益率的协方差矩阵$\\Sigma$，由此可以计算得到\n\n\\begin{equation*}\n    \\sigma = \\omega_a^T\\Sigma \\omega_a\n\\end{equation*}\n\n其中$\\Sigma$对应入参中的risk_model['cov']。\n\n- 风险模型：因子收益率的协方差矩阵$F$, 特质收益率的协方差矩阵$\\Delta$(对角矩阵)\n\\begin{equation*}\n    \\sigma = \\omega_a^T \\left(X F X^T + \\Delta \\right)  \\omega_a\n\\end{equation*}\n\n由于一般情况下风险因子的数量小于标的股票的数量，所以$\\omega_a^T X F X^T \\omega_a$的时间复杂度要小于$\\omega_a^T\\Sigma \\omega_a$， 所以第二种方法效率更高。\n\n其中， $F$对应入参中的risk_model['factor_cov'], $\\Delta$对应risk_model['idsync']，$X$对应risk_model['factor_loading']"
+    ]
+  },
+  "Step By Step 06 - 完整的回测.ipynb": {
+    "code_comments": [
+      "# Back test parameter settings",
+      "# Model settings",
+      "# Constraintes settings",
+      "# Running settings",
+      "# Strategy"
+    ],
+    "markdown": [
+      "# Step by Step 06 - 完整的回测\n-----------------------------\n\n这里我们把之前所有的模块整合在一起，完成一个完整的回测",
+      "## 一、回测的设置\n\n这里我们进行一个非常简单的基于指数增强策略的因子回测。这里我们测试的一个偏中低频的策略：\n\n1. 换仓频率：10日，每两周调仓；\n2. 换仓限制：单次换仓比例不超过40%；\n3. 股票池：沪深300；\n4. 组合优化：基于标准的收益-方差分析；",
+      "我们使用两个基于价量的截面因子：\n\n* EMA50；\n* EMV60\n\n我们这边使用等权的因子加权模型；",
+      "对于组合的优化要求，我们对一些基本的风格和杠杆率进行控制：\n\n* 杠杆率：80%以上投资于股票，无杠杆；\n* 风格暴露：对于市值、非线性市值以及市场BETA的超额暴露为0",
+      "## 二、 运行回测\n\n我们提供了两个高级类，用来帮助用户方便的运行回测：\n\n* `RunningSetting`: 运行配置集合\n* `Strategy`: 策略类",
+      "配置完成以后，可以简单的通过`run`成员完成回测：",
+      "最终的结果，可以通过直接绘图来进行分析；其中包括了换手损失以及超额收益。"
+    ]
+  },
+  "Step By Step 07 - 风险因子模型.ipynb": {
+    "code_comments": [
+      "# 个股限制",
+      "# 我们这里使用一个带限制条件的优化器来解决这个组合优化问题："
+    ],
+    "markdown": [
+      "# Step By Step 07 - 风险因子模型\n-------------------\n\n> 在本篇中我们使用数据供应商提供的因子模型，进行alpha建模",
+      "## 一、数据展示",
+      "### 1.1 因子暴露\n\n这里我们展示某一天的因子截面值，这里我们只使用**风格因子**以及**行业因子**：",
+      "### 1.2 因子风险模型\n\n类似的，我们也可以获取因子的风险矩阵：",
+      "#### 1.2.1 因子协方差",
+      "#### 1.2.2 因子载荷\n\n这个值实际上就是之前1.1的**因子暴露**",
+      "#### 1.2.3 因子特质风险",
+      "## 二、结合因子模型的alpha信号构造\n\n首先我们给予 **Finance-Python** 提供的功能来构造一个目标因子：",
+      "我们可以使用因子暴露对原始因子进行 **风格剥离**（中性化）,这里我们只选用 **市值以及Beta** 风格因子进行中性化：",
+      "我们可以验证这两个因子确实被从因子中剥离了",
+      "## 三、组合构建\n\n在本节中，我们使用上一节计算算得到的因子作为我们的单期预测，进行组合构建。\n\n在这里我们使用经典的**单期均值方差模型**，但是会引入投资交易中经常需要考虑的各种限制：\n\n1. 杠杆率的要求（不得过低或者过高）；\n2. 单票集中度的要求（单票不可持仓过大）；\n3. 行业板块集中度的要求（不可过高）；\n4. 风格偏移的限制（对某些风格的偏好不可过高或过低）；\n5. 在以上的限制下，最大化风险调整后收益。\n\n在这里我们将展示一个例子，涵盖以上各个点；",
+      "我们将做控制以下控制：\n\n1. 所以个股相对于基准，偏离不超过2%；\n2. 所有行业板块，相对于基准偏离不超过3%；\n3. 三个风格因子的风格偏离，不高于50%；\n4. 杠杆率不低于80%，同时不高于120%\n\n这里我们选用的基准为沪深300指数权重（做归一化）; 用户也可以直接使用0作为基准，这样的化，就是一个long-short组合。\n\n下面进入我们整个环节中最复杂的一步，构建风险控制矩阵以及限制边界：",
+      "让我们逐个检验限制条件是否被满足：",
+      "1. 个股限制",
+      "2. 行业偏离",
+      "3. 风格偏移",
+      "4. 杠杆率",
+      "5. 效用\n\n> **注意**: 这里为了节省篇幅，我们简化了效用计算，实际的效用还包括风险的调整。但是简单的直接考虑期望的变化，也能看到优化器的作用。",
+      "## 四、后记",
+      "这里我们非常细致的拆解了，使用风险因子模型，进行因子构造以及组合优化的过程。\n\n实际上，alpha-mind提供了直接使用上面的算法进行回测的功能，用户没有必要自己手写上面每一步。\n\n主要目的是通过这个例子，让用户了解alpha-mind因子建模的原理，鼓励用户自己基于alpha-mind的基础组件进行定制开发。本篇也无法涵盖alpha-mind在因子建模和组合优化上的所有功能。例如：对交易成本的控制等，留待以后的篇章向大家介绍。"
+    ]
+  }
+}
