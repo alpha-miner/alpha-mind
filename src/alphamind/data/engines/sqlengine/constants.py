@@ -1,0 +1,46 @@
+risk_styles = [
+    "BETA",
+    "MOMENTUM",
+    "SIZE",
+    "EARNYILD",
+    "RESVOL",
+    "GROWTH",
+    "BTOP",
+    "LEVERAGE",
+    "LIQUIDTY",
+    "SIZENL",
+]
+
+industry_styles = [
+    "Bank",
+    "RealEstate",
+    "Health",
+    "Transportation",
+    "Mining",
+    "NonFerMetal",
+    "HouseApp",
+    "LeiService",
+    "MachiEquip",
+    "BuildDeco",
+    "CommeTrade",
+    "CONMAT",
+    "Auto",
+    "Textile",
+    "FoodBever",
+    "Electronics",
+    "Computer",
+    "LightIndus",
+    "Utilities",
+    "Telecom",
+    "AgriForest",
+    "CHEM",
+    "Media",
+    "IronSteel",
+    "NonBankFinan",
+    "ELECEQP",
+    "AERODEF",
+    "Conglomerates",
+]
+
+macro_styles = ["COUNTRY"]
+total_risk_factors = risk_styles + industry_styles + macro_styles

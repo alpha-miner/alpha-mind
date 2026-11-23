@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "alpha-mind"
+version = "0.4.0"
+description = "Arrow-native multi-factor research and portfolio construction"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "wegamekinglc" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "calc-flow-python>=2026.11.14",
+    "connectorx>=0.3.3",
+    "cvxpy>=1.4",
+    "dal-python>=2026.11.15",
+    "numba>=0.56",
+    "numpy>=1.22",
+    "packaging>=21",
+    "psycopg2-binary>=2.9",
+    "pyarrow>=14",
+    "pymysql>=1.0",
+    "scikit-learn>=1.2",
+    "scipy>=1.8",
+    "sqlalchemy>=2.0",
+    "statsmodels>=0.13",
+    "xgboost>=1.7",
+]
+
+[project.optional-dependencies]
+notebooks = ["jupyterlab>=3", "matplotlib>=3.6", "xlsxwriter>=3"]
+
+[project.scripts]
+alphamind = "alphamind.bin.cli:main"
+alphamind-benchmarks = "alphamind.benchmarks.runner:main"
+
+[dependency-groups]
+dev = ["pytest>=7", "pytest-cov>=4", "ruff>=0.4"]
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/alphamind"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra --strict-config --strict-markers"
+markers = ["integration: tests that require an external database service"]
+
+[tool.ruff]
+target-version = "py39"
+src = ["src"]
+line-length = 100
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = ["alphamind"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true

@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --frozen --group dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test:
+    name: Test (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: alpha
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: alpha
+          POSTGRES_PASSWORD: alpha
+          POSTGRES_DB: alpha
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U alpha -d alpha"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      ALPHAMIND_MYSQL_URI: mysql+pymysql://root:root@127.0.0.1:3306/alpha
+      ALPHAMIND_POSTGRES_URI: postgresql+psycopg2://alpha:alpha@127.0.0.1:5432/alpha
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - run: uv sync --frozen --group dev
+      - name: Test with branch coverage
+        if: matrix.python-version == '3.13'
+        run: >-
+          uv run pytest
+          --cov=alphamind
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-report=html
+      - name: Test
+        if: matrix.python-version != '3.13'
+        run: uv run pytest
+      - name: Publish coverage summary
+        if: matrix.python-version == '3.13'
+        run: |
+          {
+            echo '### Branch coverage (Python 3.13)'
+            echo '```text'
+            uv run coverage report
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage report
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-python-3.13
+          path: |
+            coverage.xml
+            htmlcov/
+          if-no-files-found: error
+          retention-days: 7
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv build
+      - name: Install and smoke-test the wheel
+        run: |
+          uv venv .package-venv
+          uv pip install --python .package-venv/bin/python dist/*.whl
+          .package-venv/bin/python -c "import alphamind; import alphamind.api"
+          .package-venv/bin/alphamind --help
+          .package-venv/bin/alphamind-benchmarks --help

@@ -1,0 +1,52 @@
+name: Benchmarks
+
+on:
+  schedule:
+    - cron: "17 22 * * *"
+  workflow_dispatch:
+    inputs:
+      samples:
+        description: Number of measured samples per case
+        type: number
+        default: 10
+      size:
+        description: Number of rows per case
+        type: number
+        default: 10000
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmarks-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    name: Python benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --frozen --group dev
+      - name: Run benchmark suite
+        run: >-
+          uv run alphamind-benchmarks
+          --size ${{ inputs.size || 10000 }}
+          --samples ${{ inputs.samples || 10 }}
+          --warmup 3
+          --output benchmark-results
+      - name: Publish benchmark summary
+        run: cat benchmark-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: benchmark-results/
+          if-no-files-found: error
+          retention-days: 30

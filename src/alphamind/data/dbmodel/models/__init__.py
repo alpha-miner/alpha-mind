@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+"""
+Created on 2020-11-14
+
+@author: cheng.li
+"""
+
+import os
+
+__all__ = [
+    "Base",
+    "FactorMaster",
+    "HaltList",
+    "IndexComponent",
+    "IndexMarket",
+    "IndexWeight",
+    "Industry",
+    "Market",
+    "RiskCovDay",
+    "RiskCovLong",
+    "RiskCovShort",
+    "RiskExposure",
+    "RiskMaster",
+    "RiskReturn",
+    "SecurityMaster",
+    "SpecificReturn",
+    "SpecificRiskDay",
+    "SpecificRiskLong",
+    "SpecificRiskShort",
+    "Universe",
+]
+
+if "DB_VENDOR" in os.environ and os.environ["DB_VENDOR"].lower() == "mysql":
+    from alphamind.data.dbmodel.models.mysql import (
+        Base,
+        FactorMaster,
+        HaltList,
+        IndexComponent,
+        IndexMarket,
+        IndexWeight,
+        Industry,
+        Market,
+        RiskCovDay,
+        RiskCovLong,
+        RiskCovShort,
+        RiskExposure,
+        RiskMaster,
+        RiskReturn,
+        SecurityMaster,
+        SpecificReturn,
+        SpecificRiskDay,
+        SpecificRiskLong,
+        SpecificRiskShort,
+        Universe,
+    )
+else:
+    from alphamind.data.dbmodel.models.postgres import (
+        Base,
+        FactorMaster,
+        HaltList,
+        IndexComponent,
+        IndexMarket,
+        Industry,
+        Market,
+        RiskCovDay,
+        RiskCovLong,
+        RiskCovShort,
+        RiskExposure,
+        RiskMaster,
+        RiskReturn,
+        SecurityMaster,
+        SpecificReturn,
+        SpecificRiskDay,
+        SpecificRiskLong,
+        SpecificRiskShort,
+        Universe,
+    )
