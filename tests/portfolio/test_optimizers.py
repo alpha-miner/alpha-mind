@@ -1,7 +1,13 @@
+import cvxpy as cp
 import numpy as np
 import pytest
 
-from alphamind.portfolio.optimizers import LPOptimizer, QuadraticOptimizer, TargetVolOptimizer
+from alphamind.portfolio.optimizers import (
+    LPOptimizer,
+    QuadraticOptimizer,
+    TargetVolOptimizer,
+    _risk_expression,
+)
 
 
 class TestOptimizers:
@@ -157,3 +163,33 @@ class TestOptimizers:
         np.testing.assert_array_almost_equal(
             optimizer.x_value(), [-0.3, -0.10919033, 0.40919033], 4
         )
+
+    def test_factor_risk_uses_factor_covariance_directly(self, monkeypatch):
+        matrix_shapes = []
+        original_quad_form = cp.quad_form
+
+        def record_quad_form(x, matrix):
+            matrix_shapes.append(matrix.shape)
+            return original_quad_form(x, matrix)
+
+        monkeypatch.setattr(cp, "quad_form", record_quad_form)
+        risk = _risk_expression(
+            cp.Variable(3),
+            cov=None,
+            factor_cov=np.array([[0.5, -0.3], [-0.3, 0.7]]),
+            factor_load=np.array([[0.8, 0.2], [0.5, 0.5], [0.2, 0.8]]),
+            factor_special=np.array([0.1, 0.3, 0.2]),
+        )
+
+        assert risk.is_convex()
+        assert matrix_shapes == [(2, 2)]
+
+    def test_factor_risk_rejects_negative_specific_risk(self):
+        with pytest.raises(ValueError, match="factor_special must be non-negative"):
+            _risk_expression(
+                cp.Variable(1),
+                cov=None,
+                factor_cov=np.array([[1.0]]),
+                factor_load=np.array([[1.0]]),
+                factor_special=np.array([-1.0]),
+            )

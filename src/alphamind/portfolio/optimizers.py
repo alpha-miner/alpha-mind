@@ -28,22 +28,32 @@ def _linear_constraints(x, cons_matrix):
     return [exposure >= matrix[:, -2], exposure <= matrix[:, -1]]
 
 
-def _covariance(cov, factor_cov, factor_load, factor_special, size):
-    if cov is not None:
-        variance = np.asarray(cov, dtype=float)
-    elif factor_cov is not None:
+def _risk_expression(x, cov, factor_cov, factor_load, factor_special):
+    size = x.shape[0]
+    if cov is None and factor_cov is not None:
         if factor_load is None or factor_special is None:
             raise ValueError("factor_load and factor_special are required with factor_cov")
         loadings = np.asarray(factor_load, dtype=float)
         factors = np.asarray(factor_cov, dtype=float)
-        variance = loadings @ factors @ loadings.T + np.diag(
-            _vector(factor_special, "factor_special", size)
+        special = _vector(factor_special, "factor_special", size)
+        if loadings.ndim != 2 or loadings.shape[0] != size:
+            raise ValueError(f"factor_load must have {size} rows")
+        n_factors = loadings.shape[1]
+        if factors.shape != (n_factors, n_factors):
+            raise ValueError(f"factor_cov must have shape {(n_factors, n_factors)}")
+        if np.any(special < 0):
+            raise ValueError("factor_special must be non-negative")
+        factors = (factors + factors.T) / 2.0
+        return cp.sum_squares(cp.multiply(np.sqrt(special), x)) + cp.quad_form(
+            x @ loadings, cp.psd_wrap(factors)
         )
-    else:
+    if cov is None:
         raise ValueError("cov and factor_cov can't both be empty")
+    variance = np.asarray(cov, dtype=float)
     if variance.shape != (size, size):
         raise ValueError(f"covariance matrix must have shape {(size, size)}")
-    return (variance + variance.T) / 2.0
+    variance = (variance + variance.T) / 2.0
+    return cp.quad_form(x, cp.psd_wrap(variance))
 
 
 class _CvxpyOptimizer:
@@ -150,11 +160,8 @@ class QuadraticOptimizer(_CvxpyOptimizer):
         solver_options=None,
     ):
         super().__init__(objective, lbound, ubound, solver, solver_options)
-        variance = _covariance(cov, factor_cov, factor_load, factor_special, len(self._objective))
-        risk = cp.psd_wrap(variance)
-        objective_expr = self._objective @ self._x_var + 0.5 * penalty * cp.quad_form(
-            self._x_var, risk
-        )
+        risk = _risk_expression(self._x_var, cov, factor_cov, factor_load, factor_special)
+        objective_expr = self._objective @ self._x_var + 0.5 * penalty * risk
         self._solve(objective_expr, _linear_constraints(self._x_var, cons_matrix))
 
 
@@ -178,7 +185,7 @@ class TargetVolOptimizer(_CvxpyOptimizer):
         super().__init__(objective, lbound, ubound, solver, target_options)
         if target_vol < 0:
             raise ValueError("target_vol must be non-negative")
-        variance = _covariance(cov, factor_cov, factor_load, factor_special, len(self._objective))
+        risk = _risk_expression(self._x_var, cov, factor_cov, factor_load, factor_special)
         constraints = _linear_constraints(self._x_var, cons_matrix)
-        constraints.append(cp.quad_form(self._x_var, cp.psd_wrap(variance)) <= target_vol**2)
+        constraints.append(risk <= target_vol**2)
         self._solve(self._objective @ self._x_var, constraints)

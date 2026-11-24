@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 from pathlib import Path
 
 import numpy as np
@@ -72,10 +71,14 @@ def create_inputs(output: Path) -> pa.Table:
     forward_returns = np.vstack([returns[1:], returns[-1:]])
     benchmark = np.linspace(1.0, 2.0, n_assets)
     benchmark /= benchmark.sum()
-    aware_dates = [value.replace(tzinfo=dt.timezone.utc) for value in dates]
+    date_values = pc.assume_timezone(
+        pa.array(np.asarray(dates, dtype="datetime64[us]"), type=pa.timestamp("us")), "UTC"
+    )
+    date_indices = np.repeat(np.arange(n_dates, dtype=np.int32), n_assets)
+    trade_dates = pc.take(date_values, pa.array(date_indices))
     research = pa.table(
         {
-            "trade_date": [value for value in aware_dates for _ in CODES],
+            "trade_date": trade_dates,
             "code": np.tile(CODES, n_dates),
             "close": close.reshape(-1),
             "raw_momentum": 0.4 * beta - 0.3 * size + rng.normal(size=n_dates * n_assets),
@@ -101,7 +104,7 @@ def create_inputs(output: Path) -> pa.Table:
         }
     )
     save(factor_covariance, output, "input/factor_covariance.parquet")
-    latest_date = aware_dates[-1]
+    latest_date = date_values[-1]
     latest = research.filter(pc.equal(research["trade_date"], latest_date))
     specific_risk = pa.table(
         {
@@ -110,7 +113,7 @@ def create_inputs(output: Path) -> pa.Table:
         }
     )
     save(specific_risk, output, "input/specific_risk.parquet")
-    schedule = pa.table({"trade_date": aware_dates, "sequence": np.arange(1, n_dates + 1)})
+    schedule = pa.table({"trade_date": date_values, "sequence": np.arange(1, n_dates + 1)})
     save(schedule, output, "calendar/schedule.parquet")
     return research
 

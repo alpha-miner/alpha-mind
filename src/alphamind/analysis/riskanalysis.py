@@ -1,5 +1,6 @@
 import numpy as np
 import pyarrow as pa
+import pyarrow.compute as pc
 
 from alphamind.data.arrow import as_arrow, column_values, to_numpy
 from alphamind.data.neutralize import neutralize
@@ -13,8 +14,8 @@ def risk_analysis(net_weights: pa.Table, next_bar_returns: pa.Table, risk_table:
         raise ValueError("weight, return and risk tables must have the same rows")
     if "trade_date" not in net_table.column_names:
         raise ValueError("net_weights requires a trade_date column")
-    dates = np.asarray(net_table["trade_date"].to_pylist())
-    _, group_idx = np.unique(dates, return_inverse=True)
+    dates = pc.cast(net_table["trade_date"].combine_chunks(), pa.int64())
+    _, group_idx = np.unique(dates.to_numpy(zero_copy_only=False), return_inverse=True)
     net_pos = column_values(net_table, "weight").reshape((-1, 1))
     returns = column_values(return_table, "return")
     factor_names = [name for name in risks.column_names if name not in ("trade_date", "code")]
