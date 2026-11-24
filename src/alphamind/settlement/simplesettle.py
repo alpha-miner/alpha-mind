@@ -23,24 +23,23 @@ def simple_settle(
             "contribution": net_pos * returns,
         }
     )
-    total_query = """
-        SELECT 'total' AS industry, SUM(contribution) AS er, CORR(weight, returns) AS ic
-        FROM input
-    """
-    total = cf.compute(table, lambda input_table: input_table.sql(total_query))
     if groups is None:
-        return total
-    grouped_query = """
+        total_query = """
+            SELECT 'total' AS industry, SUM(contribution) AS er, CORR(weight, returns) AS ic
+            FROM input
+        """
+        return cf.compute(table, lambda input_table: input_table.sql(total_query))
+    combined_query = """
         SELECT industry, SUM(contribution) AS er, CORR(weight, returns) AS ic
         FROM input
         GROUP BY industry
-        ORDER BY industry
+        UNION ALL
+        SELECT 'total' AS industry, SUM(contribution) AS er, CORR(weight, returns) AS ic
+        FROM input
     """
-    grouped = cf.compute(table, lambda input_table: input_table.sql(grouped_query))
-    grouped_labels = grouped["industry"].to_pylist()
-    expected_order = [str(value) for value in np.unique(groups)]
-    grouped = grouped.take(pa.array([grouped_labels.index(label) for label in expected_order]))
-    schema = pa.schema([pa.field(field.name, field.type) for field in grouped.schema])
-    grouped = pa.Table.from_arrays(grouped.columns, schema=schema)
-    total = pa.Table.from_arrays(total.columns, schema=schema)
-    return pa.concat_tables([grouped, total])
+    combined = cf.compute(table, lambda input_table: input_table.sql(combined_query))
+    combined_labels = combined["industry"].to_pylist()
+    expected_order = [str(value) for value in np.unique(groups)] + ["total"]
+    combined = combined.take(pa.array([combined_labels.index(label) for label in expected_order]))
+    schema = pa.schema([pa.field(field.name, field.type) for field in combined.schema])
+    return pa.Table.from_arrays(combined.columns, schema=schema)
