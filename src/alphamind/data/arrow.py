@@ -57,15 +57,19 @@ def _normalize_temporal(table: pa.Table) -> pa.Table:
 
 def as_arrow(data: TableInput, schema: pa.Schema | None = None) -> pa.Table:
     if isinstance(data, pa.Table):
-        table = data if schema is None else pa.Table.from_arrays(data.columns, schema=schema)
+        table = data
     elif isinstance(data, pa.RecordBatch):
-        table = pa.Table.from_batches([data], schema=schema)
+        table = pa.Table.from_batches([data])
     elif isinstance(data, pa.RecordBatchReader):
         table = data.read_all()
     elif hasattr(data, "to_pyarrow"):
         table = data.to_pyarrow()
     else:
         raise TypeError(f"Expected Arrow tabular data, got {type(data).__name__}")
+
+    if schema is not None:
+        table = pa.Table.from_arrays(table.columns, schema=schema)
+
     return _normalize_temporal(table)
 
 
