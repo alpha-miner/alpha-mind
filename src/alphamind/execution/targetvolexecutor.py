@@ -3,9 +3,10 @@ from typing import Tuple
 
 import numpy as np
 import pyarrow as pa
+import pyarrow.compute as pc
 
 from alphamind.data.arrow import as_arrow
-from alphamind.execution.baseexecutor import ExecutorBase
+from alphamind.execution.baseexecutor import ExecutorBase, _sum_absolute
 
 
 class TargetVolExecutor(ExecutorBase):
@@ -21,25 +22,23 @@ class TargetVolExecutor(ExecutorBase):
         target_pos = as_arrow(target_pos)
         if len(self.returns) < self.window:
             if self.current_pos is None or self.current_pos.num_rows == 0:
-                turn_over = float(np.abs(target_pos["weight"].to_numpy(zero_copy_only=False)).sum())
+                turn_over = _sum_absolute(target_pos["weight"])
             else:
                 turn_over = self.calc_turn_over(target_pos, self.current_pos)
             return turn_over, target_pos
         volatility = float(np.std(self.returns, ddof=1))
         leverage = float(np.mean(self.leverages))
         self.multiplier = self.target_vol / volatility * leverage if volatility > 0 else 1.0
-        weights = target_pos["weight"].to_numpy(zero_copy_only=False) * self.multiplier
+        weights = pc.multiply(target_pos["weight"], self.multiplier)
         candidate_pos = target_pos.set_column(
-            target_pos.schema.get_field_index("weight"), "weight", pa.array(weights)
+            target_pos.schema.get_field_index("weight"), "weight", weights
         )
         turn_over = self.calc_turn_over(candidate_pos, self.current_pos)
         return turn_over, candidate_pos
 
     def set_current(self, current_pos):
         super().set_current(current_pos)
-        self.leverages.append(
-            float(np.abs(self.current_pos["weight"].to_numpy(zero_copy_only=False)).sum())
-        )
+        self.leverages.append(_sum_absolute(self.current_pos["weight"]))
 
     def update(self, data_dict: dict):
         self.returns.append(float(data_dict["return"]))
