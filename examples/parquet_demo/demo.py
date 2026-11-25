@@ -30,10 +30,10 @@ from alphamind.portfolio.riskmodel import FactorRiskModel
 from alphamind.settlement.simplesettle import simple_settle
 
 FEATURES = ["momentum", "value"]
-N_ASSETS = 300
+N_ASSETS = 3000
 N_BACKTEST_DAYS = 252
 WARMUP_DAYS = 2
-N_SELECTED = 50
+N_SELECTED = 500
 CODES = np.array([f"{index:06d}" for index in range(1, N_ASSETS + 1)])
 
 

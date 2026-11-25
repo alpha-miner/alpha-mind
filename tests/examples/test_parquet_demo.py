@@ -26,12 +26,12 @@ def test_parquet_demo_runs_end_to_end(tmp_path):
 
     research = read_parquet(tmp_path / "input/research.parquet")
     processed = read_parquet(tmp_path / "features/processed.parquet")
-    assert research.num_rows == 254 * 300
-    assert processed.num_rows == 252 * 300
+    assert research.num_rows == 254 * 3000
+    assert processed.num_rows == 252 * 3000
     assert processed.column_names == ["trade_date", "code", "dx", "momentum", "value"]
 
     optimized = read_parquet(tmp_path / "portfolio/optimized.parquet")
-    assert optimized.num_rows == 300
+    assert optimized.num_rows == 3000
     assert pc.sum(optimized["weight"]).as_py() == pytest.approx(1.0)
 
     backtest = read_parquet(tmp_path / "backtest/returns.parquet")
@@ -41,10 +41,11 @@ def test_parquet_demo_runs_end_to_end(tmp_path):
     np.testing.assert_allclose(turnover["weight"].to_pylist(), backtest["turn_over"].to_pylist())
 
     positions = read_parquet(tmp_path / "backtest/positions.parquet")
+    assert positions.num_rows == 252 * 3000
     selected = positions.filter(pc.greater(positions["weight"], 0.0))
     counts = selected.group_by("trade_date").aggregate([("weight", "count")])
     assert counts.num_rows == 252
-    assert counts["weight_count"].to_pylist() == [50] * 252
+    assert counts["weight_count"].to_pylist() == [500] * 252
 
     attribution = read_parquet(tmp_path / "analysis/return_attribution.parquet")
     assert attribution.column_names == ["trade_date", "idiosyncratic", "BETA", "SIZE"]
