@@ -5,7 +5,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 
 from alphamind.analysis.factoranalysis import er_portfolio_analysis
-from alphamind.data.arrow import column_values, to_numpy
+from alphamind.data.arrow import align_values, as_arrow_array, column_values, to_numpy
 from alphamind.data.calendar import advanceDateByCalendar, makeSchedule
 from alphamind.data.engines.sqlengine import SqlEngine, industry_styles, macro_styles, risk_styles
 from alphamind.data.processing import factor_processing
@@ -16,6 +16,15 @@ from alphamind.portfolio.constraints import LinearConstraints
 from alphamind.utilities import alpha_logger, map_freq
 
 all_styles = risk_styles + industry_styles + macro_styles
+
+
+def _bound_values(codes, bounds, default):
+    code_array = as_arrow_array(codes)
+    names = [name for name in bounds if name != "other"]
+    keys = pa.array(names, type=code_array.type)
+    values = pa.array([bounds[name] for name in names], type=pa.float64())
+    aligned = align_values(code_array, keys, values, default=bounds.get("other", default))
+    return aligned.to_numpy(zero_copy_only=False)
 
 
 class RunningSetting:
@@ -99,7 +108,7 @@ class Strategy:
             "benchmark", pc.cast(pc.greater(total_data["weight"], 0.0), pa.float64())
         )
         total_data = total_data.append_column(
-            "total", pa.array(np.ones(total_data.num_rows), type=pa.float64())
+            "total", pa.repeat(pa.scalar(1.0, type=pa.float64()), total_data.num_rows)
         )
         self.total_data = total_data.sort_by([("trade_date", "ascending"), ("code", "ascending")])
         self.index_return = self.engine.fetch_dx_return_index_range(
@@ -130,7 +139,6 @@ class Strategy:
 
     @staticmethod
     def _create_lu_bounds(running_setting, codes, benchmark_w):
-        codes = np.asarray(codes)
         lbound = np.zeros_like(benchmark_w)
         ubound = np.ones_like(benchmark_w)
         if running_setting.weights_bandwidth is not None:
@@ -142,12 +150,12 @@ class Strategy:
             if not isinstance(lb, dict):
                 lbound = np.ones_like(benchmark_w) * lb
             else:
-                lbound = np.array([lb.get(code, lb.get("other", 0.0)) for code in codes])
+                lbound = _bound_values(codes, lb, 0.0)
         if ub is not None:
             if not isinstance(ub, dict):
                 ubound = np.ones_like(benchmark_w) * ub
             else:
-                ubound = np.array([ub.get(code, ub.get("other", 1.0)) for code in codes])
+                ubound = _bound_values(codes, ub, 1.0)
         return lbound, ubound
 
     def run(self, running_setting):
@@ -164,14 +172,13 @@ class Strategy:
             data = self.total_data.filter(pc.equal(self.total_data["trade_date"], ref_date))
             risk_model = self.risk_models[ref_date]
             model = self.alpha_models[ref_date]
-            codes = data["code"].to_pylist()
+            codes = data["code"]
             if previous_pos is None:
                 current_position = None
             else:
-                previous = dict(
-                    zip(previous_pos["code"].to_pylist(), column_values(previous_pos, "weight"))
-                )
-                current_position = np.array([previous.get(code, 0.0) for code in codes])
+                current_position = align_values(
+                    codes, previous_pos["code"], previous_pos["weight"]
+                ).to_numpy(zero_copy_only=False)
             benchmark_w = column_values(data, "weight")
             constraints = LinearConstraints(running_setting.bounds, data, benchmark_w)
             lbound, ubound = self._create_lu_bounds(running_setting, codes, benchmark_w)
@@ -201,9 +208,9 @@ class Strategy:
                 risk_model.get_risk_profile(codes),
                 current_position,
             )
-            target_pos = target_pos.append_column("code", pa.array(codes))
+            target_pos = target_pos.append_column("code", codes)
             target_pos = target_pos.append_column(
-                "trade_date", pa.array([ref_date] * target_pos.num_rows)
+                "trade_date", pa.repeat(ref_date, target_pos.num_rows)
             )
             turn_over, executed_pos = executor.execute(target_pos=target_pos)
             executed_weights = column_values(executed_pos, "weight")
@@ -225,11 +232,14 @@ class Strategy:
         )
         next_date = advanceDateByCalendar("china.sse", dates[-1], self.freq)
         output_dates = dates + [next_date]
-        index_returns = dict(
-            zip(self.index_return["trade_date"].to_pylist(), column_values(self.index_return, "dx"))
-        )
+        benchmark_returns = align_values(
+            as_arrow_array(dates),
+            self.index_return["trade_date"],
+            self.index_return["dx"],
+            default=np.nan,
+        ).to_numpy(zero_copy_only=False)
         shifted_returns = [0.0] + rets
-        shifted_benchmark = [0.0] + [index_returns.get(date, np.nan) for date in dates]
+        shifted_benchmark = np.concatenate(([0.0], benchmark_returns))
         shifted_leverage = [0.0] + leverages
         excess = np.asarray(shifted_returns) - np.asarray(shifted_benchmark) * np.asarray(
             shifted_leverage

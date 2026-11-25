@@ -29,9 +29,8 @@ def cs_impl(
         er, [winsorize_normal, standardize], total_risk_exp, [standardize]
     ).flatten()
     industry = column_values(total_data, "industry_name")
-    codes = total_data["code"].to_pylist()
     weights = er / np.abs(er).sum()
-    target_pos = pa.table({"code": codes, "weight": weights, "industry": industry})
+    target_pos = pa.table({"code": total_data["code"], "weight": weights, "industry": industry})
     target_pos = target_pos.join(as_arrow(dx_returns), keys="code", join_type="inner")
     target_pos = target_pos.join(
         total_data.select(["code"] + constraint_risk), keys="code", join_type="inner"

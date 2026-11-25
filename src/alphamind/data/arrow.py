@@ -99,6 +99,36 @@ def column_values(table: pa.Table, name: str) -> np.ndarray:
     return table[name].combine_chunks().to_numpy(zero_copy_only=False)
 
 
+def as_arrow_array(values):
+    if isinstance(values, pa.ChunkedArray):
+        return values.combine_chunks()
+    if isinstance(values, pa.Array):
+        return values
+    return pa.array(values)
+
+
+def last_index_in(values, value_set):
+    values = as_arrow_array(values)
+    value_set = as_arrow_array(value_set)
+    if pa.types.is_null(values.type) and not pa.types.is_null(value_set.type):
+        values = pc.cast(values, value_set.type)
+    elif pa.types.is_null(value_set.type) and not pa.types.is_null(values.type):
+        value_set = pc.cast(value_set, values.type)
+    reverse_order = pa.array(range(len(value_set) - 1, -1, -1), type=pa.int64())
+    reversed_set = pc.take(value_set, reverse_order)
+    reversed_indices = pc.index_in(values, value_set=reversed_set)
+    return pc.subtract(len(value_set) - 1, reversed_indices)
+
+
+def align_values(codes, source_codes, values, default=0.0):
+    values = as_arrow_array(values)
+    if pa.types.is_null(values.type):
+        values = pc.cast(values, pa.float64())
+    indices = last_index_in(codes, source_codes)
+    aligned = pc.take(values, indices)
+    return pc.fill_null(aligned, pa.scalar(default, type=aligned.type))
+
+
 def to_numpy(table: pa.Table, columns: Sequence[str] | None = None, dtype=None) -> np.ndarray:
     table = as_arrow(table)
     selected = table.select(list(columns)) if columns is not None else table
@@ -127,14 +157,18 @@ def drop_nulls(
 
 def drop_duplicates(table: pa.Table, keys: Sequence[str]) -> pa.Table:
     table = as_arrow(table)
-    columns = [table[name].to_pylist() for name in keys]
-    seen = set()
-    indices = []
-    for index, key in enumerate(zip(*columns)):
-        if key not in seen:
-            seen.add(key)
-            indices.append(index)
-    return table.take(pa.array(indices, type=pa.int64()))
+    if not keys:
+        return table.slice(0, 0)
+    row_name = "__alphamind_row_id"
+    while row_name in table.column_names:
+        row_name = "_" + row_name
+    rows = pa.array(range(table.num_rows), type=pa.int64())
+    grouped = (
+        table.append_column(row_name, rows).group_by(list(keys)).aggregate([(row_name, "min")])
+    )
+    indices = grouped[f"{row_name}_min"]
+    ordered = pc.take(indices, pc.sort_indices(indices))
+    return table.take(ordered)
 
 
 def timestamp_scalar(value) -> pa.Scalar:

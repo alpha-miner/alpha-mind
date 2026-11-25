@@ -3,7 +3,7 @@ import abc
 import pyarrow as pa
 import pyarrow.compute as pc
 
-from alphamind.data.arrow import as_arrow
+from alphamind.data.arrow import align_values, as_arrow
 
 
 def _sum_absolute(values) -> float:
@@ -12,12 +12,7 @@ def _sum_absolute(values) -> float:
 
 
 def _align_weights(codes, position_codes, position_weights):
-    reverse_order = pa.array(range(len(position_codes) - 1, -1, -1), type=pa.int64())
-    reversed_codes = pc.take(position_codes, reverse_order)
-    reversed_weights = pc.take(position_weights, reverse_order)
-    indices = pc.index_in(codes, value_set=reversed_codes)
-    weights = pc.take(reversed_weights, indices)
-    return pc.fill_null(weights, pa.scalar(0, type=weights.type))
+    return align_values(codes, position_codes, position_weights)
 
 
 class ExecutorBase(metaclass=abc.ABCMeta):

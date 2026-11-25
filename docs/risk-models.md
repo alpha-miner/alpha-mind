@@ -1,6 +1,6 @@
 # 风险模型
 
-风险模型位于 `alphamind.portfolio.riskmodel`。构造输入是 Arrow 表，`get_risk_profile` 输出供 cvxpy 构建器使用的 NumPy 矩阵字典。
+风险模型位于 `alphamind.portfolio.riskmodel`。构造输入是 Arrow 表，`get_risk_profile` 输出供 cvxpy 构建器使用的 NumPy 矩阵字典。代码选择接受 Python 序列或 Arrow 数组；代码匹配和特异风险对齐使用 Arrow Compute，未知代码会抛出 `KeyError`。
 
 ## 全协方差模型
 

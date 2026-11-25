@@ -2,6 +2,7 @@ import datetime as dt
 
 import numpy as np
 import pyarrow as pa
+import pytest
 
 from alphamind.analysis.calculators import calculate_turn_over
 from alphamind.data.arrow import timestamp_scalar
@@ -58,6 +59,52 @@ def test_calculate_turn_over_duplicate_codes_follow_last_value_in_section():
     result = calculate_turn_over(positions)
 
     np.testing.assert_allclose(result["weight"].to_pylist(), [0.7, 0.4])
+
+
+def test_calculate_turn_over_single_period_uses_last_duplicate_weights():
+    positions = pa.table(
+        {
+            "trade_date": [dt.date(2026, 1, 5)] * 3,
+            "code": ["A", "A", "B"],
+            "weight": [0.2, 0.3, -0.4],
+        }
+    )
+
+    result = calculate_turn_over(positions)
+
+    assert result["weight"].to_pylist() == pytest.approx([0.7])
+
+
+def test_calculate_turn_over_aligns_reordered_rectangular_codes():
+    positions = pa.table(
+        {
+            "trade_date": [dt.date(2026, 1, 5)] * 2 + [dt.date(2026, 1, 6)] * 2,
+            "code": ["A", "B", "B", "A"],
+            "weight": [0.2, 0.3, 0.4, 0.1],
+            "count": [1, 2, 4, 8],
+        }
+    )
+
+    result = calculate_turn_over(positions)
+
+    assert result["weight"].to_pylist() == pytest.approx([0.5, 0.2])
+    assert result["count"].to_pylist() == pytest.approx([3.0, 9.0])
+
+
+def test_calculate_turn_over_ignores_internal_name_collisions():
+    name = "__alphamind_turnover_period"
+    positions = pa.table(
+        {
+            "trade_date": [dt.date(2026, 1, 5)] * 2 + [dt.date(2026, 1, 6)] * 2,
+            "code": ["A", "B", "B", "A"],
+            name: [1.0, 2.0, 4.0, 8.0],
+        }
+    )
+
+    result = calculate_turn_over(positions)
+
+    assert result.column_names == ["trade_date", name]
+    assert result[name].to_pylist() == pytest.approx([3.0, 9.0])
 
 
 def test_calculate_turn_over_empty_panel_preserves_dates_and_float_factors():

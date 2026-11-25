@@ -9,6 +9,7 @@ from typing import Optional
 
 import numpy as np
 import pyarrow as pa
+import pyarrow.compute as pc
 
 from alphamind.data.arrow import to_numpy
 from alphamind.data.processing import factor_processing
@@ -61,8 +62,10 @@ def er_quantile_analysis(
     if de_trend:
         resid = n_bins - 1
         res_weight = 1.0 / resid
-        for i, value in enumerate(ret):
-            ret[i] = (1.0 + res_weight) * value - res_weight * total_return
+        ret = pc.subtract(
+            pc.multiply(pa.array(group_return), 1.0 + res_weight),
+            res_weight * total_return,
+        ).to_numpy(zero_copy_only=False)
 
     return ret
 

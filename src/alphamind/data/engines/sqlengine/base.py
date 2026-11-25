@@ -10,8 +10,9 @@ import sqlalchemy as sa
 from sqlalchemy import Table, and_, join, outerjoin, select
 
 from alphamind.data.arrow import (
+    align_values,
     as_arrow,
-    column_values,
+    as_arrow_array,
     drop_duplicates,
     drop_nulls,
     read_sql,
@@ -133,7 +134,7 @@ class SqlEngineBase:
             ["trade_date", "benchmark_dx"]
         )
         result = data.join(benchmark, keys="trade_date", join_type="left outer")
-        values = column_values(result, "dx") - column_values(result, "benchmark_dx")
+        values = pc.subtract(result["dx"], result["benchmark_dx"])
         return with_column(result, "dx", values).drop(["benchmark_dx"])
 
     def fetch_dx_return(
@@ -170,8 +171,7 @@ class SqlEngineBase:
                 ref_date, benchmark, expiry_date=expiry_date, horizon=horizon, offset=offset
             )
             if index_return.num_rows:
-                values = column_values(result, "dx") - index_return["dx"][0].as_py()
-                result = with_column(result, "dx", values)
+                result = with_column(result, "dx", pc.subtract(result["dx"], index_return["dx"][0]))
         if neutralized_risks:
             risk = self.fetch_risk_model(ref_date, codes)[1]
             result = result.join(risk, keys="code", join_type="inner")
@@ -513,13 +513,11 @@ class SqlEngineBase:
     def _factor_risk_model(covariance, exposure):
         for name in covariance.column_names:
             if name not in ("Factor", "FactorID", "trade_date"):
-                covariance = with_column(
-                    covariance, name, column_values(covariance, name) / 10000.0
-                )
+                covariance = with_column(covariance, name, pc.divide(covariance[name], 10000.0))
         special = pa.table(
             {
                 "code": exposure["code"],
-                "idsync": column_values(exposure, "srisk") ** 2 / 10000.0,
+                "idsync": pc.divide(pc.power(exposure["srisk"], 2), 10000.0),
             }
         )
         return FactorRiskModel(covariance, exposure, special)
@@ -599,8 +597,9 @@ class SqlEngineBase:
         result = drop_duplicates(self._read(query), ["code"])
         if codes is None:
             return result
-        weights = dict(zip(result["code"].to_pylist(), column_values(result, "weight")))
-        return pa.table({"code": list(codes), "weight": [weights.get(code, 0.0) for code in codes]})
+        code_array = as_arrow_array(codes)
+        weights = align_values(code_array, result["code"], result["weight"])
+        return pa.table({"code": code_array, "weight": weights})
 
     def fetch_benchmark_range(self, benchmark, start_date=None, end_date=None, dates=None):
         component = self.models.IndexComponent
