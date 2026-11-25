@@ -12,7 +12,7 @@ from typing import Iterable, Tuple
 import numpy as np
 import pyarrow as pa
 
-from alphamind.data.arrow import as_arrow
+from alphamind.data.arrow import as_arrow, as_arrow_array
 from alphamind.data.engines.sqlengine import SqlEngine
 from alphamind.data.engines.universe import Universe, load_universe
 from alphamind.data.rank import rank
@@ -175,7 +175,7 @@ def predict_by_model(
         codes, x_values = predict_data["predict"]["code"], predict_data["predict"]["x"]
 
     predictions = pa.table(
-        {"code": list(codes), "prediction": alpha_model.predict(x_values).flatten()}
+        {"code": as_arrow_array(codes), "prediction": alpha_model.predict(x_values).flatten()}
     )
     return predictions, as_arrow(x_values)
 
@@ -202,11 +202,11 @@ class Composer:
         else:
             table = as_arrow(x)
             codes = (
-                table["code"].to_pylist() if "code" in table.column_names else range(table.num_rows)
+                table["code"]
+                if "code" in table.column_names
+                else pa.array(range(table.num_rows), type=pa.int64())
             )
-            predictions = pa.table(
-                {"code": list(codes), "prediction": model.predict(table).flatten()}
-            )
+            predictions = pa.table({"code": codes, "prediction": model.predict(table).flatten()})
             return predictions, table
 
     def score(

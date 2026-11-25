@@ -26,7 +26,8 @@ def with_dates(columns):
 
 class FakeRiskModel:
     def get_risk_profile(self, codes):
-        assert codes == CODES
+        assert isinstance(codes, pa.ChunkedArray)
+        assert codes.to_pylist() == CODES
         return {"factor_cov": np.eye(1), "idsync": np.ones(2)}
 
 

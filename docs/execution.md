@@ -1,6 +1,6 @@
 # 执行器与执行管道
 
-执行器把目标持仓转换为计划执行持仓。输入输出均为包含 `code`、`weight` 的 Arrow 表；换手采用 L1 权重变化口径。
+执行器把目标持仓转换为计划执行持仓。输入输出均为包含 `code`、`weight` 的 Arrow 表；换手采用 L1 权重变化口径。换手与代码对齐直接由 Arrow Compute 完成，不转换为 Python 列表或字典。
 
 ## NaiveExecutor
 

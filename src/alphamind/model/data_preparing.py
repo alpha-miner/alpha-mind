@@ -427,9 +427,9 @@ def fetch_predict_phase(
     train_x = drop_nulls(train_x, [name for name in train_x.column_names if name != "dx"])
     x_values = to_numpy(train_x, transformer.names, dtype=float)
     y_values = to_numpy(train_x, ["dx"], dtype=float)
-    date_label = np.asarray(train_x["trade_date"].to_pylist())
+    date_label = pc.cast(train_x["trade_date"], pa.int64()).to_numpy(zero_copy_only=False)
     dates = np.unique(date_label)
-    if not len(dates) or dates[-1] != timestamp_scalar(ref_date).as_py():
+    if not len(dates) or dates[-1] != timestamp_scalar(ref_date).value:
         return {
             "x_names": transformer.names,
             "predict": {

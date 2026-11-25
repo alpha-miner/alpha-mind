@@ -66,6 +66,7 @@ IPC 和 Feather 不支持这里的 `columns` / `filters` 参数；CSV 只支持�
 
 ```python
 from alphamind.data.arrow import (
+    align_values,
     as_arrow,
     drop_duplicates,
     drop_nulls,
@@ -79,12 +80,14 @@ clean = drop_nulls(clean, ["code", "value"])
 clean = drop_duplicates(clean, ["code"])
 clean = with_column(clean, "value", [2.0, 3.0])
 new_table = from_numpy([[1.0, 2.0], [3.0, 4.0]], names=["f1", "f2"])
+weights = align_values(["A", "B"], clean["code"], clean["value"], default=0.0)
 ```
 
 - `drop_nulls` 默认同时剔除浮点 NaN。
 - `drop_duplicates` 保留每个键首次出现的行，不自动排序。
 - `from_numpy` 接受一维或二维数组，一维数组会成为单列。
 - `with_column` 覆盖同名列，不存在时追加。
+- `align_values` 使用 Arrow 索引内核对齐代码和数值；源代码重复时取最后值，目标代码缺失时填 `default`，不逐行构造 Python 字典。
 
 ## 数据质量建议
 

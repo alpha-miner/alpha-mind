@@ -9,6 +9,8 @@
 | API | 用途 |
 | --- | --- |
 | `as_arrow(data, schema=None)` | 将 Table、RecordBatch 或 RecordBatchReader 规范为 Arrow 表 |
+| `as_arrow_array(values)` | 将 Arrow 数组、分块列或外部序列规范为连续 Arrow 数组 |
+| `last_index_in(values, value_set)` / `align_values(...)` | 按最后出现位置查找或对齐代码列，缺失值可填默认权重 |
 | `read_table(path, file_format=None, columns=None, filters=None, **options)` | 按后缀或显式格式读取 |
 | `write_table(table, path, file_format=None, **options)` | 写入 Parquet、IPC、Feather 或 CSV |
 | `read_parquet(path, **options)` / `write_parquet(...)` | Parquet 专用入口 |

@@ -8,12 +8,15 @@ import pytest
 import sqlalchemy as sa
 
 from alphamind.data.arrow import (
+    align_values,
     as_arrow,
+    as_arrow_array,
     column_values,
     drop_duplicates,
     drop_nulls,
     empty_table,
     from_numpy,
+    last_index_in,
     read_sql,
     read_table,
     timestamp_scalar,
@@ -91,6 +94,43 @@ def test_null_duplicate_and_timestamp_helpers():
     assert timestamp_scalar(dt.datetime(2026, 1, 5)) == expected
     aware = dt.datetime(2026, 1, 5, tzinfo=dt.timezone(dt.timedelta(hours=8)))
     assert timestamp_scalar(aware).as_py().utcoffset() == dt.timedelta(0)
+
+
+def test_arrow_alignment_preserves_last_values_and_missing_defaults():
+    source_codes = pa.chunked_array([["A", "A"], ["B"]])
+    values = pa.chunked_array([[0.1], [0.2, 0.3]])
+    codes = pa.array(["B", "A", "C"])
+
+    aligned = align_values(codes, source_codes, values)
+
+    assert aligned.to_pylist() == pytest.approx([0.3, 0.2, 0.0])
+    assert last_index_in(codes, source_codes).to_pylist() == [2, 1, None]
+    assert align_values([2, 1], [1, 2], [10.0, 20.0]).to_pylist() == [20.0, 10.0]
+    assert np.isnan(align_values(["C"], ["A"], [1.0], default=np.nan)[0].as_py())
+    assert last_index_in(pa.array([None]), pa.array(["A", None])).to_pylist() == [1]
+    assert last_index_in(pa.array(["A"]), pa.array([None])).to_pylist() == [None]
+    assert last_index_in([None], [None]).to_pylist() == [0]
+    assert last_index_in([], []).to_pylist() == []
+    assert align_values(["A"], [], []).to_pylist() == [0.0]
+    assert as_arrow_array(source_codes).equals(pa.array(["A", "A", "B"]))
+
+
+def test_drop_duplicates_uses_arrow_groups_and_preserves_first_row_order():
+    table = pa.table(
+        {
+            "code": pa.chunked_array([["B", "A"], ["B", "A", "A"]]),
+            "group": [1, 1, 1, 1, 2],
+            "value": ["first-b", "first-a", "duplicate-b", "duplicate-a", "first-a2"],
+            "__alphamind_row_id": [10, 11, 12, 13, 14],
+        }
+    )
+
+    result = drop_duplicates(table, ["code", "group"])
+
+    assert result["value"].to_pylist() == ["first-b", "first-a", "first-a2"]
+    assert result.column_names == table.column_names
+    assert drop_duplicates(table, []).num_rows == 0
+    assert drop_duplicates(table.slice(0, 0), ["code"]).schema == table.schema
 
 
 def test_csv_feather_parquet_and_stream_round_trips(tmp_path):

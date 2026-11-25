@@ -1,5 +1,6 @@
 import numpy as np
 import pyarrow as pa
+import pytest
 
 from alphamind.portfolio.riskmodel import FactorRiskModel, FullRiskModel
 
@@ -45,3 +46,29 @@ class TestRiskModel:
         np.testing.assert_array_almost_equal(model.get_idsync([1, 3]), self.special_values[[0, 2]])
         np.testing.assert_array_almost_equal(model.get_risk_exp(), self.exposure_values)
         np.testing.assert_array_almost_equal(model.get_idsync(), self.special_values)
+
+    def test_arrow_code_selection_and_reordered_inputs(self):
+        model = FactorRiskModel(
+            self.factor_cov.take([1, 0]), self.risk_exp, self.idsync.take([2, 1, 0])
+        )
+        codes = pa.chunked_array([[3], [1]])
+
+        np.testing.assert_array_almost_equal(model.get_factor_cov(), self.factor_values)
+        np.testing.assert_array_almost_equal(
+            model.get_risk_exp(codes), self.exposure_values[[2, 0], :]
+        )
+        np.testing.assert_array_almost_equal(model.get_idsync(codes), self.special_values[[2, 0]])
+        np.testing.assert_array_almost_equal(
+            FullRiskModel(self.sec_cov).get_cov(pa.array([3, 1])),
+            self.security_values[np.ix_([2, 0], [2, 0])],
+        )
+
+    def test_unknown_codes_are_rejected(self):
+        model = FactorRiskModel(self.factor_cov, self.risk_exp, self.idsync)
+
+        with pytest.raises(KeyError, match="All codes"):
+            model.get_risk_exp([4])
+        with pytest.raises(KeyError, match="All codes"):
+            FullRiskModel(self.sec_cov).get_cov([4])
+        with pytest.raises(KeyError, match="All codes"):
+            FactorRiskModel(self.factor_cov, self.risk_exp, self.idsync.slice(0, 2))
