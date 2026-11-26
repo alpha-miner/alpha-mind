@@ -1,8 +1,8 @@
-# 数据预处理
+# Data Preprocessing
 
-预处理函数作用于 NumPy 数值矩阵；Arrow 表通过 `to_numpy` 进入该层，处理后再构造成 Arrow 表。截面研究通常应在每个 `trade_date` 内独立处理，避免不同日期的数据混合。
+Preprocessing functions operate on NumPy numerical matrices. Arrow tables enter this layer through `to_numpy` and are converted back to Arrow tables afterward. Cross-sectional research should normally process each `trade_date` independently to avoid mixing data from different dates.
 
-## 标准流程
+## Standard workflow
 
 ```python
 from alphamind.data.arrow import to_numpy, with_column
@@ -22,15 +22,15 @@ for index, name in enumerate(["momentum", "value"]):
     section = with_column(section, name, processed[:, index])
 ```
 
-处理顺序固定为：
+The processing order is fixed:
 
-1. 依次执行 `pre_process`。
-2. 若提供 `risk_factors`，剔除全零风险列并回归中性化。
-3. 依次执行 `post_process`。
+1. Run each `pre_process` step in order.
+2. When `risk_factors` is provided, remove all-zero risk columns and neutralize by regression.
+3. Run each `post_process` step in order.
 
-`groups` 会传给每个处理器和中性化函数，用于更细的分组处理。
+`groups` is passed to every processor and to the neutralization function for finer-grained processing.
 
-## 去极值
+## Winsorization
 
 ```python
 from alphamind.data.winsorize import NormalWinsorizer, winsorize_normal
@@ -41,11 +41,11 @@ processor.fit(train_values)
 test_values = processor.transform(test_values)
 ```
 
-- `flat` 将超出正常均值区间的值压到边界。
-- 其他 `method` 选择插值路径，`interval` 控制插值区间。
-- 无状态函数在当前样本上计算统计量；有状态类可把训练样本统计量应用到新样本。
+- `flat` clips values outside the normal mean interval to its boundaries.
+- Other `method` values select interpolation paths, and `interval` controls the interpolation interval.
+- Stateless functions calculate statistics on the current sample; stateful classes can apply training-sample statistics to new samples.
 
-## 标准化
+## Standardization
 
 ```python
 from alphamind.data.standardize import Standardizer, projection, standardize
@@ -57,9 +57,9 @@ new_zscore = standardizer.transform(test_values)
 unit_projection = projection(values, axis=1)
 ```
 
-标准差下限为 `1e-8`，用于避免常数列除零。分组处理时，有状态转换要求新数据标签已在 `fit` 中出现。
+The standard-deviation floor is `1e-8` to prevent division by zero for constant columns. For grouped processing, stateful transforms require every new data label to have appeared during `fit`.
 
-## 中性化
+## Neutralization
 
 ```python
 from alphamind.data.neutralize import neutralize
@@ -69,14 +69,14 @@ residual_by_industry = neutralize(risk, values, groups=industry)
 residual, detail = neutralize(risk, values, detail=True)
 ```
 
-`risk` 形状为 `(n_samples, n_risks)`，`values` 为一维或二维。`detail=True` 时，字典包含：
+`risk` has shape `(n_samples, n_risks)`, while `values` may be one- or two-dimensional. With `detail=True`, the dictionary contains:
 
-- `exposure`：每个风险因子对应的回归暴露。
-- `explained`：风险因子解释的收益或因子部分。
+- `exposure`: regression exposure corresponding to each risk factor.
+- `explained`: the return or factor component explained by the risk factors.
 
-求解失败时回退到伪逆。中性化不等于删除风险数据；组合构建仍可能需要原始暴露矩阵。
+A pseudoinverse fallback is used when the primary solve fails. Neutralization does not mean deleting risk data; portfolio construction may still require the original exposure matrix.
 
-## 排名与分位数
+## Ranks and quantiles
 
 ```python
 from alphamind.data.quantile import quantile
@@ -87,14 +87,14 @@ percentiles = percentile(values)
 bins = quantile(values[:, 0], n_bins=5)
 ```
 
-`rank` 从 0 开始；`percentile` 映射到 `[0, 1]`；`quantile` 返回从 0 开始的分组编号。`CSRank` 和 `CSQuantiles` 则是 calc-flow 表达式，适用于 Arrow 面板。
+`rank` is zero-based; `percentile` maps to `[0, 1]`; and `quantile` returns zero-based bucket numbers. `CSRank` and `CSQuantiles` are instead calc-flow expressions for Arrow panels.
 
-## 避免数据泄漏
+## Avoiding data leakage
 
-- 每个截面独立去极值和标准化。
-- 只用当时已知的风险暴露和因子值。
-- 训练窗口与预测窗口分开，避免使用未来收益。
-- 窗口未形成的 null 不应作为零参与训练。
-- 训练、预测使用相同的特征顺序和处理流程。
+- Winsorize and standardize each cross-section independently.
+- Use only risk exposures and factor values known at the time.
+- Separate training and prediction windows, and never use future returns.
+- Do not treat nulls from incomplete windows as zero during training.
+- Use identical feature ordering and processing pipelines for training and prediction.
 
-完整逐截面处理见 `examples/parquet_demo/demo.py` 的 `process_features`。
+See `process_features` in `examples/parquet_demo/demo.py` for complete cross-section-by-cross-section processing.

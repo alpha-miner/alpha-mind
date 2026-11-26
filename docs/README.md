@@ -1,42 +1,42 @@
-# Alpha-Mind 文档
+# Alpha-Mind Documentation
 
-本文档基于当前 `0.4.0` API 编写。所有示例以 Arrow 为表格数据边界，完整可运行示例位于 [`examples/parquet_demo`](../examples/parquet_demo/README.md)。
+This documentation describes the current `0.4.0` API. All examples use Arrow as the tabular-data boundary. A complete runnable example is available in [`examples/parquet_demo`](../examples/parquet_demo/README.md).
 
-## 入门
+## Getting started
 
-1. [Introduction](introduction.md)：核心概念、数据结构和第一个因子。
-2. [Setup 与 Parquet 示例](setup.md)：安装、运行示例、输入 schema 与输出说明。
-3. [Arrow 与文件](arrow-data.md)：统一读写入口、类型规范与 Parquet 下推。
+1. [Introduction](introduction.md): core concepts, data structures, and your first factor.
+2. [Setup and the Parquet demo](setup.md): installation, running the demo, input schemas, and outputs.
+3. [Arrow and files](arrow-data.md): unified I/O, type conventions, and Parquet pushdown.
 
-27 本可执行专题示例见 [Notebook 索引](../notebooks/README.md)。
+The [Notebook index](../notebooks/README.md) contains 27 executable topical examples.
 
-## 数据与计算
+## Data and computation
 
-- [交易日与调仓日程](calendar.md)
-- [因子表达式](factor-expressions.md)
-- [数据预处理](data-preprocessing.md)
-- [MySQL、PostgreSQL 与 ORM](databases.md)
-- [股票池定义与组合](universes.md)
+- [Trading calendars and rebalancing schedules](calendar.md)
+- [Factor expressions](factor-expressions.md)
+- [Data preprocessing](data-preprocessing.md)
+- [MySQL, PostgreSQL, and the ORM](databases.md)
+- [Universe definitions and composition](universes.md)
 
-## 研究与组合
+## Research and portfolios
 
-- [因子分析与分层收益](factor-analysis.md)
-- [风险模型](risk-models.md)
-- [组合构建、约束与 cvxpy](portfolio-construction.md)
-- [执行器与执行管道](execution.md)
-- [绩效、换手与风险归因](performance-attribution.md)
+- [Factor analysis and quantile returns](factor-analysis.md)
+- [Risk models](risk-models.md)
+- [Portfolio construction, constraints, and cvxpy](portfolio-construction.md)
+- [Executors and execution pipelines](execution.md)
+- [Performance, turnover, and risk attribution](performance-attribution.md)
 
-## 模型与生产流程
+## Models and production workflows
 
-- [机器学习与模型持久化](machine-learning.md)
-- [策略回测](strategy-backtesting.md)
-- [基准测试与定时任务](benchmarks.md)
+- [Machine learning and model persistence](machine-learning.md)
+- [Strategy backtesting](strategy-backtesting.md)
+- [Benchmarks and scheduled jobs](benchmarks.md)
 
-## 项目维护
+## Project maintenance
 
-- [开发、测试与覆盖率](development.md)
+- [Development, testing, and coverage](development.md)
 - [API Reference](api-reference.md)
 
-## 推荐阅读路径
+## Recommended reading path
 
-如果只使用本地文件，按 **Introduction → Setup → Arrow 与文件 → 因子表达式 → 组合构建 → 绩效归因** 阅读。需要数据库回测时，再阅读 **数据库 → 股票池 → 机器学习 → 策略回测**。
+For local-file workflows, read **Introduction → Setup → Arrow and Files → Factor Expressions → Portfolio Construction → Performance Attribution**. For database-backed backtests, continue with **Databases → Universes → Machine Learning → Strategy Backtesting**.

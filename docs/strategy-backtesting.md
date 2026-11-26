@@ -1,8 +1,8 @@
-# 策略回测
+# Strategy Backtesting
 
-策略层将数据读取、逐期模型训练、组合构建和执行连接起来。当前 `Strategy` 是数据库集成工作流；纯 Parquet 场景可直接组合相同底层模块，demo 提供了完整文件回测路径。
+The strategy layer connects data loading, period-by-period model training, portfolio construction, and execution. The current `Strategy` is a database-integrated workflow; pure Parquet scenarios can compose the same low-level modules directly, and the demo provides a complete file-based backtesting path.
 
-## 数据库策略
+## Database strategy
 
 ```python
 from alphamind.data.engines.universe import Universe
@@ -55,55 +55,55 @@ setting = RunningSetting(
 returns, positions = strategy.run(setting)
 ```
 
-`Strategy` 当前实例化默认 MySQL `SqlEngine`。PostgreSQL 用户可以直接使用其查询引擎和底层组合模块搭建流程，或为策略提供与测试类似的引擎适配；不要因为 PostgreSQL 查询接口一致就假设此类会自动切换后端。
+`Strategy` currently instantiates the default MySQL `SqlEngine`. PostgreSQL users can build workflows from its query engine and the low-level portfolio modules, or provide an engine adapter similar to the tests. Do not assume that this class switches backends automatically merely because the PostgreSQL query interface is consistent.
 
-## 数据准备
+## Data preparation
 
-`prepare_backtest_data` 读取并连接：
+`prepare_backtest_data` reads and joins:
 
-- 因子表达式结果；
-- 行业矩阵；
-- 基准权重；
-- 因子风险模型及风险暴露；
-- 个股和指数未来对数收益。
+- Factor-expression results.
+- Industry matrices.
+- Benchmark weights.
+- The factor risk model and risk exposures.
+- Forward logarithmic returns for securities and indices.
 
-连接键为 `trade_date`、`code`。缺失基准权重填零，另外生成全 1 的 `total` 暴露列和 `benchmark` 指示列。结果保存在 `strategy.total_data`，按日期和代码排序。
+Join keys are `trade_date` and `code`. Missing benchmark weights are filled with zero, and an all-one `total` exposure column and a `benchmark` indicator column are generated. Results are stored in `strategy.total_data`, sorted by date and code.
 
-`prepare_backtest_models` 在每个调仓日调用 `train_model`，通过 `DataMeta` 获取该时点之前的训练窗口。传入 Dask 兼容客户端时可并行调度，但 Dask 客户端由调用方管理。
+`prepare_backtest_models` calls `train_model` on each rebalancing date and obtains the training window before that time through `DataMeta`. A Dask-compatible client enables parallel scheduling, but the caller manages the Dask client.
 
 ## RunningSetting
 
-| 参数 | 含义 |
+| Parameter | Meaning |
 | --- | --- |
-| `lbound` / `ubound` | 全局数值，或按代码配置的上下界字典；字典可用 `other` 默认值 |
-| `weights_bandwidth` | 围绕基准权重生成上下界 |
-| `bounds` | `LinearConstraints` 使用的 Box 约束定义 |
-| `rebalance_method` | `risk_neutral`、`rank`、`long_short`、`mean_variance`、`target_vol` |
-| `executor` | 默认 `NaiveExecutor`，可替换为执行器或自定义兼容对象 |
-| `turn_over_target` | 通过额外关键字传入线性换手约束 |
-| `target_vol`、`risk_model` | 通过内部选项传给对应组合方法 |
+| `lbound` / `ubound` | Global values or per-code bound dictionaries; dictionaries support an `other` default |
+| `weights_bandwidth` | Generate lower and upper bounds around benchmark weights |
+| `bounds` | Box-constraint definitions used by `LinearConstraints` |
+| `rebalance_method` | `risk_neutral`, `rank`, `long_short`, `mean_variance`, `target_vol` |
+| `executor` | `NaiveExecutor` by default; replaceable with another executor or compatible custom object |
+| `turn_over_target` | Passed as an additional keyword for the linear turnover constraint |
+| `target_vol`, `risk_model` | Passed through internal options to the corresponding portfolio method |
 
-`rank` 方法还需要 `use_rank`；当前 `Strategy._calculate_pos` 不转发该参数，使用排名法时应直接调用 `er_portfolio_analysis` 或扩展此方法。均值方差和目标波动率使用已读取的因子风险模型。
+The `rank` method also requires `use_rank`; the current `Strategy._calculate_pos` does not forward this parameter. Call `er_portfolio_analysis` directly or extend this method when using ranked construction. Mean-variance and target-volatility methods use the factor risk model already read.
 
-## 输出
+## Outputs
 
-`run` 返回两个 Arrow 表：
+`run` returns two Arrow tables.
 
 ### returns
 
-每行一个收益记录，首行用于初始零点：
+Each row is a return record, with the first row representing the initial zero point:
 
-- `returns`：组合对数收益；
-- `turn_over`：执行换手；
-- `leverage`：绝对权重之和；
-- `benchmark_returns`：基准对数收益；
-- `excess_return`：组合收益减去杠杆调整后的基准收益。
+- `returns`: portfolio logarithmic return.
+- `turn_over`: execution turnover.
+- `leverage`: sum of absolute weights.
+- `benchmark_returns`: benchmark logarithmic return.
+- `excess_return`: portfolio return minus leverage-adjusted benchmark return.
 
 ### positions
 
-每个调仓日的执行持仓，包含 `weight`、`industry`、`er`、`code`、`trade_date`，并连接 `benchmark_weight` 和 `dx`。
+Executed holdings for each rebalancing date, containing `weight`, `industry`, `er`, `code`, and `trade_date`, joined with `benchmark_weight` and `dx`.
 
-保存输出：
+Save outputs with:
 
 ```python
 from alphamind.data import write_parquet
@@ -112,23 +112,23 @@ write_parquet(returns, "backtest_returns.parquet")
 write_parquet(positions, "backtest_positions.parquet")
 ```
 
-## 纯 Parquet 回测
+## Pure Parquet backtesting
 
-本地文件没有 SQL Universe、风险表和模型训练接口时，可按以下步骤显式循环：
+When local files have no SQL Universe, risk tables, or model-training interface, use an explicit loop:
 
-1. 从 Parquet 读取完整特征面板。
-2. 按 `trade_date` 切分截面并排序。
-3. 只用历史数据训练或选择固定信号。
-4. 生成目标 `code`、`weight` Arrow 表。
-5. 通过 `ExecutionPipeline` 执行并保存持仓。
-6. 计算组合收益、换手与归因。
+1. Read the complete feature panel from Parquet.
+2. Split cross-sections by `trade_date` and sort them.
+3. Train only on historical data or select a fixed signal.
+4. Generate target `code`, `weight` Arrow tables.
+5. Execute through `ExecutionPipeline` and save holdings.
+6. Calculate portfolio returns, turnover, and attribution.
 
-`examples/parquet_demo/demo.py` 的 `run_file_backtest` 实现了排名组合和阈值执行，随后 `optimize_latest` 与 `analyze_results` 展示均值方差组合及评价。
+`run_file_backtest` in `examples/parquet_demo/demo.py` implements ranked portfolios and threshold execution; `optimize_latest` and `analyze_results` then demonstrate mean-variance portfolios and evaluation.
 
-## 回测注意事项
+## Backtesting considerations
 
-- 明确收益持有期与调仓频率，避免重叠窗口被误解为独立样本。
-- 检查未来收益是否完整，数据库接口会剔除不完整窗口。
-- 将交易成本、可交易性和停牌规则纳入研究假设；当前策略层不会自动模拟撮合费用。
-- 求解不可行时策略会记录警告并尝试全量调仓，研究中应检查这些警告。
-- 保存模型日期、输入数据和持仓，确保结果可审计。
+- Define the return holding period and rebalancing frequency explicitly, and do not mistake overlapping windows for independent samples.
+- Check that forward returns are complete; database interfaces remove incomplete windows.
+- Include transaction costs, tradability, and suspension rules in research assumptions; the current strategy layer does not simulate matching fees automatically.
+- When optimization is infeasible, the strategy logs a warning and attempts full rebalancing; inspect these warnings during research.
+- Save model dates, input data, and holdings so results remain auditable.

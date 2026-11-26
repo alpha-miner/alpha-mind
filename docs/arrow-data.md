@@ -1,8 +1,8 @@
-# Arrow 与文件
+# Arrow and Files
 
-## 数据边界
+## Data boundaries
 
-`alphamind.data.arrow` 是文件、数据库和内部数值计算之间的边界。公开读写函数返回 `pyarrow.Table`；`pa.RecordBatch` 和 `pa.RecordBatchReader` 也可作为写入输入。
+`alphamind.data.arrow` is the boundary between files, databases, and internal numerical calculations. Public read and write functions return `pyarrow.Table`; `pa.RecordBatch` and `pa.RecordBatchReader` are also accepted as write inputs.
 
 ```python
 import pyarrow as pa
@@ -14,7 +14,7 @@ loaded = read_table("factor.parquet")
 assert isinstance(loaded, pa.Table)
 ```
 
-不要使用 `.to_pandas()` 在模块间传递数据。需要矩阵运算时，在数值函数边界显式转换：
+Do not use `.to_pandas()` to exchange data between modules. Convert explicitly at a numerical function boundary when matrix operations are required:
 
 ```python
 from alphamind.data.arrow import column_values, to_numpy
@@ -23,18 +23,18 @@ matrix = to_numpy(loaded, ["value"], dtype=float)  # shape: (n, 1)
 vector = column_values(loaded, "value")  # shape: (n,)
 ```
 
-## 支持的格式
+## Supported formats
 
-| 格式 | 后缀 | 读取 | 写入 | 备注 |
+| Format | Extensions | Read | Write | Notes |
 | --- | --- | --- | --- | --- |
-| Parquet | `.parquet`、`.pq` | `read_parquet` / `read_table` | `write_parquet` / `write_table` | 默认 Zstandard 压缩 |
-| Arrow IPC | `.arrow`、`.ipc` | `read_table` | `write_table` | 可读取 IPC file 或 stream |
-| Feather | `.feather` | `read_table` | `write_table` | Arrow Feather 文件 |
-| CSV | `.csv` | `read_table` | `write_table` | 可传 PyArrow CSV 选项 |
+| Parquet | `.parquet`, `.pq` | `read_parquet` / `read_table` | `write_parquet` / `write_table` | Zstandard compression by default |
+| Arrow IPC | `.arrow`, `.ipc` | `read_table` | `write_table` | Reads IPC files or streams |
+| Feather | `.feather` | `read_table` | `write_table` | Arrow Feather files |
+| CSV | `.csv` | `read_table` | `write_table` | Accepts PyArrow CSV options |
 
-后缀不足以判断时显式传 `file_format="parquet"`。无法识别的格式会抛出 `ValueError`。
+When the extension is insufficient, pass `file_format="parquet"` explicitly. An unrecognized format raises `ValueError`.
 
-## Parquet 列裁剪与过滤
+## Parquet column pruning and filtering
 
 ```python
 from alphamind.data import read_parquet, write_parquet
@@ -47,22 +47,22 @@ selected = read_parquet(
 )
 ```
 
-`columns` 减少读取列，`filters` 使用 PyArrow 的过滤表达式并可在读取时下推。其他关键字参数传给 `pyarrow.parquet.read_table` 或 `write_table`。
+`columns` reduces the number of columns read. `filters` uses PyArrow filter expressions and can be pushed down into the read. Other keyword arguments are passed to `pyarrow.parquet.read_table` or `write_table`.
 
-IPC 和 Feather 不支持这里的 `columns` / `filters` 参数；CSV 只支持读取后的列选择，不支持 `filters`。
+IPC and Feather do not support these `columns` / `filters` arguments. CSV supports column selection only after reading and does not support `filters`.
 
-## 类型规范化
+## Type normalization
 
-`as_arrow` 和文件读取会统一常见外部类型：
+`as_arrow` and file reads normalize common external types:
 
-- 日期、时间戳以及名称以 `date` 结尾或为 `updatetime` 的时序列转换为 `timestamp[us, UTC]`。
-- 无时区时间按 UTC 解释；已有其他时区的时间转换为 UTC。
-- binary、large binary 和 large string 转为 string。
-- decimal 转为 float64。
+- Date, timestamp, and time-series columns whose names end in `date` or equal `updatetime` are converted to `timestamp[us, UTC]`.
+- Timezone-naive values are interpreted as UTC; values with other timezones are converted to UTC.
+- Binary, large binary, and large string are converted to string.
+- Decimal is converted to float64.
 
-因此，读写前后的时间列类型可能不同。证券代码应显式使用字符串，避免前导零丢失；风险方差、收益和权重建议使用 float64。
+Consequently, temporal column types may differ before and after a write/read round trip. Security identifiers should be explicit strings to avoid losing leading zeros; float64 is recommended for risk variances, returns, and weights.
 
-## 常用 Arrow 辅助函数
+## Common Arrow helpers
 
 ```python
 from alphamind.data.arrow import (
@@ -83,20 +83,20 @@ new_table = from_numpy([[1.0, 2.0], [3.0, 4.0]], names=["f1", "f2"])
 weights = align_values(["A", "B"], clean["code"], clean["value"], default=0.0)
 ```
 
-- `drop_nulls` 默认同时剔除浮点 NaN。
-- `drop_duplicates` 保留每个键首次出现的行，不自动排序。
-- `from_numpy` 接受一维或二维数组，一维数组会成为单列。
-- `with_column` 覆盖同名列，不存在时追加。
-- `align_values` 使用 Arrow 索引内核对齐代码和数值；源代码重复时取最后值，目标代码缺失时填 `default`，不逐行构造 Python 字典。
+- `drop_nulls` also removes floating-point NaN values by default.
+- `drop_duplicates` keeps the first row for each key and does not sort automatically.
+- `from_numpy` accepts one- or two-dimensional arrays; a one-dimensional array becomes a single column.
+- `with_column` replaces an identically named column or appends one when absent.
+- `align_values` aligns codes and values with an Arrow index kernel rather than constructing a Python dictionary row by row. The last value is used for duplicate source codes, and missing target codes receive `default`.
 
-## 数据质量建议
+## Data-quality recommendations
 
-在计算窗口因子或连接风险数据前：
+Before calculating windowed factors or joining risk data:
 
-1. 固定 `trade_date`、`code` 和风险列 schema。
-2. 按 `trade_date`、`code` 排序，并检查键唯一性。
-3. 区分 `null`、NaN 和无穷大，不要把缺失窗口默认填成零。
-4. 确保同一截面内资产顺序与 NumPy 风险矩阵一致。
-5. 将每个研究阶段的输入输出保存为 Parquet，便于审计和复现。
+1. Fix the schemas of `trade_date`, `code`, and risk columns.
+2. Sort by `trade_date` and `code`, then check key uniqueness.
+3. Distinguish `null`, NaN, and infinity; do not fill missing windows with zero by default.
+4. Ensure asset ordering within each cross-section matches the NumPy risk matrices.
+5. Save each research stage's inputs and outputs as Parquet for auditability and reproducibility.
 
-完整文件工作流见 [Parquet demo](setup.md)。
+See the [Parquet demo](setup.md) for a complete file workflow.

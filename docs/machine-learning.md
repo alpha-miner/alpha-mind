@@ -1,22 +1,22 @@
-# 机器学习与模型持久化
+# Machine Learning and Model Persistence
 
-模型层接收 Arrow 特征表，内部转换为 NumPy 后调用 scikit-learn 或 XGBoost。特征名、公式、训练时间和底层模型都可序列化。
+The model layer accepts Arrow feature tables, converts them internally to NumPy, and calls scikit-learn or XGBoost. Feature names, formulas, training time, and the underlying model can all be serialized.
 
-## 支持的模型
+## Supported models
 
-| 类型 | API |
+| Type | API |
 | --- | --- |
-| 固定线性权重 | `ConstLinearModel` |
-| 线性回归 | `LinearRegression` |
+| Fixed linear weights | `ConstLinearModel` |
+| Linear regression | `LinearRegression` |
 | Lasso | `LassoRegression` |
-| 逻辑回归 | `LogisticRegression` |
-| 支持向量回归 | `NvSVRModel` |
-| 随机森林 | `RandomForestRegressor`、`RandomForestClassifier` |
-| XGBoost | `XGBRegressor`、`XGBClassifier`、`XGBTrainer` |
+| Logistic regression | `LogisticRegression` |
+| Support-vector regression | `NvSVRModel` |
+| Random forest | `RandomForestRegressor`, `RandomForestClassifier` |
+| XGBoost | `XGBRegressor`, `XGBClassifier`, `XGBTrainer` |
 
-模型构造时，`features` 可以是列名列表或表达式字典。表达式由 `Transformer` 管理，模型实际特征名为排序后的输出名。
+At model construction, `features` may be a list of column names or a dictionary of expressions. Expressions are managed by `Transformer`, and actual model feature names are the sorted output names.
 
-## 固定权重模型
+## Fixed-weight model
 
 ```python
 from alphamind.model import ConstLinearModel
@@ -28,9 +28,9 @@ model = ConstLinearModel(
 prediction = model.predict(feature_table)
 ```
 
-权重字典按键映射到特征，不依赖字典声明顺序。固定模型不需要 `fit`。
+Weight dictionaries map keys to features and do not depend on dictionary declaration order. Fixed models do not require `fit`.
 
-## 训练线性回归
+## Training a linear regression
 
 ```python
 import numpy as np
@@ -47,11 +47,11 @@ score = model.score(x_train, y_train)
 ic = model.ic(x_train, y_train)
 ```
 
-`fit` 只选择 `model.features` 对应列，因此输入 Arrow 表可以额外携带 `trade_date`、`code` 和标签。`predict` 返回 NumPy 数组，对外表格结果应重新构造 Arrow。
+`fit` selects only the columns corresponding to `model.features`, so the input Arrow table may also carry `trade_date`, `code`, and labels. `predict` returns a NumPy array; construct an Arrow table for external tabular results.
 
-## 使用 Composer
+## Using Composer
 
-`train_model` 和 `predict_by_model` 可直接处理 Arrow 数据：
+`train_model` and `predict_by_model` process Arrow data directly:
 
 ```python
 from alphamind.model.composer import Composer, DataMeta, predict_by_model, train_model
@@ -70,9 +70,9 @@ predictions, features = predict_by_model(
 )
 ```
 
-`predictions` 是包含 `code`、`prediction` 的 Arrow 表。
+`predictions` is an Arrow table containing `code` and `prediction`.
 
-`Composer` 进一步按日期保存多个模型：
+`Composer` additionally stores multiple models by date:
 
 ```python
 composer = Composer(alpha_model=template, data_meta=data_meta)
@@ -82,19 +82,19 @@ score, x_used, y_used = composer.score("2026-01-16", x=x_test, y=y_test)
 ic, x_used, y_used = composer.ic("2026-01-16", x=x_test, y=y_test)
 ```
 
-不显式传 `x` 时，`DataMeta` 通过 SQL 引擎读取训练和预测数据。其参数包括调仓频率、股票池、训练批数、风险中性列、风险模型、预处理、预热窗口和数据源 URI。
+When `x` is not passed explicitly, `DataMeta` reads training and prediction data through the SQL engine. Its parameters include rebalancing frequency, universe, number of training batches, risk-neutralization columns, risk model, preprocessing, warm-up window, and data-source URI.
 
-## 数据准备接口
+## Data-preparation interfaces
 
-- `fetch_data_package`：一次构造多个训练/预测时间桶。
-- `fetch_train_phase`：构造指定参考日之前的训练窗口。
-- `fetch_predict_phase`：构造指定参考日预测截面，可按交易日中位数填充因子。
-- `prepare_data`：读取并连接因子、标签、行业和基准。
-- `batch_processing`：将数值窗口切分为训练与预测桶。
+- `fetch_data_package`: construct multiple training/prediction time buckets in one operation.
+- `fetch_train_phase`: construct the training window before a specified reference date.
+- `fetch_predict_phase`: construct the prediction cross-section for a reference date, optionally filling factors with trading-day medians.
+- `prepare_data`: read and join factors, labels, industries, and benchmarks.
+- `batch_processing`: split numerical windows into training and prediction buckets.
 
-这些接口依赖数据库数据模型。纯 Parquet 工作流可直接用 Arrow 过滤日期，再把表传给 `fit` 或 `train_model`，如 demo 所示。
+These interfaces depend on the database data model. Pure Parquet workflows can filter dates directly with Arrow and pass tables to `fit` or `train_model`, as demonstrated by the demo.
 
-## 保存与加载
+## Saving and loading
 
 ```python
 from alphamind.model import load_model
@@ -104,20 +104,20 @@ restored = load_model(description)
 restored_predictions = restored.predict(x_test)
 ```
 
-描述包含：
+The description contains:
 
-- 模型类路径、语言和保存时间；
-- 特征名、因子公式与拟合目标；
-- 底层模型序列化内容和训练时间；
-- scikit-learn 或 XGBoost 版本；
-- 线性模型权重（适用时）。
+- Model class path, language, and save time.
+- Feature names, factor formulas, and fit targets.
+- Serialized underlying-model content and training time.
+- scikit-learn or XGBoost versions.
+- Linear-model weights, where applicable.
 
-当前环境库版本低于模型保存版本时会记录警告。序列化使用 Python 对象编码，只加载受信任来源的模型描述。
+A warning is logged when the current environment's library version is older than the version used to save the model. Serialization uses Python object encoding; load model descriptions only from trusted sources.
 
-## 训练规范
+## Training guidelines
 
-- 训练标签与特征必须按键和顺序对齐。
-- 避免未来数据进入预处理、风险中性化或训练窗口。
-- 分类模型标签应是类别，回归模型标签应为一维数值数组。
-- 保存预测时附加 `trade_date` 和 `code`，不要只保存无键数组。
-- 用 IC、分层收益和组合结果共同评价，而不是只看拟合分数。
+- Align training labels and features by key and order.
+- Keep future data out of preprocessing, risk neutralization, and training windows.
+- Classification labels should be categories; regression labels should be one-dimensional numerical arrays.
+- Attach `trade_date` and `code` when saving predictions rather than storing unlabeled arrays alone.
+- Evaluate models with IC, quantile returns, and portfolio results together rather than relying only on fit scores.

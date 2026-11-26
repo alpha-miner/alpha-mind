@@ -1,8 +1,8 @@
-# 因子分析与分层收益
+# Factor Analysis and Quantile Returns
 
-因子分析包括多因子预处理与合成、分层收益、组合回测以及单因子截面统计。表格输入输出使用 Arrow，数值收益数组和权重使用 NumPy。
+Factor analysis includes multi-factor preprocessing and composition, quantile returns, portfolio backtesting, and single-factor cross-sectional statistics. Tabular inputs and outputs use Arrow, while numerical return arrays and weights use NumPy.
 
-## 多因子分层分析
+## Multi-factor quantile analysis
 
 ```python
 import numpy as np
@@ -20,9 +20,9 @@ group_returns = quantile_analysis(
 )
 ```
 
-默认流程是先 `winsorize_normal`、`standardize`，可选风险中性化，再 `standardize`，最后与 `factor_weights` 相乘得到单一 `er`。返回值为长度 `n_bins` 的 NumPy 数组，按因子值从低到高排列。
+The default workflow applies `winsorize_normal` and `standardize`, optionally neutralizes risk, applies `standardize` again, and finally multiplies by `factor_weights` to obtain a single `er`. The return value is a NumPy array of length `n_bins`, ordered from low to high factor values.
 
-关闭默认处理或覆盖流程：
+Disable the default processing or override the workflow with:
 
 ```python
 group_returns = quantile_analysis(
@@ -35,9 +35,9 @@ group_returns = quantile_analysis(
 )
 ```
 
-这适用于已经处理好的因子。`er_quantile_analysis(er, n_bins, dx_return, de_trend=False)` 可直接分析已有预期收益；`de_trend=True` 会调整分层收益中的整体趋势。
+This is appropriate for factors that have already been processed. `er_quantile_analysis(er, n_bins, dx_return, de_trend=False)` directly analyzes existing expected returns; `de_trend=True` adjusts the overall trend in quantile returns.
 
-保存结果仍使用 Arrow：
+Results are still saved with Arrow:
 
 ```python
 import pyarrow as pa
@@ -47,9 +47,9 @@ result = pa.table({"quantile": np.arange(1, 6), "return": group_returns})
 write_parquet(result, "quantile_returns.parquet")
 ```
 
-## 因子组合分析
+## Factor-combination analysis
 
-`factor_analysis` 在因子合成后调用 `er_portfolio_analysis`，返回目标持仓表和可选结算表：
+`factor_analysis` calls `er_portfolio_analysis` after factor composition and returns a target-holdings table and an optional settlement table:
 
 ```python
 weights, analysis = factor_analysis(
@@ -64,19 +64,19 @@ weights, analysis = factor_analysis(
 )
 ```
 
-持仓表包含 `weight`、`industry`、`er`。`detail_analysis=True` 时，结算表按行业及 `total` 汇总。主要 `method`：
+The holdings table contains `weight`, `industry`, and `er`. With `detail_analysis=True`, the settlement table is summarized by industry and `total`. Principal methods include:
 
-| 方法 | 构建方式 | 额外要求 |
+| Method | Construction | Additional requirements |
 | --- | --- | --- |
-| `risk_neutral` | 线性规划，默认 | `benchmark`、约束；可传换手参数 |
-| `rank` | 选择前 N 名 | `use_rank` |
-| `ls` / `long_short` | 标准化多空权重 | 无 |
-| `mv` / `mean_variance` | 均值方差 | `risk_model`，可选 `lam` |
-| `tv` / `target_vol` | 目标波动率 | `risk_model`，可选 `target_vol` |
+| `risk_neutral` | Linear programming; default | `benchmark` and constraints; turnover parameters are optional |
+| `rank` | Select the top N | `use_rank` |
+| `ls` / `long_short` | Standardized long-short weights | None |
+| `mv` / `mean_variance` | Mean-variance optimization | `risk_model`, optional `lam` |
+| `tv` / `target_vol` | Target volatility | `risk_model`, optional `target_vol` |
 
-`is_tradable` 是不可交易资产掩码时，会限制其目标上界。线性方法支持 `lbound`、`ubound`、`turn_over_target` 和 `current_position`。构建失败会给出求解状态错误或组合异常，不应静默使用不可行结果。
+When `is_tradable` is a mask of non-tradable assets, their target upper bounds are restricted. Linear methods support `lbound`, `ubound`, `turn_over_target`, and `current_position`. Construction failures report a solver-status error or portfolio exception; infeasible results must never be used silently.
 
-## 已有预期收益的组合分析
+## Portfolio analysis with existing expected returns
 
 ```python
 from alphamind.analysis.factoranalysis import er_portfolio_analysis
@@ -90,24 +90,24 @@ weights, analysis = er_portfolio_analysis(
 )
 ```
 
-该入口不要求 Arrow 因子表，适合机器学习预测或外部信号已经生成 `er` 的情况。
+This entry point does not require an Arrow factor table and is suitable when machine-learning predictions or external signals have already produced `er`.
 
-## 数据库单因子截面分析
+## Database single-factor cross-sectional analysis
 
-`cross_section_analysis(ref_date, factor_name, universe, horizon, constraint_risk, engine)` 自动读取因子、风险、行业和未来收益。`cs_impl` 则允许直接传入这些 Arrow 表。
+`cross_section_analysis(ref_date, factor_name, universe, horizon, constraint_risk, engine)` automatically reads factor, risk, industry, and forward-return data. `cs_impl` also accepts these Arrow tables directly.
 
-输出为三个数值：
+It returns three values:
 
-1. 因子组合对数收益；
-2. 因子暴露与去趋势收益的相关系数 IC；
-3. 一元 OLS 中因子暴露系数的 t 统计量。
+1. The factor portfolio's logarithmic return.
+2. The information coefficient (IC), namely the correlation between factor exposure and detrended returns.
+3. The t-statistic of the factor-exposure coefficient in a univariate OLS regression.
 
-有效样本不足原始样本的 33% 时返回 `(nan, nan, nan)`。该统计流程包含去极值、标准化和风险中性化，调用时应明确 `constraint_risk` 的列顺序。
+When valid samples represent less than 33% of the original sample, it returns `(nan, nan, nan)`. This statistical workflow includes winsorization, standardization, and risk neutralization; callers must specify the column order of `constraint_risk` explicitly.
 
-## 研究检查清单
+## Research checklist
 
-- 分层数量不能超过有效样本数，且每组应有足够资产。
-- 因子和收益行必须一一对应。
-- 对数收益与简单收益不要混用。
-- IC、分层收益和优化组合评价回答的问题不同，应结合使用。
-- 所有统计结果都应关联明确的 `trade_date` 和股票池。
+- The number of quantiles cannot exceed the number of valid samples, and every bucket should contain enough assets.
+- Factor and return rows must correspond one-to-one.
+- Do not mix logarithmic and simple returns.
+- IC, quantile returns, and optimized-portfolio evaluation answer different questions and should be used together.
+- Every statistical result should be associated with an explicit `trade_date` and universe.

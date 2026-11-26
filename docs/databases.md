@@ -1,8 +1,8 @@
-# MySQL、PostgreSQL 与 ORM
+# MySQL, PostgreSQL, and the ORM
 
-数据库层将 SQL 查询转换为 Arrow：ConnectorX 负责读取，SQLAlchemy 负责模型、DDL、查询编译和写入。`SqlEngine` 的查询结果统一为 `pyarrow.Table`。
+The database layer converts SQL queries to Arrow: ConnectorX handles reads, while SQLAlchemy handles models, DDL, query compilation, and writes. Every `SqlEngine` query returns a `pyarrow.Table`.
 
-## 选择后端
+## Selecting a backend
 
 ```python
 from alphamind.data.engines.sqlengine.mysql import SqlEngine as MySQLEngine
@@ -15,38 +15,38 @@ mysql = MySQLEngine(mysql_url, factor_tables=["factor_momentum"])
 postgres = PostgresEngine(postgres_url, factor_tables=["factor_momentum"])
 ```
 
-`alphamind.data.engines.sqlengine.SqlEngine` 是默认 MySQL 引擎的兼容入口。需要明确后端时，建议从对应模块导入。引擎支持上下文管理器，退出时释放连接池：
+`alphamind.data.engines.sqlengine.SqlEngine` is a compatibility entry point for the default MySQL engine. Import from the backend-specific module when the backend should be explicit. Engines support context management and release their connection pools on exit:
 
 ```python
 with PostgresEngine(postgres_url) as engine:
     meta = engine.fetch_factors_meta()
 ```
 
-连接串应通过安全的配置或密钥管理注入，不要提交到仓库。
+Inject connection strings through secure configuration or secret management; never commit them to the repository.
 
-## 数据模型
+## Data models
 
-MySQL 模型位于 `alphamind.data.dbmodel.models.mysql`，PostgreSQL 模型位于 `...models.postgres`。主要实体包括：
+MySQL models are located in `alphamind.data.dbmodel.models.mysql`, and PostgreSQL models in `...models.postgres`. Principal entities include:
 
-| 领域 | 模型 |
+| Domain | Models |
 | --- | --- |
-| 个股与指数行情 | `Market`、`IndexMarket` |
-| 指数成分与权重 | `IndexComponent`；MySQL 另有 `IndexWeight` |
-| 股票池 | `Universe` |
-| 行业 | `Industry`；MySQL 使用 `SwIndustryDaily` 映射 |
-| 因子与风险元数据 | `FactorMaster`、`RiskMaster` |
-| 风险暴露 | `RiskExposure` |
-| 因子协方差 | `RiskCovDay`、`RiskCovShort`、`RiskCovLong` |
-| 特质风险 | `SpecificRiskDay`、`SpecificRiskShort`、`SpecificRiskLong` |
-| 证券与停复牌 | `SecurityMaster`、`HaltList` |
-| 风险与特质收益 | `RiskReturn`、`SpecificReturn` |
-| MySQL 扩展因子 | `FactorMomentum`、`FactorValuationEstimation`、`FactorVolatilityValue` |
+| Security and index market data | `Market`, `IndexMarket` |
+| Index constituents and weights | `IndexComponent`; MySQL also has `IndexWeight` |
+| Universes | `Universe` |
+| Industries | `Industry`; MySQL uses the `SwIndustryDaily` mapping |
+| Factor and risk metadata | `FactorMaster`, `RiskMaster` |
+| Risk exposures | `RiskExposure` |
+| Factor covariance | `RiskCovDay`, `RiskCovShort`, `RiskCovLong` |
+| Idiosyncratic risk | `SpecificRiskDay`, `SpecificRiskShort`, `SpecificRiskLong` |
+| Securities and trading halts | `SecurityMaster`, `HaltList` |
+| Risk and idiosyncratic returns | `RiskReturn`, `SpecificReturn` |
+| MySQL extended factors | `FactorMomentum`, `FactorValuationEstimation`, `FactorVolatilityValue` |
 
-PostgreSQL 行情 `chgPct` 使用小数收益，MySQL 模型使用百分数；引擎在生成对数收益时分别处理。行业分类标识也因后端而异：PostgreSQL 支持 `sw`、`sw_adj`、`zz`、`dx`、`zjh`，MySQL 支持 `sw`、`zz`、`zx`、`zjh`。
+PostgreSQL market-data `chgPct` values use decimal returns, while MySQL models use percentages; the engines handle them differently when generating logarithmic returns. Industry-classification identifiers also differ by backend: PostgreSQL supports `sw`, `sw_adj`, `zz`, `dx`, and `zjh`; MySQL supports `sw`, `zz`, `zx`, and `zjh`.
 
-## 初始化表结构
+## Initializing schemas
 
-显式使用所选后端的 `Base`：
+Use the selected backend's `Base` explicitly:
 
 ```python
 from alphamind.data.dbmodel.models.postgres import Base
@@ -56,16 +56,16 @@ repository = ArrowSQLRepository(db_url=postgres_url)
 repository.create_all(Base)
 ```
 
-CLI 也提供初始化命令。`DB_VENDOR=mysql` 时选择 MySQL 模型，否则选择 PostgreSQL 模型：
+The CLI also provides an initialization command. `DB_VENDOR=mysql` selects the MySQL models; otherwise, PostgreSQL models are selected:
 
 ```bash
 DB_VENDOR=mysql uv run alphamind initdb --url "$ALPHAMIND_MYSQL_URI"
 uv run alphamind initdb --url "$ALPHAMIND_POSTGRES_URI"
 ```
 
-只在目标空库执行初始化；已有生产库应先审查 DDL 和迁移策略。
+Run initialization only against an empty target database. Review the DDL and migration strategy before using an existing production database.
 
-## Arrow 仓储读写
+## Arrow repository reads and writes
 
 ```python
 import pyarrow as pa
@@ -83,15 +83,15 @@ repository.write(FactorMaster, rows, mode="append", batch_size=1000)
 loaded = repository.read(FactorMaster, columns=["factor", "source", "alias"])
 ```
 
-写入模式：
+Write modes:
 
-- `append`：插入记录，主键冲突由数据库报错。
-- `upsert`：按主键或匹配的唯一索引更新非主键列。
-- `replace`：先删除整张表，再插入；只适用于明确授权的全量重建。
+- `append`: insert records; primary-key conflicts are reported by the database.
+- `upsert`: update non-primary-key columns using the primary key or a matching unique index.
+- `replace`: delete the entire table before inserting; use only for an explicitly authorized full rebuild.
 
-`write` 返回记录数，空表返回 0。仓储也接受 SQLAlchemy `Table` 或表名字符串。`read` 始终通过 ConnectorX 返回 Arrow。
+`write` returns the record count, or 0 for an empty table. The repository also accepts a SQLAlchemy `Table` or a table-name string. `read` always returns Arrow through ConnectorX.
 
-## 因子与行情查询
+## Factor and market-data queries
 
 ```python
 from alphamind.data.engines.universe import Universe
@@ -113,25 +113,25 @@ factors = engine.fetch_factor(
 returns = engine.fetch_dx_return(ref_date, codes, horizon=1, offset=1)
 ```
 
-`factor_tables` 声明额外因子表；也可通过逗号分隔的 `FACTOR_TABLES` 环境变量配置。行情表和风险暴露表会自动加入因子来源。未找到表达式依赖列时会抛出错误。
+`factor_tables` declares additional factor tables; a comma-separated `FACTOR_TABLES` environment variable can also be used. Market-data and risk-exposure tables are automatically included as factor sources. An error is raised when an expression dependency cannot be found.
 
-常用查询：
+Common queries:
 
-| 方法 | 结果 |
+| Method | Result |
 | --- | --- |
-| `fetch_codes` / `fetch_codes_range` | 股票池代码列表 / Arrow 面板 |
-| `fetch_factor` / `fetch_factor_range` | 单日 / 区间因子 |
-| `fetch_factor_range_forward` | 下一期因子值，列名为 `dx` |
-| `fetch_dx_return*` | 个股或指数未来对数收益 |
-| `fetch_industry*` / `fetch_industry_matrix*` | 行业分类 / 行业哑变量 |
-| `fetch_risk_model*` | 协方差、暴露，可选 `FactorRiskModel` |
-| `fetch_benchmark*` | 基准成分权重 |
-| `fetch_trade_status*` | 可交易状态 |
-| `fetch_data` / `fetch_data_range` | 面向研究的数据包 |
+| `fetch_codes` / `fetch_codes_range` | Universe code list / Arrow panel |
+| `fetch_factor` / `fetch_factor_range` | Single-date / date-range factors |
+| `fetch_factor_range_forward` | Next-period factor values in the `dx` column |
+| `fetch_dx_return*` | Forward logarithmic returns for securities or indices |
+| `fetch_industry*` / `fetch_industry_matrix*` | Industry classifications / industry dummy variables |
+| `fetch_risk_model*` | Covariance, exposures, and optionally `FactorRiskModel` |
+| `fetch_benchmark*` | Benchmark constituent weights |
+| `fetch_trade_status*` | Tradability status |
+| `fetch_data` / `fetch_data_range` | Research data package |
 
-区间接口支持 `start_date` + `end_date`，或显式 `dates`。收益只有窗口样本数完整时才返回，因此区间末端通常没有未来收益。
+Range interfaces accept `start_date` + `end_date` or explicit `dates`. Returns are emitted only for complete window samples, so future returns are normally unavailable at the end of a range.
 
-## 风险模型与数据包
+## Risk models and data packages
 
 ```python
 risk, covariance, exposure = engine.fetch_risk_model(
@@ -149,9 +149,9 @@ package = engine.fetch_data(
 )
 ```
 
-`risk_model` 可选 `day`、`short`、`long`。`model_type="factor"` 返回可直接用于组合优化的 `FactorRiskModel`，并同时返回原始 Arrow 协方差和暴露表。
+`risk_model` may be `day`, `short`, or `long`. `model_type="factor"` returns a `FactorRiskModel` ready for portfolio optimization together with the raw Arrow covariance and exposure tables.
 
-## 集成测试
+## Integration tests
 
 ```bash
 export ALPHAMIND_MYSQL_URI='mysql+pymysql://root:root@127.0.0.1:3306/alpha'
@@ -159,4 +159,4 @@ export ALPHAMIND_POSTGRES_URI='postgresql+psycopg2://alpha:alpha@127.0.0.1:5432/
 uv run pytest tests/data/engines -q
 ```
 
-CI 启动 MySQL 8.4 和 PostgreSQL 16，实际执行连接、DDL、Arrow 查询、动态因子表和 upsert 测试。
+CI starts MySQL 8.4 and PostgreSQL 16 and performs real connection, DDL, Arrow query, dynamic factor-table, and upsert tests.

@@ -1,34 +1,34 @@
 # Introduction
 
-Alpha-Mind 用于完成“原始数据 → 因子 → 预期收益 → 目标持仓 → 执行与归因”的量化研究流程。它不是一个行情下载器，也不绑定特定数据源；研究数据可以来自 Parquet 文件，也可以来自 MySQL 或 PostgreSQL。
+Alpha-Mind supports the quantitative research workflow from **raw data → factors → expected returns → target holdings → execution and attribution**. It is not a market-data downloader and is not tied to a specific data provider; research data can come from Parquet files, MySQL, or PostgreSQL.
 
-## 核心概念
+## Core concepts
 
-### Arrow 表格
+### Arrow tables
 
-模块之间传递的表格统一为 `pyarrow.Table`。常用约定如下：
+All tables passed between modules are `pyarrow.Table` objects. Common conventions include:
 
-- `trade_date`：交易日期；读写后会规范为 UTC 时间戳。
-- `code`：证券代码；股票代码建议始终使用字符串并保留前导零。
-- `weight`：组合或基准权重。
-- `dx`：对数收益；需要简单收益时使用 `exp(dx) - 1`。
-- 其余列：因子值、风险暴露、行业或分析结果。
+- `trade_date`: trading date, normalized to a UTC timestamp when read or written.
+- `code`: security identifier; stock codes should always be strings so leading zeros are preserved.
+- `weight`: portfolio or benchmark weight.
+- `dx`: logarithmic return; use `exp(dx) - 1` when a simple return is required.
+- Other columns: factor values, risk exposures, industries, or analysis results.
 
-NumPy 只用于矩阵计算、优化器目标和数值数组参数，不作为跨模块表格协议。项目不依赖 pandas 数据框。
+NumPy is used for matrix calculations, optimizer objectives, and numeric array parameters, not as a cross-module table protocol. The project does not depend on pandas DataFrames.
 
-### 因子表达式
+### Factor expressions
 
-`Transformer` 将 Alpha-Mind 表达式绑定到 calc-flow。`LAST("x")` 读取列，`SHIFT` 和 `MA` 执行个股时序计算，`CSRank` 与 `CSQuantiles` 执行交易日截面计算。
+`Transformer` binds Alpha-Mind expressions to calc-flow. `LAST("x")` reads a column, `SHIFT` and `MA` perform security-level time-series calculations, and `CSRank` and `CSQuantiles` perform trading-day cross-sectional calculations.
 
-### 预期收益与组合
+### Expected returns and portfolios
 
-一个或多个因子经过预处理并合成为预期收益 `er`。组合构建器将 `er`、基准权重、风险模型和约束转换为目标权重。优化问题由 cvxpy 求解。
+One or more factors are preprocessed and combined into expected returns `er`. Portfolio builders convert `er`, benchmark weights, a risk model, and constraints into target weights. Optimization problems are solved by cvxpy.
 
-### 执行与归因
+### Execution and attribution
 
-执行器根据当前持仓、换手上限或波动率目标生成实际计划持仓。结算、换手与风险归因函数再将持仓和未来收益转换为 Arrow 结果表。
+Executors generate planned holdings from current positions, turnover limits, or volatility targets. Settlement, turnover, and risk-attribution functions then convert holdings and future returns into Arrow result tables.
 
-## 第一个因子
+## Your first factor
 
 ```python
 import datetime as dt
@@ -62,14 +62,14 @@ result = transformer.transform("code", source)
 assert result.column_names == ["lag_1", "mean_2", "percentile", "rank", "raw"]
 ```
 
-注意：
+Note that:
 
-1. 输出列按名称排序，与字典声明顺序无关。
-2. 窗口未形成时结果为 `null`，不是零。
-3. `Transformer` 只返回表达式列。若需要 `trade_date`、`code` 或标签，应从已按 `trade_date`、`code` 排序的输入重新附加。
-4. 截面计算按 `trade_date` 分组；传入多个日期时不会把不同日期混为一个截面。
+1. Output columns are sorted by name, independently of dictionary declaration order.
+2. An incomplete window produces `null`, not zero.
+3. `Transformer` returns only expression columns. When `trade_date`, `code`, or labels are needed, reattach them from input sorted by `trade_date` and `code`.
+4. Cross-sectional calculations are grouped by `trade_date`; multiple dates are never combined into one cross-section.
 
-## 从 Parquet 读取同一流程
+## Running the same workflow from Parquet
 
 ```python
 from alphamind.data import read_parquet, write_parquet
@@ -79,21 +79,21 @@ loaded = read_parquet("input.parquet", columns=["trade_date", "code", "x"])
 result = transformer.transform("code", loaded)
 ```
 
-生产数据通常先按键去重、排序并处理无效值，再计算依赖历史窗口的表达式。完整示例见 [Setup](setup.md)。
+Production data should normally be deduplicated by key, sorted, and checked for invalid values before calculating expressions that depend on historical windows. See [Setup](setup.md) for a complete example.
 
-## 主要功能如何衔接
+## How the main features fit together
 
-1. 使用 `read_parquet` 或 `SqlEngine` 取得 Arrow 数据。
-2. 使用 `makeSchedule` 生成调仓日期。
-3. 使用 `Transformer` 计算因子，使用 `factor_processing` 去极值、标准化和中性化。
-4. 使用固定权重或机器学习模型得到预期收益。
-5. 使用 `FactorRiskModel` / `FullRiskModel` 描述风险。
-6. 使用排名、线性或均值方差构建器生成持仓。
-7. 使用执行管道应用交易约束。
-8. 使用分层、结算、换手和归因函数评价结果。
+1. Obtain Arrow data with `read_parquet` or `SqlEngine`.
+2. Generate rebalancing dates with `makeSchedule`.
+3. Calculate factors with `Transformer`, then winsorize, standardize, and neutralize them with `factor_processing`.
+4. Produce expected returns with fixed weights or a machine-learning model.
+5. Describe risk with `FactorRiskModel` or `FullRiskModel`.
+6. Generate holdings with a ranked, linear, or mean-variance builder.
+7. Apply trading constraints through the execution pipeline.
+8. Evaluate results with quantile, settlement, turnover, and attribution functions.
 
-## 下一步
+## Next steps
 
-- 想直接运行所有主要功能：[Setup 与 Parquet 示例](setup.md)。
-- 想理解文件与类型：[Arrow 与文件](arrow-data.md)。
-- 想连接已有数据仓库：[MySQL 与 PostgreSQL](databases.md)。
+- To run all major features directly: [Setup and the Parquet demo](setup.md).
+- To understand files and types: [Arrow and files](arrow-data.md).
+- To connect an existing data warehouse: [MySQL and PostgreSQL](databases.md).

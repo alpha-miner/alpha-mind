@@ -1,8 +1,8 @@
-# 因子表达式
+# Factor Expressions
 
-Alpha-Mind 表达式位于 `alphamind.formula`，由 `Transformer` 绑定到 calc-flow-python。表达式既可处理本地 Arrow 表，也可作为 `SqlEngine.fetch_factor*` 的因子定义。
+Alpha-Mind expressions are defined in `alphamind.formula` and bound to calc-flow-python by `Transformer`. Expressions can process local Arrow tables or define factors for `SqlEngine.fetch_factor*`.
 
-## 基本用法
+## Basic usage
 
 ```python
 from alphamind.data import Transformer
@@ -18,25 +18,25 @@ transformer = Transformer(expressions)
 result = transformer.transform("code", arrow_table)
 ```
 
-`factor_pool` 也可以是单个字符串、表达式、列表或元组。使用字典时，键是输出名，值是表达式或原始列名。`transformer.names` 按输出名排序，`transformer.dependency` 给出所需输入列。
+`factor_pool` may also be a single string, expression, list, or tuple. For a dictionary, keys are output names and values are expressions or raw column names. `transformer.names` is sorted by output name, and `transformer.dependency` lists the required input columns.
 
-## 表达式清单
+## Expression catalog
 
-| 类别 | API | 说明 |
+| Category | API | Description |
 | --- | --- | --- |
-| 列与常量 | `LAST(x)`、`Literal(value)` | 读取列或生成常量；字符串列可直接使用 |
-| 时序滞后 | `SHIFT(x, periods)` | 每个 `code` 内滞后，周期必须大于等于 1 |
-| 滚动窗口 | `MA`、`STD`、`SUM`、`MAX`、`MIN` | 参数为 `(window, x)`，完整窗口之前为 null |
-| 指数窗口 | `EMA(window, x)` | span 与最小窗口均为 `window` |
-| 技术指标 | `MACD(x, short=12, long=26)` | `short` 必须小于 `long` |
-| 截面排名 | `CSRank(x, groups=None)` | 每个交易日内排名 |
-| 截面百分位 | `CSQuantiles(x, groups=None)` | 返回百分位，不是分组编号 |
-| 截面回归残差 | `CSRes(x, risk, groups=None)` | 对风险暴露回归后取残差 |
-| 截面头部/尾部 | `CSTopN(x, n, groups=None)`、`CSBottomN` | 每个交易日选取前后 N 项 |
+| Columns and constants | `LAST(x)`, `Literal(value)` | Read a column or create a constant; string columns are supported directly |
+| Time-series lag | `SHIFT(x, periods)` | Lag within each `code`; periods must be at least 1 |
+| Rolling windows | `MA`, `STD`, `SUM`, `MAX`, `MIN` | Arguments are `(window, x)`; incomplete windows produce null |
+| Exponential window | `EMA(window, x)` | Both span and minimum window are `window` |
+| Technical indicator | `MACD(x, short=12, long=26)` | `short` must be less than `long` |
+| Cross-sectional rank | `CSRank(x, groups=None)` | Rank within each trading day |
+| Cross-sectional percentile | `CSQuantiles(x, groups=None)` | Returns a percentile, not a bucket number |
+| Cross-sectional residual | `CSRes(x, risk, groups=None)` | Regress on risk exposures and return residuals |
+| Cross-sectional top/bottom | `CSTopN(x, n, groups=None)`, `CSBottomN` | Select the first or last N items within each trading day |
 
-## 算术组合
+## Arithmetic composition
 
-表达式支持 `+`、`-`、`*`、`/`、`**`、`^` 和一元负号。`^` 同样表示幂，不是按位异或。
+Expressions support `+`, `-`, `*`, `/`, `**`, `^`, and unary negation. `^` also denotes exponentiation, not bitwise XOR.
 
 ```python
 from alphamind.formula import LAST, MA, SHIFT
@@ -46,11 +46,11 @@ acceleration = MA(5, "close") - SHIFT(MA(5, "close"), 1)
 composite = 0.6 * LAST("momentum") + 0.4 * LAST("value")
 ```
 
-整数字面量在算术运算中会规范为浮点常量，以保持不同后端计算一致。
+Integer literals are normalized to floating-point constants during arithmetic to keep calculations consistent across backends.
 
-## 截面分组
+## Cross-sectional groups
 
-截面表达式默认按 `trade_date` 分组。`groups` 可增加分组字段：
+Cross-sectional expressions group by `trade_date` by default. `groups` adds grouping fields:
 
 ```python
 from alphamind.formula import CSRank
@@ -59,11 +59,11 @@ industry_rank = CSRank("momentum", groups="industry")
 region_industry_rank = CSRank("momentum", groups=["region", "industry"])
 ```
 
-输入必须包含这些分组列。时序或截面表达式同时要求 `trade_date` 和 `transform` 第一个参数指定的实体列。
+These grouping columns must be present in the input. Time-series and cross-sectional expressions also require `trade_date` and the entity column specified as the first argument to `transform`.
 
-## 输入排序与输出键
+## Input ordering and output keys
 
-带顺序要求的表达式会按 `trade_date`、实体列排序后计算，再生成结果。结果仅含表达式输出，不包含输入键。安全地附加键：
+Order-dependent expressions sort by `trade_date` and the entity column before calculating. Results contain only expression outputs, not input keys. Attach keys safely with:
 
 ```python
 from alphamind.data import drop_nulls, with_column
@@ -75,9 +75,9 @@ features = with_column(features, "trade_date", ordered["trade_date"])
 features = with_column(features, "code", ordered["code"])
 ```
 
-若额外分组字段存在无效键，应先清理，且确保用于附加键的输入与 Transformer 实际清理后的行完全一致。窗口列的 null 应在计算完成后再过滤。
+When additional grouping fields contain invalid keys, clean them first and ensure that the input used to reattach keys has exactly the same rows as Transformer's cleaned input. Nulls in windowed columns should be filtered only after calculation.
 
-## 序列化
+## Serialization
 
 ```python
 from alphamind.formula import LAST, SHIFT, decode_formula, encode_formula
@@ -87,6 +87,6 @@ encoded = encode_formula(formula)
 restored = decode_formula(encoded)
 ```
 
-模型描述也会保存表达式，加载模型时自动恢复。不要把不可信来源的序列化内容直接反序列化。
+Model descriptions also store expressions and restore them automatically when loaded. Do not deserialize serialized content directly from untrusted sources.
 
-完整表达式示例见 `examples/parquet_demo/demo.py` 的 `calculate_features`。
+See `calculate_features` in `examples/parquet_demo/demo.py` for a complete expression example.
