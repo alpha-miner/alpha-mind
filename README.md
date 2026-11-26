@@ -12,7 +12,7 @@ Alpha-Mind is an Arrow-native framework for multi-factor research and portfolio 
 - **Portfolio optimization**: cvxpy supports linear programs, turnover constraints, mean-variance optimization, and target-volatility problems.
 - **Research workflows**: preprocessing, risk models, quantile analysis, performance attribution, machine learning, execution, and backtesting are included.
 
-Python 3.9 and later are supported; CI covers Python 3.9–3.13.
+Python 3.9 and later are supported; CI covers Python 3.9–3.14.
 
 ## Quick start
 

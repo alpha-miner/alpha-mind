@@ -19,7 +19,9 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
+
 dependencies = [
     "calc-flow-python>=2026.11.14",
     "connectorx>=0.3.3",
@@ -45,8 +47,18 @@ notebooks = ["jupyterlab>=3", "matplotlib>=3.6", "xlsxwriter>=3"]
 alphamind = "alphamind.bin.cli:main"
 alphamind-benchmarks = "alphamind.benchmarks.runner:main"
 
+[project.urls]
+Repository = "https://github.com/wegamekinglc/alpha-mind"
+Documentation = "https://github.com/wegamekinglc/alpha-mind/tree/master/docs"
+Issues = "https://github.com/wegamekinglc/alpha-mind/issues"
+
 [dependency-groups]
-dev = ["pytest>=7", "pytest-cov>=4", "ruff>=0.4"]
+dev = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "ruff>=0.4",
+    "tomli>=2; python_version < '3.11'",
+]
 
 [tool.uv]
 package = true

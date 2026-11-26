@@ -69,7 +69,7 @@ Real-service tests are skipped when URI variables are unset; SQLite file-databas
 `.github/workflows/ci.yml` contains:
 
 1. **Quality**: Ruff lint and format checks on Python 3.13.
-2. **Test**: a Python 3.9–3.13 matrix with MySQL and PostgreSQL services; Python 3.13 generates the branch-coverage report.
+2. **Test**: a Python 3.9–3.14 matrix with MySQL and PostgreSQL services; Python 3.13 generates the branch-coverage report.
 3. **Package**: builds the wheel and source distribution, installs the wheel in an isolated environment, and checks imports and both CLIs.
 
 Pushes to master and pull requests trigger the workflow. Concurrency groups cancel obsolete runs on the same branch or pull request.
@@ -105,3 +105,37 @@ Clean up local builds and temporary virtual environments afterward; do not commi
 - Examples must match the current public API; avoid copying obsolete pandas or Finance-Python usage from old notebooks.
 - When changing workflow behavior, update the corresponding feature page, Parquet demo, and tests together.
 - Use relative links so both GitHub rendering and local reading work.
+
+## PyPI releases
+
+`.github/workflows/release.yml` builds the pure-Python wheel and source distribution on Python 3.13. It tests the installed wheel on Python 3.9–3.14 and installs the source distribution on Python 3.14 before publication. A manual **PyPI release** workflow dispatch performs the build, validation, and installation tests without publishing.
+
+The release process follows the DAL and Calc Flow pipelines: annotated-tag provenance, a master-head check, PyPI version-availability validation, distribution metadata checks, SHA-256 manifests, installed-artifact tests, and OIDC Trusted Publishing. Every third-party GitHub Action is pinned to a full commit SHA.
+
+One-time setup:
+
+1. Configure a PyPI trusted publisher for project `alpha-mind`, owner `wegamekinglc`, repository `alpha-mind`, workflow `release.yml`, and environment `pypi`.
+2. Create a GitHub environment named `pypi` and add any required reviewers. Do not store a PyPI API token in the repository.
+3. Ensure the PyPI project exists or that the configured publisher is authorized for its initial upload.
+
+For each release:
+
+1. Update `project.version` in `pyproject.toml` and `__version__` in `src/alphamind/__init__.py` to the same final `X.Y.Z` version.
+2. Run the full tests and validate a local build:
+
+   ```bash
+   uv run pytest -q
+   uv build --clear --no-create-gitignore --out-dir dist
+   uv run python scripts/verify_release.py --dist-dir dist
+   ```
+
+3. Merge the release commit into `master` and push it. The release tag must be annotated and point to the current remote master head:
+
+   ```bash
+   git tag -a alpha-mind-vX.Y.Z <release-commit> -m "alpha-mind X.Y.Z"
+   git push origin alpha-mind-vX.Y.Z
+   ```
+
+4. Watch the **PyPI release** workflow. The tag job publishes only after all validation and installation tests pass.
+
+PyPI artifacts are immutable. Never move or reuse a release tag; increment the version and create a new release instead.
