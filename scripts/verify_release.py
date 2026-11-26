@@ -21,7 +21,9 @@ except ModuleNotFoundError:  # Python 3.9/3.10 development environments
     import tomli as tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
-FINAL_VERSION_RE = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)")
+FINAL_VERSION_RE = re.compile(
+    r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*))?"
+)
 SOURCE_VERSION_RE = re.compile(r'^__version__\s*=\s*["\']([^"\']+)["\']\s*$', re.MULTILINE)
 REQUIRED_PYTHON_CLASSIFIERS = frozenset(
     {
@@ -55,7 +57,9 @@ def project_configuration(root: Path = ROOT) -> ReleaseConfig:
     if name != "alpha-mind":
         raise ValueError(f"project.name must be 'alpha-mind', got {name!r}")
     if not isinstance(version, str) or FINAL_VERSION_RE.fullmatch(version) is None:
-        raise ValueError(f"project.version must be a final X.Y.Z version, got {version!r}")
+        raise ValueError(
+            f"project.version must be a final X.Y.Z or X.Y.Z.N version, got {version!r}"
+        )
     if requires_python != ">=3.9":
         raise ValueError(f"project.requires-python must be '>=3.9', got {requires_python!r}")
     if not isinstance(classifiers, list) or not all(isinstance(item, str) for item in classifiers):
