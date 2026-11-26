@@ -31,9 +31,7 @@ def test_as_arrow_supports_batches_readers_and_to_pyarrow():
     batch = table.to_batches()[0]
 
     assert as_arrow(batch).equals(table)
-    assert as_arrow(
-        pa.RecordBatchReader.from_batches(table.schema, [batch])
-    ).equals(table)
+    assert as_arrow(pa.RecordBatchReader.from_batches(table.schema, [batch])).equals(table)
 
     class Convertible:
         def to_pyarrow(self):
@@ -208,9 +206,7 @@ def test_read_sql_parameter_and_connection_variants(tmp_path):
 
     with engine.begin() as connection:
         connection.execute(sa.text("CREATE TABLE values_table (value DOUBLE, name TEXT)"))
-        connection.execute(
-            sa.text("INSERT INTO values_table VALUES (1.0, 'A'), (2.0, 'B')")
-        )
+        connection.execute(sa.text("INSERT INTO values_table VALUES (1.0, 'A'), (2.0, 'B')"))
         connection.execute(sa.text("SELECT * FROM values_table"))
 
     with engine.connect() as connection:
@@ -222,9 +218,10 @@ def test_read_sql_parameter_and_connection_variants(tmp_path):
 
     assert result["name"].to_pylist() == ["B"]
 
-    assert read_sql(
-        "SELECT value FROM values_table ORDER BY value", url
-    )["value"].to_pylist() == [1.0, 2.0]
+    assert read_sql("SELECT value FROM values_table ORDER BY value", url)["value"].to_pylist() == [
+        1.0,
+        2.0,
+    ]
 
     with pytest.raises(TypeError, match="must be a mapping"):
         read_sql("SELECT * FROM values_table WHERE value > :minimum", engine, [1.0])
