@@ -120,11 +120,12 @@ def test_pypi_response_handling(monkeypatch, status, error):
             self.closed = True
 
     monkeypatch.setattr(verify_release, "HTTPSConnection", Connection)
+    version = verify_release.project_configuration().version
     if error is None:
-        verify_release.ensure_version_is_new_on_pypi("alpha-mind", "0.4.0")
+        verify_release.ensure_version_is_new_on_pypi("alpha-mind", version)
     else:
         with pytest.raises(error):
-            verify_release.ensure_version_is_new_on_pypi("alpha-mind", "0.4.0")
+            verify_release.ensure_version_is_new_on_pypi("alpha-mind", version)
 
 
 def test_distribution_validation_and_hash_manifest(tmp_path):
