@@ -1,0 +1,424 @@
+{
+  "Example 1 - Factor IC analysis.ipynb": {
+    "code_comments": [
+      "        # const linear model",
+      "# %%time"
+    ],
+    "markdown": [
+      "* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required."
+    ]
+  },
+  "Example 10 - Quadratic Optimizer Comparison with CVXOPT.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required.",
+      "# Data Preparing\n--------------------------",
+      "# Optimizing Weights\n-------------------------------------",
+      "# Performace Timing\n-------------------------"
+    ]
+  },
+  "Example 11 - Long Short Strategy Model.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required."
+    ]
+  },
+  "Example 12 - Machine Learning Model Prediction.ipynb": {
+    "code_comments": [
+      "    ## naive model",
+      "    ## regression model"
+    ],
+    "markdown": [
+      "* This example demonstrates how to use machine-learning models in alpha-mind.\n\n* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required.",
+      "## Data Configuration\n------------",
+      "I use the current values of `[\"EMA5D\", \"EMV6D\"]` to predict returns approximately one month ahead.\n\n* The training universe is `hs300`.\n* All factors are neutralized, standardized, and otherwise preprocessed.\n* For the linear model, observations are spaced ten business days apart, and the previous eight periods provide the training features.",
+      "## Model Prediction\n-----------",
+      "## Model Comparison (Linear Regression vs. Naive Constant Linear Model)\n------------------",
+      "## Model Time Series\n-------------------------",
+      "By comparing test-set results, I can evaluate the following models:\n\n* Naive Model: uses the previous factor value directly as the current prediction.\n* Linear regression: fits previous factor values and uses the resulting model to predict the current value.",
+      "In this example, the linear regression model has a slightly higher IC than the Naive model.",
+      "## Backtest (Simple Long-Short Strategy)\n--------------------------"
+    ]
+  },
+  "Example 13 - Evaluation within Industry Groups.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* This example tests factors using within-industry ranks and compares them with regression-residual and raw-factor versions. This section references *QEPM*, p. 117.\n* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required.",
+      "# Parameter Settings\n--------------",
+      "# Example Factors\n--------------------\n\nI compare three approaches to reducing industry concentration:\n\n* Rank the raw factor.\n* Rank the raw factor within each industry.\n* Regress the raw factor on industry dummy variables and rank the residuals.",
+      "## 1. Raw Factor Ranks\n--------------------",
+      "Without industry adjustment, stocks with the highest values of the selected alpha factor `CFO2EV` are concentrated in banks and the broader financial sector.",
+      "## 2. Within-Industry Factor Ranks\n----------------------",
+      "Adjusted Shenwan industry classifications are used as industry labels:",
+      "Within-industry ranks produce a more balanced industry distribution.",
+      "## 3. Industry-Neutral Factors from Regression\n--------------------------------",
+      "Another approach is linear regression with industries as dummy variables. The regression residual replaces the original factor to achieve industry neutrality:",
+      "This method is less effective in the example. The adjustment is relatively small, and concentration in the broader financial sector remains.",
+      "# Backtest Results\n------------------",
+      "I compare the three methods using a simple equal-weighted strategy that is long the top 20% of stocks and short the bottom 20%:"
+    ]
+  },
+  "Example 2 - Strategy Analysis.ipynb": {
+    "code_comments": [
+      "# Back test parameter settings",
+      "# Model settings",
+      "# Constraintes settings",
+      "# Running settings",
+      "# Strategy"
+    ],
+    "markdown": [
+      "* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required."
+    ]
+  },
+  "Example 3 - Multi Weight Gap Comparison.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "> The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required."
+    ]
+  },
+  "Example 4 - Single Factor Analysis.ipynb": {
+    "code_comments": [
+      "# rebalance"
+    ],
+    "markdown": [
+      "* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required."
+    ]
+  },
+  "Example 5 - Style Factor Analysis.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* This method references The Barra China Equity Model (CNE5) documentation.\n\n* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required."
+    ]
+  },
+  "Example 6 - Target Volatility Builder.ipynb": {
+    "code_comments": [
+      "# check the result"
+    ],
+    "markdown": [
+      "* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required.",
+      "## 1. Single Day Analysis\n-----------------------",
+      "### Portfolio Construction\n\n* using `EPS` factor as alpha factor;\n* short selling is forbiden;\n* target of volatility for the activate weight is setting at 2.5% annually level.",
+      "## 2. Porfolio Construction: 2016 ~ 2018\n-------------------------------"
+    ]
+  },
+  "Example 7 - Portfolio Optimizer Performance.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "* Compare the performance of different portfolio optimizers on problems of different sizes.\n\n* The results compare `alphamind` with other Python optimizers. The current implementation uses `cvxpy`; the historical comparison preferred `cvxopt` and then `scipy`.\n\n* `scipy` performs poorly on `ashare_ex`, so its results for that universe are generally omitted.\n\n* All times are in milliseconds.\n\n* The original example asked users to set `DB_URI` to a database. This version uses deterministic local data, so neither `DB_URI` nor a database is required.",
+      "## 0. Data Preparation\n------------------",
+      "## 1. Linear Optimization (Linear Constraints)\n---------------------------------",
+      "## 2. Linear Optimization (L1 Constraints)\n-----------------------",
+      "## 3. Mean-Variance Optimization (Unconstrained)\n-----------------------",
+      "## 4. Mean-Variance Optimization (Box Constraints)\n---------------",
+      "## 5. Mean-Variance Optimization (Box and Linear Constraints)\n----------------",
+      "## 6. Linear Optimization (Quadratic Constraints)\n-------------------------"
+    ]
+  },
+  "Example 9 - Linear Optimizer Comparison with CVXOPT.ipynb": {
+    "code_comments": [],
+    "markdown": []
+  },
+  "Quick Start 1 - Factor Preprocess.ipynb": {
+    "code_comments": [
+      "# Assume 50 stocks with one factor each, forming a matrix",
+      "# For demonstration, use one standard deviation as the lower and upper bounds",
+      "# Assume two groups (such as industries), with the first and last 25 stocks in different groups",
+      "# Give the first and last 25 factors different standard deviations",
+      "# For demonstration, use one standard deviation as the lower and upper bounds",
+      "# Assume two groups (such as industries), with the first and last 25 stocks in different groups",
+      "# Give the first and last 25 factors different standard deviations",
+      "# For demonstration, use one standard deviation as the lower and upper bounds",
+      "# Assume 30 stocks with ten factors each, forming a matrix",
+      "# Assume four risk factors per stock, forming a matrix",
+      "# Risk neutralization is the residual from linearly regressing the original factor on risk factors",
+      "# Assume all stocks belong to three groups (such as industries)",
+      "# Neutralize the factor against risk and industry",
+      "# If every industry is identical, the result will equal ret_neutralize_1",
+      "# print(ret_neutralize_1)",
+      "# print(ret_neutralize_3)",
+      "# Assume ten stocks with one factor each",
+      "# Assume two industries, with the first and last five stocks in different industries",
+      "# Assume 30 stocks with ten factors each, forming a matrix",
+      "# Assume four risk factors per stock, forming a matrix",
+      "# Assume all stocks belong to three groups (such as industries)",
+      "#ret_preprocess"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 1: Introduction to Factor Processing",
+      "The alpha-mind data package provides functions for factor neutralization, standardization, and winsorization:\n* [neutralize.py](https://github.com/alpha-miner/alpha-mind/blob/master/alphamind/data/neutralize.py): provides the risk-neutralization function *neutralize*.\n* [standardize.py](https://github.com/alpha-miner/alpha-mind/blob/master/alphamind/data/standardize.py): provides *standardize*, the sklearn-style *Standardizer*, and *GroupStandardizer*.\n* [winsorize.py](https://github.com/alpha-miner/alpha-mind/blob/master/alphamind/data/winsorize.py): provides the *winsorize_normal* outlier-control function.\n\nStandardization and winsorization can also process data by group, for example by industry.",
+      "### 1. Winsorization\n#### Full-Cross-Section Processing\n\nThe *winsorize_normal* function provided by alpha-mind assumes normally distributed data and controls extreme values.",
+      "#### Industry-by-Industry Processing\nWinsorization sometimes needs to be grouped, for example by industry. Pass an additional grouping argument to *winsorize_normal* for this purpose.",
+      "### 2. Standardization\nStandardization is used similarly to winsorization, so this section demonstrates only grouped standardization.",
+      "Sklearn-style *Standardizer* and *GroupedStandardizer* operators are also available. Their *fit* and *transform* methods produce the same effect. See the sklearn documentation and this project's source code for details.",
+      "### 3. Neutralization\n#### Risk (Style) Neutralization",
+      "#### Risk and Industry Neutralization\nProduction environments generally also require industry neutralization. For *neutralize*, pass an additional NumPy array containing each stock's industry label.",
+      "#### Industry-Only Neutralization\nFor industry-only neutralization, pass a matrix of ones as the risk-factor argument, which is the first argument to *neutralize*. The following code provides a simple test.",
+      "The industry-neutralized factor equals the original factor minus its industry mean, as expected.",
+      "### 4. Combined Preprocessing Function\nAlpha-mind also provides *factor_processing*, which combines all the functions described above into a single preprocessing step.\n- Pass a list of preprocessing functions to *pre_process*, such as winsorization and standardization. When risk factors are provided, neutralization runs automatically after preprocessing.\n- *post_process* specifies processing after neutralization, if any, or after *pre_process*. Winsorization and standardization functions can again be supplied as a list."
+    ]
+  },
+  "Quick Start 2 - Factor Rank and Quantile.ipynb": {
+    "code_comments": [
+      "# Assume ten stocks with two factors each, forming a matrix",
+      "# Assume ten stocks with one factor each",
+      "# Assume these ten stocks form two industries, with the first and last five in different groups"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 2: Factor Ranks and Quantiles",
+      "The alpha-mind data package provides utility functions for ranking factors and calculating quantiles.",
+      "### 1. Factor Ranks: *rank*\n- Rank values from low to high and return the rank sequence.\n- Supports both overall and industry-by-industry (grouped) ranking.",
+      "### 2. Factor Quantiles: *quantile*\n- Assign values to the specified number of buckets *(n_bins)* from low to high and return each factor's bucket number."
+    ]
+  },
+  "Quick Start 3 - Portfolio Builder.ipynb": {
+    "code_comments": [
+      "# Assume five assets",
+      "# Current asset weights",
+      "# Expected asset-return vector",
+      "# Asset risk-factor matrix with one risk factor",
+      "# Constraints",
+      "# Constraint 1 - lower and upper asset-weight bounds",
+      "# Constraint 2 - lower and upper portfolio risk-exposure bounds",
+      "# Constraint 3 - turnover upper bound for position adjustments (the lower bound is zero and need not be set)",
+      "# Assume three assets",
+      "# Expected asset-return vector",
+      "# Return covariance matrix",
+      "# Idiosyncratic return variance (idiosyncratic risk)",
+      "# The resulting covariance matrix is",
+      "# Asset risk-exposure matrix with two risk factors",
+      "# Benchmark index weight vector",
+      "# Constraints",
+      "# Constraint 1 - lower and upper absolute asset-weight bounds",
+      "# Constraint 2 - lower and upper portfolio risk-exposure bounds",
+      "# Build a risk model using the asset covariance matrix directly to calculate portfolio variance"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 3: Portfolio Construction",
+      "The alpha-mind portfolio package provides portfolio-construction utilities.\n- Different construction methods correspond to different optimization problems.\n- The package includes linear and mean-variance construction methods.",
+      "### Linear Construction: *linear_builder*\n- Objective: maximize expected portfolio return subject to linear constraints.\n- Linear constraints include:\n  - Lower and upper asset-weight bounds *lbound, ubound*.\n  - Lower and upper portfolio risk-exposure bounds *risk_target*: the function multiplies the factor matrix by the weights to obtain portfolio risk exposure.\n  - The turnover limit for position adjustments *turn_over_target*, where turnover is the L1 norm of the difference between target and current weight vectors, namely the sum of absolute differences.",
+      "### Mean-Variance Construction: *mean_variance_builder*\n- Build a model from the classic mean-variance portfolio-optimization problem.\n- The objective function is:\n\n\n\\begin{align*}\n&\\mathop{\\arg\\max}_{\\omega} \\ \\  \\omega_a R - \\frac{1}{2} \\lambda \\sigma   \\\\\n&s.t.\\quad\n\\begin{cases}\n\\omega_L  \\le \\omega_a \\le \\omega_U  \\\\\n\\sigma_L \\le \\sigma \\le \\sigma_U\n\\end{cases}\n\\end{align*}\n\n\nwhere\n- $\\omega_a$ is the vector of active portfolio weights. If $\\omega$ and $\\omega_b$ denote absolute portfolio and benchmark asset-weight vectors, then $\\omega_a =\\omega -\\omega_b$.\n- $R$ is the vector of expected asset returns.\n- $\\lambda$ is the risk-aversion coefficient, and $\\sigma$ is the variance of total portfolio returns.",
+      "##### Function Parameters and Usage",
+      "*mean_variance_builder* accepts:\n- Expected asset-return vector *er*.\n- Risk model *risk_model* (optional).\n- Benchmark asset-weight vector *bm*.\n- Lower and upper asset-weight bounds *lbound, ubound*.\n- Portfolio risk-exposure matrix *risk_exposure* (optional).\n- Lower and upper portfolio risk-exposure bounds *risk_target* (optional).\n- Risk-aversion coefficient *lam* (optional).",
+      "NOTE 1: The lower and upper asset-weight bounds *lbound, ubound* apply to the absolute weight vector.\n- The code calculates active-weight bounds: *$\\omega_L$ = lbound - $\\omega_b$* and *$\\omega_U$ = ubound - $\\omega_b$*. It finally adds $\\omega_b$ back to the optimizer's solution to obtain optimal absolute portfolio weights.\n- The code also calculates active-return risk bounds: *risk_target_lbound - risk_exposure $\\omega_b$* and *risk_target_ubound + risk_exposure $\\omega_b$*.",
+      "NOTE 2: To calculate portfolio variance, *mean_variance_builder* accepts two input forms:\n- The asset-return covariance matrix $\\Sigma$, giving\n\n\\begin{equation*}\n    \\sigma = \\omega_a^T\\Sigma \\omega_a\n\\end{equation*}\n\nwhere $\\Sigma$ corresponds to risk_model['cov'].\n\n- A risk model comprising the factor-return covariance matrix $F$ and the idiosyncratic-return covariance matrix $\\Delta$ (a diagonal matrix):\n\\begin{equation*}\n    \\sigma = \\omega_a^T \\left(X F X^T + \\Delta \\right)  \\omega_a\n\\end{equation*}\n\nBecause there are generally fewer risk factors than stocks, $\\omega_a^T X F X^T \\omega_a$ has lower computational complexity than $\\omega_a^T\\Sigma \\omega_a$, making the second method more efficient.\n\nHere, $F$ corresponds to risk_model['factor_cov'], $\\Delta$ to risk_model['idsync'], and $X$ to risk_model['factor_loading'].",
+      ""
+    ]
+  },
+  "Quick Start 5 - Alpha Factor Quantile Analysis.ipynb": {
+    "code_comments": [
+      "# %matplotlib inline",
+      "# Factor-neutralization settings",
+      "# industry_stryles contains industry styles; risk_styles contains risk styles",
+      "# makeSchedule generates the business-day rebalancing sequence",
+      "# Fetch data",
+      "# fetch_factor_range fetches factor data",
+      "# fetch_risk_model_range fetches risk-model data",
+      "# fetch_dx_return_range fetches return data",
+      "#%%time",
+      "# neutralize is the factor-neutralization function",
+      "# er_quantile_analysis is the quantile-analysis function"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 5: Five-Quantile Alpha Factor Analysis",
+      "## 1. Data Preparation\n------------------\n\n* Universe: CSI 800\n* Factor: `ETOP`\n* Rebalancing frequency: five trading days\n* Start date: 2010-01-01\n* End date: 2019-01-31\n* Number of quantiles: five",
+      "## 2. Comparing Quantile-Group Returns\n-----------------------"
+    ]
+  },
+  "Quick Start 6 - Formula Based Stocks Screening.ipynb": {
+    "code_comments": [
+      "# CSTopN selects the top N values in the cross-section",
+      "# Select the three highest ROE values within each Shenwan level-one industry",
+      "# See the official formula documentation for available functions"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 6: Formula-Based Stock Screening",
+      "## 1. Writing Formulas\n-------------------------",
+      "## 2. Fetching Data\n---------------",
+      "## 3. Stock Screening\n---------------------"
+    ]
+  },
+  "Quick Start 7 - Single Factor IC Analysis.ipynb": {
+    "code_comments": [
+      "# Fetch related data",
+      "# Includes factor values, risk-model data, and stock returns",
+      "# Factor neutralization",
+      "# Neutralize the factors in neutralized_styles",
+      "# Fetch industry data",
+      "# Calculate industry IC",
+      "# Calculate industry IR as ic.mean/ic.std"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 7: Single-Factor Analysis",
+      "## 1. Prepare Historical Factor Data\n-----------------------",
+      "## 2. Calculate the Historical IC Series\n----------------------",
+      "## 3. Calculate Within-Industry IR\n---------------------"
+    ]
+  },
+  "Quick Start 8 - IC Decay Calculation.ipynb": {
+    "code_comments": [
+      "# Set factor names, centered factors, and related settings"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 8: IC Decay Calculation",
+      "> This example calculates IC decay for the EMA5D factor.",
+      "## 1. Basic Parameter Settings",
+      "* Shift the factor with the `SHIFT` formula function.",
+      "* Fetch the underlying data.",
+      "* Neutralize the factor.",
+      "* Calculate the IC series.",
+      "* Draw a bar chart."
+    ]
+  },
+  "Quick Start 9 - Back Testing Stock Screening.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "# Alpha-Mind Quick Start 9: Stock-Screening Backtest",
+      "> This example selects stocks with formulas and backtests the resulting strategy.",
+      "## 1. Parameter Settings\n----------------\n\n* Rebalancing frequency: weekly\n* Universe: CSI 800\n* Start date: 2017-05-31\n* End date: 2019-05-31\n* Performance benchmark: CSI 300",
+      "## 2. Stock-Screening Formula\n-----------------------\n\n* On each rebalancing date, rank stocks by the `EMA5D` factor and select the three highest-ranked stocks.",
+      "## 3. Calculation Process\n----------------",
+      "* Fetch factor values and industry information.",
+      "* Select stocks with the factor and fetch their daily returns.",
+      "* Calculate each rebalancing result and its returns.",
+      "## 4. Performance Presentation\n-------------------\n\n### 4.1 Daily Returns and Drawdown",
+      "* Cumulative-return and drawdown curves",
+      "* Maximum drawdown and annualized return",
+      "### 4.2 Excess Return and Alpha",
+      "### 4.3 Monthly Returns",
+      "### 4.4 Industry Distribution",
+      "### 4.5 Turnover",
+      "* Monthly-turnover histogram"
+    ]
+  },
+  "Step By Step 01 - Getting Started.ipynb": {
+    "code_comments": [],
+    "markdown": [
+      "# Step By Step 01 - Getting Started\n----------",
+      "## 1. Common Packages\n\nThe following tools are frequently used with **alpha-mind**:\n\n* *pyarrow*: tabular-data processing and Arrow interchange;\n* *numpy*: high-performance vector calculations;\n* *matplotlib*: plotting.\n\nI also use more specialized tools:\n\n* *scipy*: common numerical algorithms;\n* *cvxpy*: optimization toolkit.\n\nThe following code verifies that these packages are installed correctly:",
+      "### 2. **alpha-mind**\n\n**alpha-mind** is a standard Python package that can be installed directly with **pip**:\n\n```bash\n$ pip install alpha-mind\n```",
+      "You can verify that alpha-mind is installed successfully. I can now begin exploring its features."
+    ]
+  },
+  "Step By Step 02 - Data Acquisition.ipynb": {
+    "code_comments": [
+      "# Fetch a single date only",
+      "# Fetch a date range",
+      "# Fetch CSI 300 constituents",
+      "# The following example fetches one month of daily returns"
+    ],
+    "markdown": [
+      "# Step By Step 02 - Data Acquisition\n----------",
+      "In the database-backed **alpha-mind** workflow, data is stored in MySQL. To simplify data access, **alpha-mind** provides a unified data interface, `SqlEngine`. The current project also supports PostgreSQL and local Parquet files.",
+      "## 1. Initialize the Data Interface\n\nUsers can initialize `SqlEngine` with a valid SQLAlchemy-format database connection string:",
+      "## 2. Fetch Data\n\nEvery data-access method in `SqlEngine` begins with `fetch_`:",
+      "### 2.1 Fetch Market-Related Data"
+    ]
+  },
+  "Step By Step 03 - Factor Design.ipynb": {
+    "code_comments": [
+      "# Supports intuitive addition, subtraction, multiplication, and division",
+      "# Expressions can be arbitrarily long",
+      "# A standard rolling mean",
+      "# This example uses CSI 300 constituents"
+    ],
+    "markdown": [
+      "# Step By Step 03 - Factor Design\n----------\n\nFactor design requires factor transformations. **alpha-mind** uses **calc-flow-python** to compose transformations efficiently.",
+      "## 1. Fetching Basic Factors",
+      "## 2. Arithmetic Operations",
+      "## 3. Window-Based Rolling Calculations\n\nFinancial calculations inevitably involve time-series processing, which in turn requires rolling operations. **calc-flow-python** provides comprehensive support for these operations.",
+      "## 4. Cross-Sectional Processing\n\nFinancial factor analysis often compares individual stocks. This requires cross-sectional processing, such as ranking CSI 300 constituents by an indicator:",
+      "## 5. Complete Composition\n\nAll the operations above can be composed with one another."
+    ]
+  },
+  "Step By Step 04 - Factor Preprocessing.ipynb": {
+    "code_comments": [
+      "# First, prepare the raw data"
+    ],
+    "markdown": [
+      "# Step By Step 04 - Factor Preprocessing\n--------------\n\nFactors generally require preprocessing, principally standardization and winsorization, before being used to generate signals.",
+      "## 1. Standardization",
+      "## 2. Winsorization",
+      "## 3. Neutralization\n\nThis step is particularly characteristic of quantitative research. For a factor model, the original factor is normally neutralized against **risk factors**, retaining only the residual component.",
+      "## 4. Pipeline\n\n**alpha-mind** provides a unified processing function so users can combine multiple preprocessing steps in one pipeline."
+    ]
+  },
+  "Step By Step 05 - Portfolio Optimization.ipynb": {
+    "code_comments": [
+      "# Assume five assets",
+      "# Current asset weights",
+      "# Expected asset-return vector",
+      "# Asset risk-factor matrix with one risk factor",
+      "# Constraints",
+      "# Constraint 1 - lower and upper asset-weight bounds",
+      "# Constraint 2 - lower and upper portfolio risk-exposure bounds",
+      "# Constraint 3 - turnover upper bound for position adjustments (the lower bound is zero and need not be set)",
+      "# Assume three assets",
+      "# Expected asset-return vector",
+      "# Return covariance matrix",
+      "# Idiosyncratic return variance (idiosyncratic risk)",
+      "# The resulting covariance matrix is",
+      "# Asset risk-exposure matrix with two risk factors",
+      "# Benchmark index weight vector",
+      "# Constraints",
+      "# Constraint 1 - lower and upper absolute asset-weight bounds",
+      "# Constraint 2 - lower and upper portfolio risk-exposure bounds",
+      "# Build a risk model using the asset covariance matrix directly to calculate portfolio variance"
+    ],
+    "markdown": [
+      "# Alpha-Mind Quick Start 3: Portfolio Construction",
+      "The alpha-mind portfolio package provides portfolio-construction utilities.\n- Different construction methods correspond to different optimization problems.\n- The package includes linear and mean-variance construction methods.",
+      "### Linear Construction: *linear_builder*\n- Objective: maximize expected portfolio return subject to linear constraints.\n- Linear constraints include:\n  - Lower and upper asset-weight bounds *lbound, ubound*.\n  - Lower and upper portfolio risk-exposure bounds *risk_target*: the function multiplies the factor matrix by the weights to obtain portfolio risk exposure.\n  - The turnover limit for position adjustments *turn_over_target*, where turnover is the L1 norm of the difference between target and current weight vectors, namely the sum of absolute differences.",
+      "### Mean-Variance Construction: *mean_variance_builder*\n- Build a model from the classic mean-variance portfolio-optimization problem.\n- The objective function is:\n\n\n\\begin{align*}\n&\\mathop{\\arg\\max}_{\\omega} \\ \\  \\omega_a R - \\frac{1}{2} \\lambda \\sigma   \\\\\n&s.t.\\quad\n\\begin{cases}\n\\omega_L  \\le \\omega_a \\le \\omega_U  \\\\\n\\sigma_L \\le \\sigma \\le \\sigma_U\n\\end{cases}\n\\end{align*}\n\n\nwhere\n- $\\omega_a$ is the vector of active portfolio weights. If $\\omega$ and $\\omega_b$ denote absolute portfolio and benchmark asset-weight vectors, then $\\omega_a =\\omega -\\omega_b$.\n- $R$ is the vector of expected asset returns.\n- $\\lambda$ is the risk-aversion coefficient, and $\\sigma$ is the variance of total portfolio returns.",
+      "##### Function Parameters and Usage",
+      "*mean_variance_builder* accepts:\n- Expected asset-return vector *er*.\n- Risk model *risk_model* (optional).\n- Benchmark asset-weight vector *bm*.\n- Lower and upper asset-weight bounds *lbound, ubound*.\n- Portfolio risk-exposure matrix *risk_exposure* (optional).\n- Lower and upper portfolio risk-exposure bounds *risk_target* (optional).\n- Risk-aversion coefficient *lam* (optional).",
+      "NOTE 1: The lower and upper asset-weight bounds *lbound, ubound* apply to the absolute weight vector.\n- The code calculates active-weight bounds: *$\\omega_L$ = lbound - $\\omega_b$* and *$\\omega_U$ = ubound - $\\omega_b$*. It finally adds $\\omega_b$ back to the optimizer's solution to obtain optimal absolute portfolio weights.\n- The code also calculates active-return risk bounds: *risk_target_lbound - risk_exposure $\\omega_b$* and *risk_target_ubound + risk_exposure $\\omega_b$*.",
+      "NOTE 2: To calculate portfolio variance, *mean_variance_builder* accepts two input forms:\n- The asset-return covariance matrix $\\Sigma$, giving\n\n\\begin{equation*}\n    \\sigma = \\omega_a^T\\Sigma \\omega_a\n\\end{equation*}\n\nwhere $\\Sigma$ corresponds to risk_model['cov'].\n\n- A risk model comprising the factor-return covariance matrix $F$ and the idiosyncratic-return covariance matrix $\\Delta$ (a diagonal matrix):\n\\begin{equation*}\n    \\sigma = \\omega_a^T \\left(X F X^T + \\Delta \\right)  \\omega_a\n\\end{equation*}\n\nBecause there are generally fewer risk factors than stocks, $\\omega_a^T X F X^T \\omega_a$ has lower computational complexity than $\\omega_a^T\\Sigma \\omega_a$, making the second method more efficient.\n\nHere, $F$ corresponds to risk_model['factor_cov'], $\\Delta$ to risk_model['idsync'], and $X$ to risk_model['factor_loading']."
+    ]
+  },
+  "Step By Step 06 - Complete Backtest.ipynb": {
+    "code_comments": [
+      "# Back test parameter settings",
+      "# Model settings",
+      "# Constraintes settings",
+      "# Running settings",
+      "# Strategy"
+    ],
+    "markdown": [
+      "# Step by Step 06 - Complete Backtest\n-----------------------------\n\nThis example combines all previous modules into a complete backtest.",
+      "## 1. Backtest Settings\n\nThis is a very simple factor backtest based on an index-enhancement strategy, using a medium-to-low-frequency approach:\n\n1. Rebalancing frequency: ten days, approximately every two weeks.\n2. Rebalancing limit: at most 40% turnover per rebalance.\n3. Universe: CSI 300.\n4. Portfolio optimization: standard mean-variance analysis.",
+      "Two price-and-volume cross-sectional factors are used:\n\n* EMA50;\n* EMV60.\n\nAn equal-weighted factor-combination model is used.",
+      "Portfolio optimization controls several basic style exposures and leverage:\n\n* Leverage: at least 80% invested in stocks, with no leverage.\n* Style exposure: zero excess exposure to market capitalization, nonlinear market capitalization, and market BETA.",
+      "## 2. Run the Backtest\n\nTwo high-level classes help users run backtests conveniently:\n\n* `RunningSetting`: collection of runtime settings.\n* `Strategy`: strategy class.",
+      "After configuration, run the backtest simply by calling the `run` method:",
+      "Results can be analyzed directly through plots, including turnover losses and excess returns."
+    ]
+  },
+  "Step By Step 07 - Risk Factor Model.ipynb": {
+    "code_comments": [
+      "# Individual-stock constraints",
+      "# Use a constrained optimizer to solve this portfolio-optimization problem:"
+    ],
+    "markdown": [
+      "# Step By Step 07 - Risk Factor Model\n-------------------\n\n> This example uses a data provider's factor model for alpha modeling.",
+      "## 1. Data Overview",
+      "### 1.1 Factor Exposures\n\nThis section displays factor cross-sections for one day using only **style factors** and **industry factors**:",
+      "### 1.2 Factor Risk Model\n\nSimilarly, I can retrieve the factor risk matrices:",
+      "#### 1.2.1 Factor Covariance",
+      "#### 1.2.2 Factor Loadings\n\nThese values are the same **factor exposures** shown in section 1.1.",
+      "#### 1.2.3 Idiosyncratic Factor Risk",
+      "## 2. Constructing an Alpha Signal with a Factor Model\n\nFirst, construct a target factor using **calc-flow-python**:",
+      "Factor exposures can remove **style effects** from the original factor through neutralization. This example uses only **market capitalization and Beta** style factors:",
+      "I can verify that these two factors have been removed from the signal.",
+      "## 3. Portfolio Construction\n\nThis section uses the factor calculated above as a single-period forecast for portfolio construction.\n\nThe classic **single-period mean-variance model** is combined with common investment and trading constraints:\n\n1. Leverage cannot be too low or too high.\n2. Individual-stock concentration cannot be excessive.\n3. Industry concentration cannot be excessive.\n4. Style deviations must remain within specified preferences.\n5. Maximize risk-adjusted returns subject to these constraints.\n\nThe following example covers all these points:",
+      "I apply the following controls:\n\n1. Each stock's deviation from the benchmark cannot exceed 2%.\n2. Every industry's deviation from the benchmark cannot exceed 3%.\n3. Deviations for three style factors cannot exceed 50%.\n4. Leverage must be between 80% and 120%.\n\nThe benchmark is normalized CSI 300 index weights. Users can instead use zero as the benchmark to create a long-short portfolio.\n\nThe most complex step is constructing the risk-control matrix and constraint bounds:",
+      "Verify each constraint individually:",
+      "1. Individual-Stock Limits",
+      "2. Industry Deviations",
+      "3. Style Deviations",
+      "4. Leverage",
+      "5. Utility\n\n> **Note**: To save space, utility calculation is simplified here. Actual utility also includes a risk adjustment. Nevertheless, considering expected-return changes alone demonstrates the optimizer's effect.",
+      "## 4. Epilogue",
+      "This example examined in detail how to use a risk-factor model for factor construction and portfolio optimization.\n\nAlpha-mind can backtest these algorithms directly, so users do not need to implement every step manually.\n\nThe purpose of this example is to explain alpha-mind's factor-modeling principles and encourage customized development with its basic components. It cannot cover every factor-modeling and portfolio-optimization feature. Topics such as transaction-cost control are left for future chapters."
+    ]
+  }
+}

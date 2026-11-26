@@ -1,10 +1,10 @@
-# 风险模型
+# Risk Models
 
-风险模型位于 `alphamind.portfolio.riskmodel`。构造输入是 Arrow 表，`get_risk_profile` 输出供 cvxpy 构建器使用的 NumPy 矩阵字典。代码选择接受 Python 序列或 Arrow 数组；代码匹配和特异风险对齐使用 Arrow Compute，未知代码会抛出 `KeyError`。
+Risk models are located in `alphamind.portfolio.riskmodel`. Constructors accept Arrow tables, while `get_risk_profile` returns a dictionary of NumPy matrices for cvxpy builders. Code selections accept Python sequences or Arrow arrays; code matching and idiosyncratic-risk alignment use Arrow Compute, and unknown codes raise `KeyError`.
 
-## 全协方差模型
+## Full-covariance model
 
-适用于资产数量较少、已经估计好证券协方差矩阵的场景：
+This model is appropriate when the number of assets is small and the security covariance matrix has already been estimated:
 
 ```python
 import pyarrow as pa
@@ -22,17 +22,17 @@ covariance = model.get_cov(["A", "B"])
 profile = model.get_risk_profile(["A", "B"])
 ```
 
-除 `code` 外，每列名称必须是对应证券代码的字符串。`profile` 中 `cov` 为证券协方差，其余因子字段为 `None`。
+Other than `code`, every column name must be the corresponding security-code string. In `profile`, `cov` is the security covariance and all other factor fields are `None`.
 
-## 因子风险模型
+## Factor risk model
 
-因子模型使用：
+The factor model uses:
 
 ```text
-证券协方差 = B @ F @ B.T + diag(idsync)
+security covariance = B @ F @ B.T + diag(idsync)
 ```
 
-其中 `B` 是资产风险暴露，`F` 是因子协方差，`idsync` 是每只资产的特质方差。
+Here, `B` is asset risk exposure, `F` is factor covariance, and `idsync` is each asset's idiosyncratic variance.
 
 ```python
 factor_cov = pa.table(
@@ -57,15 +57,15 @@ model = FactorRiskModel(factor_cov, risk_exp, specific)
 profile = model.get_risk_profile(["A", "B"])
 ```
 
-输入要求：
+Input requirements:
 
-- 协方差表用 `Factor` 标识行，风险因子列与暴露表列名一致。
-- `FactorID`、`trade_date` 等元数据不会作为数值风险因子。
-- 暴露表每行一个资产，`code` 决定默认矩阵顺序。
-- 特质风险列可命名为 `idsync` 或 `srisk`；直接构造本地模型时，其数值按方差解释。
-- 数据库引擎会把数据库中的协方差和百分化特质风险转换为小数方差后，再构造 `FactorRiskModel`。
+- The covariance table identifies rows with `Factor`; risk-factor column names must match the exposure-table columns.
+- Metadata such as `FactorID` and `trade_date` is not treated as numerical risk factors.
+- The exposure table contains one asset per row, and `code` determines the default matrix order.
+- The idiosyncratic-risk column may be named `idsync` or `srisk`; when constructing a local model directly, its values are interpreted as variances.
+- Database engines convert database covariance and percentage-based idiosyncratic risk to decimal variances before constructing `FactorRiskModel`.
 
-## 获取子集
+## Retrieving subsets
 
 ```python
 exp = model.get_risk_exp(["A"])
@@ -73,9 +73,9 @@ cov = model.get_factor_cov()
 idsync = model.get_idsync(["A"])
 ```
 
-代码子集顺序由调用参数决定。优化时必须让预期收益、基准、边界、风险暴露和 `codes` 使用同一顺序，否则数值会错位。
+Code-subset order is determined by the call argument. During optimization, expected returns, benchmark weights, bounds, risk exposures, and `codes` must all use the same order to prevent numerical misalignment.
 
-## 用于组合优化
+## Using a model in portfolio optimization
 
 ```python
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
@@ -92,14 +92,14 @@ status, objective, weights = mean_variance_builder(
 )
 ```
 
-`profile` 包含 `cov` 或 `factor_cov` + `factor_loading` + `idsync` 两条路径之一。`constraint_exposure` 是额外线性约束矩阵，与风险模型中的因子暴露不是同一参数；常见约束包括总权重、SIZE 或行业暴露。
+`profile` contains either `cov` or the `factor_cov` + `factor_loading` + `idsync` path. `constraint_exposure` is an additional linear-constraint matrix and is not the same parameter as factor exposure in the risk model; common constraints include total weight, SIZE, or industry exposure.
 
-## 数值检查
+## Numerical checks
 
-- 协方差矩阵应有限、对称并尽量保持半正定。
-- `idsync` 是方差，应非负，不能直接传标准差。
-- 风险时间尺度应与收益持有期一致。
-- 求解器内部会对协方差做对称化，但不会替用户修正错误单位。
-- 数据缺失和代码错位比求解器容差更值得优先检查。
+- Covariance matrices should be finite and symmetric and should remain positive semidefinite where possible.
+- `idsync` is variance, must be nonnegative, and must not be supplied as standard deviation.
+- The risk time horizon should match the return holding period.
+- Solvers symmetrize covariance internally but do not correct incorrect units.
+- Missing data and code misalignment deserve more attention than solver tolerances.
 
-完整本地构造和优化见 [Parquet demo](setup.md)。
+See the [Parquet demo](setup.md) for complete local construction and optimization.

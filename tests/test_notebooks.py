@@ -4,8 +4,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 NOTEBOOKS = sorted((ROOT / "notebooks").glob("*.ipynb"))
-ORIGINAL_CONTENT = json.loads(
-    (ROOT / "tests" / "fixtures" / "notebook_original_content.json").read_text(encoding="utf-8")
+ENGLISH_CONTENT = json.loads(
+    (ROOT / "tests" / "fixtures" / "notebook_english_content.json").read_text(encoding="utf-8")
 )
 
 
@@ -38,19 +38,19 @@ def test_notebook_index_covers_every_notebook():
         assert f"<{path.name}>" in index
 
 
-def test_original_notebook_markdown_and_code_comments_are_preserved():
+def test_english_notebook_markdown_and_code_comments_are_preserved():
     for path in NOTEBOOKS:
-        original = ORIGINAL_CONTENT[path.name]
+        expected = ENGLISH_CONTENT[path.name]
         current = json.loads(path.read_text(encoding="utf-8"))
-        original_markdown = original["markdown"]
+        expected_markdown = expected["markdown"]
         current_markdown = [
             "".join(cell["source"]) for cell in current["cells"] if cell["cell_type"] == "markdown"
         ]
-        assert current_markdown == original_markdown, path.name
+        assert current_markdown == expected_markdown, path.name
 
-        original_comments = original["code_comments"]
+        expected_comments = expected["code_comments"]
         current_code = "\n".join(
             "".join(cell["source"]) for cell in current["cells"] if cell["cell_type"] == "code"
         )
-        for comment in original_comments:
+        for comment in expected_comments:
             assert comment in current_code, (path.name, comment)

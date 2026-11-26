@@ -1,8 +1,8 @@
-# 绩效、换手与风险归因
+# Performance, Turnover, and Risk Attribution
 
-## 组合结算
+## Portfolio settlement
 
-`simple_settle` 计算权重与收益的贡献，并按行业及总计汇总：
+`simple_settle` calculates weight-and-return contributions and summarizes them by industry and in total:
 
 ```python
 from alphamind.settlement.simplesettle import simple_settle
@@ -15,15 +15,15 @@ result = simple_settle(
 )
 ```
 
-输出为 Arrow 表：
+The output is an Arrow table:
 
-- `industry`：行业名称，最后一行是 `total`。
-- `er`：该组净权重与收益的乘积之和。
-- `ic`：该组权重和收益的相关系数。
+- `industry`: industry name; the final row is `total`.
+- `er`: sum of net weight multiplied by return within the group.
+- `ic`: correlation between weights and returns within the group.
 
-传入 `benchmark` 时使用 `weights - benchmark` 作为净权重；否则使用原始权重。收益数值按调用者提供的口径直接相乘，函数不会自动在对数收益和简单收益之间转换。
+When `benchmark` is supplied, `weights - benchmark` is used as net weight; otherwise, raw weights are used. Return values are multiplied directly using the caller's convention; the function does not convert automatically between logarithmic and simple returns.
 
-## 换手率
+## Turnover
 
 ```python
 import pyarrow as pa
@@ -41,15 +41,15 @@ positions = pa.table(
 turnover = calculate_turn_over(positions)
 ```
 
-除 `trade_date` 和 `code` 外，每列都单独计算一条换手序列。公式为：
+A separate turnover series is calculated for every column other than `trade_date` and `code`. The formula is:
 
 ```text
 sum(abs(current_weight - previous_weight))
 ```
 
-首期相对于空仓计算，消失或新增的证券按零权重补齐。该口径没有除以 2。执行器返回的换手使用相同 L1 口径。
+The first period is measured against an empty portfolio, and securities that disappear or appear are assigned zero weight as needed. This convention does not divide by two. Executors return turnover using the same L1 convention.
 
-## 证券级风险归因
+## Security-level risk attribution
 
 ```python
 from alphamind.analysis.riskanalysis import risk_analysis
@@ -61,15 +61,15 @@ explained, exposure = risk_analysis(
 )
 ```
 
-输入表必须行数相同且资产顺序一致：
+Input tables must have identical row counts and asset ordering:
 
-- `net_weights`：`trade_date`、可选 `code`、`weight`。
-- `next_bar_returns`：与持仓对应的 `return` 列。
-- `risk_table`：键列之外的所有列都作为风险因子。
+- `net_weights`: `trade_date`, optional `code`, and `weight`.
+- `next_bar_returns`: the `return` column corresponding to holdings.
+- `risk_table`: every non-key column is treated as a risk factor.
 
-`explained` 每只证券包含 `idiosyncratic` 和各风险因子的收益贡献；各列之和等于 `weight * return`。`exposure` 按日期给出风险暴露贡献。
+For each security, `explained` contains `idiosyncratic` and each risk factor's return contribution; the columns sum to `weight * return`. `exposure` reports risk-exposure contributions by date.
 
-## 组合绩效归因
+## Portfolio performance attribution
 
 ```python
 from alphamind.analysis.perfanalysis import perf_attribution_by_pos
@@ -77,9 +77,9 @@ from alphamind.analysis.perfanalysis import perf_attribution_by_pos
 attribution = perf_attribution_by_pos(active_positions, return_table, risk_exposure)
 ```
 
-该函数在 `risk_analysis` 基础上按 `trade_date` 汇总，每行一个交易日，各贡献列之和等于组合净收益。结果可直接保存为 Parquet。已有证券级 `explained` 表时，使用 `aggregate_attribution(explained)` 直接聚合，避免重复执行风险拆解。
+This function aggregates `risk_analysis` by `trade_date`, with one row per trading day, and contribution columns sum to the portfolio's net return. Results can be saved directly as Parquet. When a security-level `explained` table already exists, use `aggregate_attribution(explained)` to aggregate it directly and avoid repeating risk decomposition.
 
-## 回测结果的基本校验
+## Basic backtest-result checks
 
 ```python
 import numpy as np
@@ -89,12 +89,12 @@ values = to_numpy(attribution, ["idiosyncratic", "BETA", "SIZE"], dtype=float)
 assert np.isfinite(values).all()
 ```
 
-实际检查还应包括：
+Practical checks should also include:
 
-1. 持仓、收益、风险表的日期和代码是否逐行匹配。
-2. 主动权重是否使用同一基准。
-3. 换手与执行管道返回口径是否一致。
-4. 风险因子收益拆解是否覆盖所有非键列。
-5. 收益贡献求和是否能与独立计算的 `weight @ return` 对账。
+1. Whether holdings, returns, and risk tables match by date and code on every row.
+2. Whether active weights use the same benchmark.
+3. Whether turnover uses the same convention as the execution pipeline.
+4. Whether risk-return decomposition covers every non-key column.
+5. Whether summed return contributions reconcile with an independently calculated `weight @ return`.
 
-demo 会同时生成证券级、风险暴露和日度组合归因结果。
+The demo generates security-level, risk-exposure, and daily portfolio attribution results.

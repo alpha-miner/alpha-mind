@@ -1,14 +1,14 @@
-# 基准测试与定时任务
+# Benchmarks and Scheduled Jobs
 
-基准测试命令提供可复现的微基准，覆盖预处理、排名组合、全历史换手、calc-flow 和 Parquet I/O。结果同时输出 JSON 和 Markdown。
+The benchmark command provides reproducible microbenchmarks covering preprocessing, ranked portfolios, full-history turnover, calc-flow, and Parquet I/O. Results are emitted as both JSON and Markdown.
 
-## 本地运行
+## Local execution
 
 ```bash
 uv run alphamind-benchmarks --output benchmark-results
 ```
 
-快速冒烟：
+Quick smoke run:
 
 ```bash
 uv run alphamind-benchmarks \
@@ -18,7 +18,7 @@ uv run alphamind-benchmarks \
   --output benchmark-results
 ```
 
-选择部分用例：
+Select specific cases:
 
 ```bash
 uv run alphamind-benchmarks \
@@ -28,42 +28,42 @@ uv run alphamind-benchmarks \
   --output benchmark-results
 ```
 
-可用 `--case`：`winsorize`、`standardize`、`neutralize`、`rank_build`、`percent_build`、`calc_flow`、`calc_flow_shift`、`turnover`、`parquet`。
+Available `--case` values are `winsorize`, `standardize`, `neutralize`, `rank_build`, `percent_build`, `calc_flow`, `calc_flow_shift`, `turnover`, and `parquet`.
 
-## 参数
+## Parameters
 
-- `--size`：工作负载行数，必须大于 0。
-- `--samples`：正式计时次数，必须大于 0。
-- `--warmup`：预热次数，可为 0。
-- `--output`：结果目录，默认 `benchmark-results`。
-- `--case`：重复传入以选择多个用例；缺省运行全部。
+- `--size`: workload row count; must be greater than 0.
+- `--samples`: number of measured runs; must be greater than 0.
+- `--warmup`: number of warm-up runs; may be 0.
+- `--output`: result directory, defaulting to `benchmark-results`.
+- `--case`: repeat to select multiple cases; all cases run by default.
 
-## 结果文件
+## Result files
 
-`results.json` 包含：
+`results.json` contains:
 
-- schema 版本和 UTC 创建时间；
-- Git commit、Alpha-Mind 版本；
-- Python 版本和操作系统平台；
-- 每个用例的原始秒数、最小/最大/均值/中位数；
-- 以中位数计算的每秒处理行数。
+- Schema version and UTC creation time.
+- Git commit and Alpha-Mind version.
+- Python version and operating-system platform.
+- Raw seconds, minimum, maximum, mean, and median for every case.
+- Rows processed per second, calculated from the median.
 
-`summary.md` 提供适合在 CI 或 PR 中阅读的表格。性能比较应使用相同 Python、依赖、硬件和参数，优先看中位数并同时检查离散程度。
+`summary.md` provides a table suitable for CI or pull requests. Performance comparisons should use identical Python versions, dependencies, hardware, and parameters. Prefer medians and inspect dispersion as well.
 
-## 定时工作流
+## Scheduled workflow
 
-`.github/workflows/benchmarks.yml` 每天 UTC 22:17 运行，即北京时间次日 06:17，也支持手动触发。工作流上传结果并保留 30 天。
+`.github/workflows/benchmarks.yml` runs at 22:17 UTC every day, equivalent to 06:17 Asia/Shanghai on the following day, and also supports manual triggering. The workflow uploads results and retains them for 30 days.
 
-手动执行：在 GitHub Actions 的 Benchmarks 工作流选择 **Run workflow**。定时任务用于趋势观察，不适合把共享 runner 上的微小波动当成严格性能回归结论。
+To run manually, select **Run workflow** in the GitHub Actions Benchmarks workflow. Scheduled jobs are intended for trend observation; small fluctuations on shared runners should not be treated as strict performance-regression conclusions.
 
-## 扩展基准
+## Extending benchmarks
 
-实现代码位于 `src/alphamind/benchmarks/runner.py`：
+Implementation code is located in `src/alphamind/benchmarks/runner.py`:
 
-1. 编写返回可调用对象的 workload 工厂。
-2. 将名称注册到 `WORKLOADS`。
-3. 保持输入构造在计时区域外。
-4. 用固定随机种子生成输入。
-5. 在 `tests/benchmarks/` 添加结果和边界测试。
+1. Write a workload factory that returns a callable.
+2. Register its name in `WORKLOADS`.
+3. Keep input construction outside the timed region.
+4. Generate inputs with a fixed random seed.
+5. Add result and boundary tests under `tests/benchmarks/`.
 
-文件 I/O 基准使用临时目录，每次操作都会真实写入并读取 Parquet，不会把网络数据库延迟混入该微基准。
+File-I/O benchmarks use temporary directories. Every operation writes and reads actual Parquet files; network database latency is not mixed into this microbenchmark.

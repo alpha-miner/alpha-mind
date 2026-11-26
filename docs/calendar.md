@@ -1,8 +1,8 @@
-# 交易日与调仓日程
+# Trading Calendars and Rebalancing Schedules
 
-交易日功能位于 `alphamind.data.calendar`，底层使用 dal-python。默认中国市场日历名为 `china.sse`，内部映射到 DAL 的 `CN.SSE`；`china.ib` 映射到 `CN.IB`。
+Trading-calendar functionality is located in `alphamind.data.calendar` and uses dal-python. The default Chinese market calendar is named `china.sse`, which maps internally to DAL's `CN.SSE`; `china.ib` maps to `CN.IB`.
 
-## 判断交易日与列出区间
+## Checking trading days and listing ranges
 
 ```python
 from alphamind.data.calendar import bizDatesList, isBizDay
@@ -11,9 +11,9 @@ assert isBizDay("china.sse", "2026-01-05")
 dates = bizDatesList("china.sse", "2026-01-05", "2026-01-16")
 ```
 
-`bizDatesList` 返回 `datetime.datetime` 列表，包含起止日期；当开始日期晚于结束日期时返回空列表。输入支持 `date`、`datetime`、`YYYY-MM-DD`、`YYYY%m%d` 和 `YYYY-MM-DD HH:MM:SS` 字符串。
+`bizDatesList` returns a list of `datetime.datetime` values including both endpoints. It returns an empty list when the start date is later than the end date. Inputs may be `date`, `datetime`, `YYYY-MM-DD`, `YYYY%m%d`, or `YYYY-MM-DD HH:MM:SS` strings.
 
-## 日期偏移
+## Date offsets
 
 ```python
 from alphamind.data.calendar import BizDayConventions, advanceDateByCalendar
@@ -23,19 +23,19 @@ next_week = advanceDateByCalendar("china.sse", "2026-01-05", "1w")
 previous_business_day = advanceDateByCalendar("china.sse", "2026-01-05", "-1b")
 ```
 
-`Period` 支持以下单位：
+`Period` supports these units:
 
-| 单位 | 含义 | 示例 |
+| Unit | Meaning | Examples |
 | --- | --- | --- |
-| `b` | 交易日 | `5b`、`-3b` |
-| `d` | 自然日 | `1d` |
-| `w` | 周 | `2w` |
-| `m` | 月 | `1m` |
-| `y` | 年 | `1y` |
+| `b` | Business day | `5b`, `-3b` |
+| `d` | Calendar day | `1d` |
+| `w` | Week | `2w` |
+| `m` | Month | `1m` |
+| `y` | Year | `1y` |
 
-非交易日单位完成日历偏移后，再按交易日约定调整。可用约定为 `Following`、`Preceding`、`ModifiedFollowing` 和 `Unadjusted`。
+After a non-business-day unit is applied, the result is adjusted according to a business-day convention. Available conventions are `Following`, `Preceding`, `ModifiedFollowing`, and `Unadjusted`.
 
-## 生成调仓日程
+## Generating a rebalancing schedule
 
 ```python
 from alphamind.data.calendar import DateGeneration, makeSchedule
@@ -56,10 +56,10 @@ monthly = makeSchedule(
 )
 ```
 
-- `Forward` 从调整后的开始日期向结束日期推进。
-- `Backward` 从调整后的结束日期向前倒推，再按时间正序返回。
-- 频率必须大于零；偏移函数本身允许负周期。
-- 返回值是 Python 时间列表，需要表格输出时显式构造 Arrow 表。
+- `Forward` advances from the adjusted start date toward the end date.
+- `Backward` works backward from the adjusted end date, then returns values in chronological order.
+- Frequency must be positive; the offset function itself permits negative periods.
+- The return value is a Python list of times; construct an Arrow table explicitly when tabular output is required.
 
 ```python
 import pyarrow as pa
@@ -69,9 +69,9 @@ schedule = pa.table({"trade_date": weekly})
 write_parquet(schedule, "schedule.parquet")
 ```
 
-## 收益区间与频率
+## Return horizons and frequency
 
-`SqlEngine.fetch_dx_return*` 使用 `horizon` 和 `offset` 计算未来收益。`Strategy` 通过 `map_freq(freq)` 将调仓频率映射为收益持有期。对数收益转简单收益：
+`SqlEngine.fetch_dx_return*` uses `horizon` and `offset` to calculate forward returns. `Strategy` maps rebalancing frequency to a return holding period through `map_freq(freq)`. Convert logarithmic returns to simple returns with:
 
 ```python
 import numpy as np
@@ -79,4 +79,4 @@ import numpy as np
 simple_return = np.exp(dx) - 1.0
 ```
 
-交易日函数只负责日期，不会验证本地 Parquet 是否真正包含这些日期；文件研究流程仍需将日程与数据键连接或过滤。
+Calendar functions handle dates only; they do not verify that local Parquet data actually contains those dates. File-based research workflows must still join or filter the schedule against the data keys.

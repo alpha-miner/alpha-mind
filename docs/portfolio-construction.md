@@ -1,8 +1,8 @@
-# 组合构建、约束与 cvxpy
+# Portfolio Construction, Constraints, and cvxpy
 
-组合模块提供排名、比例、多空、线性、均值方差和目标波动率构建器。Arrow 用于持仓和风险表；预期收益、协方差与边界在数值层使用 NumPy。
+The portfolio module provides ranked, percentage, long-short, linear, mean-variance, and target-volatility builders. Arrow is used for holdings and risk tables; expected returns, covariance, and bounds use NumPy at the numerical layer.
 
-## 排名与比例组合
+## Ranked and percentage portfolios
 
 ```python
 import numpy as np
@@ -16,9 +16,9 @@ selected_by_percent = percent_build(er, percent=0.1).flatten()
 weights_by_percent = selected_by_percent / selected_by_percent.sum()
 ```
 
-这两个函数返回 0/1 指示矩阵，不会自动归一化。`groups` 可让选择在每个分组内独立进行，`masks` 可屏蔽部分资产。比例组合使用 `int(percent * n)` 计算数量，样本太小时可能为零，归一化前应检查。
+These functions return 0/1 indicator matrices and do not normalize automatically. `groups` performs selection independently within each group, and `masks` can exclude assets. Percentage portfolios calculate the count as `int(percent * n)`, which may be zero for small samples, so check before normalizing.
 
-## 多空组合
+## Long-short portfolios
 
 ```python
 from alphamind.portfolio.longshortbulder import long_short_builder
@@ -26,9 +26,9 @@ from alphamind.portfolio.longshortbulder import long_short_builder
 weights = long_short_builder(er, leverage=1.0).flatten()
 ```
 
-输出按绝对权重之和缩放到 `leverage`。默认不做多空中性处理，正负信号决定方向；需要风险中性时应先中性化信号或添加优化约束。
+Output is scaled so the sum of absolute weights equals `leverage`. Long-short neutrality is not applied by default; positive and negative signals determine direction. Neutralize the signal first or add optimization constraints when risk neutrality is required.
 
-## 线性规划与换手约束
+## Linear programming and turnover constraints
 
 ```python
 from alphamind.portfolio.linearbuilder import linear_builder
@@ -42,9 +42,9 @@ status, objective, weights = linear_builder(
 )
 ```
 
-目标为最大化 `er @ weights`；内部以 `-er` 传给最小化求解器。`risk_constraints` 形状为 `(n_assets, n_constraints)`，上下目标分别给出每个线性暴露的范围。
+The objective maximizes `er @ weights`; internally, `-er` is passed to the minimizing solver. `risk_constraints` has shape `(n_assets, n_constraints)`, and the lower and upper targets define the range of every linear exposure.
 
-限制相对当前持仓的 L1 换手：
+Limit L1 turnover relative to current holdings with:
 
 ```python
 status, objective, weights = linear_builder(
@@ -58,9 +58,9 @@ status, objective, weights = linear_builder(
 )
 ```
 
-约束为 `sum(abs(weights - current_weights)) <= 0.2`，不是单边成交额的一半口径。`method` 参数仅为旧 API 兼容保留。
+The constraint is `sum(abs(weights - current_weights)) <= 0.2`, not a one-sided convention that divides traded value by two. The `method` parameter is retained only for old-API compatibility.
 
-## 均值方差
+## Mean-variance optimization
 
 ```python
 from alphamind.portfolio.meanvariancebuilder import mean_variance_builder
@@ -77,11 +77,11 @@ status, objective, weights = mean_variance_builder(
 )
 ```
 
-求解变量是主动权重 `weights - benchmark`，返回时加回基准。`lbound` 和 `ubound` 是总持仓边界，`risk_target` 是总组合暴露目标。`lam` 越大，风险惩罚相对收益目标越强。
+The solver variable is active weight `weights - benchmark`, and the benchmark is added back to the returned value. `lbound` and `ubound` are total-holding bounds, while `risk_target` defines total-portfolio exposure targets. Larger `lam` values strengthen risk penalties relative to the return objective.
 
-`risk_profile` 可以来自 `FullRiskModel` 或 `FactorRiskModel`。完整示例见 demo 的 `optimize_latest`。
+`risk_profile` can come from `FullRiskModel` or `FactorRiskModel`. See `optimize_latest` in the demo for a complete example.
 
-## 目标波动率
+## Target volatility
 
 ```python
 from alphamind.portfolio.meanvariancebuilder import target_vol_builder
@@ -98,9 +98,9 @@ status, objective, weights = target_vol_builder(
 )
 ```
 
-目标波动率约束作用于主动权重 `weights - benchmark`，即约束主动风险，而不是直接约束总组合绝对波动率。`vol_target` 必须非负。
+The target-volatility constraint applies to active weight `weights - benchmark`, thereby constraining active risk rather than the absolute volatility of the total portfolio directly. `vol_target` must be nonnegative.
 
-## Box 与线性约束
+## Box and linear constraints
 
 ```python
 import pyarrow as pa
@@ -122,21 +122,21 @@ lower_target, upper_target = constraints.risk_targets()
 risk_matrix = constraints.risk_exp
 ```
 
-`LinearConstraints` 以 `backbone @ exposure` 为每个约束的中心。边界类型：
+`LinearConstraints` centers each constraint at `backbone @ exposure`. Boundary types are:
 
-- `ABSOLUTE`：中心加固定偏移。
-- `RELATIVE`：中心乘相对比例，要求中心非负。
-- `MAXABSREL` / `MINABSREL`：组合绝对和相对阈值，参数为二元组。
+- `ABSOLUTE`: center plus a fixed offset.
+- `RELATIVE`: center multiplied by a relative proportion; the center must be nonnegative.
+- `MAXABSREL` / `MINABSREL`: combines absolute and relative thresholds; the parameter is a pair.
 
-旧 `Constraints` 类仍保留，但已弃用；新代码使用 `LinearConstraints`。
+The old `Constraints` class remains available but is deprecated; new code should use `LinearConstraints`.
 
-## 直接使用 cvxpy 优化器
+## Using cvxpy optimizers directly
 
-底层类为 `LPOptimizer`、`L1LPOptimizer`、`QuadraticOptimizer` 和 `TargetVolOptimizer`。它们接收最小化目标，并提供 `status()`、`feval()` 和 `x_value()`。默认线性问题使用 HiGHS，二次/二阶锥问题使用 Clarabel；可通过 `solver` 和 `solver_options` 覆盖。
+The low-level classes are `LPOptimizer`, `L1LPOptimizer`, `QuadraticOptimizer`, and `TargetVolOptimizer`. They accept minimization objectives and provide `status()`, `feval()`, and `x_value()`. Linear problems use HiGHS by default, while quadratic and second-order-cone problems use Clarabel; override these choices with `solver` and `solver_options`.
 
-直接传 `cons_matrix` 时，每行格式为 `[暴露系数..., 下界, 上界]`，共 `n_assets + 2` 列。多数研究代码应优先使用高层构建器。
+When passing `cons_matrix` directly, each row has the format `[exposure coefficients..., lower bound, upper bound]`, for `n_assets + 2` columns. Most research code should prefer the high-level builders.
 
-## 持仓随收益漂移
+## Holding drift with returns
 
 ```python
 from alphamind.portfolio.evolver import evolve_positions
@@ -144,11 +144,11 @@ from alphamind.portfolio.evolver import evolve_positions
 next_weights = evolve_positions(weights, dx_return)
 ```
 
-`dx_return` 是对数收益。函数先按价格变化调整权重，再保持调整前的总绝对杠杆。
+`dx_return` is a logarithmic return. The function first adjusts weights for price changes, then preserves the total absolute leverage from before the adjustment.
 
-## 可行性与状态
+## Feasibility and status
 
-- 可接受状态为 `optimal` 和 `optimal_inaccurate`，后者仍需检查约束残差。
-- 总权重为 1 时，资产上界之和必须至少为 1。
-- 固定暴露目标过多、基准不在边界内或换手限制过紧都可能导致不可行。
-- 不要只检查权重之和；同时检查上下界、暴露、换手和有限值。
+- Accepted statuses are `optimal` and `optimal_inaccurate`; the latter still requires checking constraint residuals.
+- When total weight is 1, the sum of asset upper bounds must be at least 1.
+- Too many fixed exposure targets, a benchmark outside its bounds, or an excessively tight turnover limit can make the problem infeasible.
+- Do not check only the weight sum; also check bounds, exposures, turnover, and finite values.
