@@ -26,7 +26,6 @@ jobs:
         with:
           version: "0.11.28"
           python-version: "3.13"
-          enable-cache: true
       - name: Validate version, tag provenance, and PyPI availability
         shell: bash
         run: |
@@ -51,7 +50,6 @@ jobs:
         with:
           version: "0.11.28"
           python-version: "3.13"
-          enable-cache: true
       - name: Build the pure-Python wheel and source distribution
         run: uv build --clear --no-create-gitignore --out-dir dist
       - name: Verify distributions and create their hash manifest

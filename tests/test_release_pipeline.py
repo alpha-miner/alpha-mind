@@ -178,6 +178,7 @@ def test_release_workflow_gates_publication():
     assert publish.count("uses: pypa/gh-action-pypi-publish@") == 1
     assert "packages-dir: dist" in publish
     assert "PYPI_API_TOKEN" not in workflow
+    assert "enable-cache:" not in workflow
     assert 'python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]' in workflow
     assert 'python-version: "3.14"' in workflow
     assert "python -m pytest -q -o pythonpath= tests" in workflow
