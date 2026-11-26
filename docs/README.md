@@ -1,6 +1,6 @@
 # Alpha-Mind Documentation
 
-This documentation describes the current `2026.11.27` API. All examples use Arrow as the tabular-data boundary. A complete runnable example is available in [`examples/parquet_demo`](../examples/parquet_demo/README.md).
+This documentation describes the current `2026.11.27.1` API. All examples use Arrow as the tabular-data boundary. A complete runnable example is available in [`examples/parquet_demo`](../examples/parquet_demo/README.md).
 
 ## Getting started
 

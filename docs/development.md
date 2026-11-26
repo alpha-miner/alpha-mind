@@ -110,7 +110,7 @@ Clean up local builds and temporary virtual environments afterward; do not commi
 
 `.github/workflows/release.yml` builds the pure-Python wheel and source distribution on Python 3.13. It tests the installed wheel on Python 3.9–3.14 and installs the source distribution on Python 3.14 before publication. A manual **PyPI release** workflow dispatch performs the build, validation, and installation tests without publishing.
 
-The release process follows the DAL and Calc Flow pipelines: annotated-tag provenance, a master-head check, PyPI version-availability validation, distribution metadata checks, SHA-256 manifests, installed-artifact tests, and OIDC Trusted Publishing. Every third-party GitHub Action is pinned to a full commit SHA. Releases use calendar versions in `YYYY.M.D` form, consistent with dal-python and calc-flow-python.
+The release process follows the DAL and Calc Flow pipelines: annotated-tag provenance, a master-head check, PyPI version-availability validation, distribution metadata checks, SHA-256 manifests, installed-artifact tests, and OIDC Trusted Publishing. Every third-party GitHub Action is pinned to a full commit SHA. Releases use calendar versions in `YYYY.M.D` form, consistent with dal-python and calc-flow-python. A same-day corrective release appends a numeric suffix, for example `2026.11.27.1`.
 
 One-time setup:
 
