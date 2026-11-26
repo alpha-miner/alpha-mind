@@ -83,3 +83,21 @@ def test_connectorx_binary_text_is_normalized_for_calc_flow():
 
     assert result.schema.field("name").type == pa.string()
     assert result["name"].to_pylist() == ["alpha", "beta"]
+
+
+def test_record_batch_reader_converts_all_batches():
+    table = pa.table(
+        {
+            "code": ["000001", "000002", "000003"],
+            "price": [100.0, 200.0, 300.0],
+        }
+    )
+
+    batches = table.to_batches(max_chunksize=1)
+    reader = pa.RecordBatchReader.from_batches(table.schema, batches)
+
+    result = as_arrow(reader)
+
+    assert isinstance(result, pa.Table)
+    assert result.equals(table)
+    assert result.num_rows == 3
