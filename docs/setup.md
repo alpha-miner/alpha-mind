@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python 3.9 or later; CI verifies Python 3.9, 3.10, 3.11, 3.12, and 3.13.
+- Python 3.9 or later; CI verifies Python 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14.
 - [uv](https://docs.astral.sh/uv/) for dependency synchronization, virtual environments, builds, and command execution.
 - The local Parquet demo requires neither a database nor external market-data downloads.
 

@@ -1,0 +1,161 @@
+name: PyPI release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "alpha-mind-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  prepare-release:
+    name: Validate release version and tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          version: "0.11.28"
+          python-version: "3.13"
+          enable-cache: true
+      - name: Validate version, tag provenance, and PyPI availability
+        shell: bash
+        run: |
+          args=(--version-only)
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            git fetch --no-tags origin master
+            test "$(git rev-parse FETCH_HEAD)" = "${GITHUB_SHA}"
+            test "$(git cat-file -t "${GITHUB_REF}")" = "tag"
+            test "$(git rev-parse "${GITHUB_REF}^{commit}")" = "${GITHUB_SHA}"
+            args+=(--tag "${GITHUB_REF_NAME}" --check-pypi)
+          fi
+          python scripts/verify_release.py "${args[@]}"
+
+  build-distributions:
+    name: Build and verify Python distributions
+    needs: prepare-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          version: "0.11.28"
+          python-version: "3.13"
+          enable-cache: true
+      - name: Build the pure-Python wheel and source distribution
+        run: uv build --clear --no-create-gitignore --out-dir dist
+      - name: Verify distributions and create their hash manifest
+        shell: bash
+        run: |
+          args=(--dist-dir dist)
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            args+=(--tag "${GITHUB_REF_NAME}")
+          fi
+          python scripts/verify_release.py "${args[@]}" > release-manifest.txt
+      - name: Upload distributions
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: python-distribution
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload hash manifest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: python-release-manifest
+          path: release-manifest.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  test-wheel:
+    name: Installed wheel tests (Python ${{ matrix.python-version }})
+    needs: build-distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Download the verified wheel
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: python-distribution
+          path: dist
+      - name: Install the wheel in an isolated environment
+        run: |
+          python -m venv .release-venv
+          .release-venv/bin/python -m pip install dist/*.whl pytest
+      - name: Check installed imports and command-line entry points
+        run: |
+          .release-venv/bin/python -c "import alphamind; import alphamind.api; print(alphamind.__version__, alphamind.__file__)"
+          .release-venv/bin/alphamind --help
+          .release-venv/bin/alphamind-benchmarks --help
+      - name: Run the test suite against the installed wheel
+        run: .release-venv/bin/python -m pytest -q -o pythonpath= tests
+
+  test-sdist:
+    name: Install source distribution (Python 3.14)
+    needs: build-distributions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.14"
+      - name: Download the verified source distribution
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: python-distribution
+          path: dist
+      - name: Install and smoke-test the source distribution
+        run: |
+          python -m venv .release-venv
+          .release-venv/bin/python -m pip install dist/*.tar.gz
+          .release-venv/bin/python -c "import alphamind; import alphamind.api; print(alphamind.__version__, alphamind.__file__)"
+          .release-venv/bin/alphamind --help
+          .release-venv/bin/alphamind-benchmarks --help
+
+  publish-pypi:
+    name: Publish alpha-mind to PyPI
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: [build-distributions, test-wheel, test-sdist]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/project/alpha-mind/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download the tested distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: python-distribution
+          path: dist
+      - name: Download the verified hash manifest
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: python-release-manifest
+      - name: Confirm artifact integrity
+        run: sha256sum --check ../release-manifest.txt
+        working-directory: dist
+      - name: Publish exact artifacts
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
+        with:
+          packages-dir: dist
