@@ -38,7 +38,7 @@ def benchmark_build_linear(n_samples: int, n_risks: int, n_loop: int) -> None:
             er, lbound, ubound, risk_exp, risk_target=(risk_lbound, risk_ubound)
         )
     impl_model_time = dt.datetime.now() - start
-    print("{0:20s}: {1}".format("Implemented model (cvxpy/HiGHS)", impl_model_time))
+    print("{0:20s}: {1}".format("Implemented model (DPP cvxpy/Clarabel)", impl_model_time))
 
     c = -er
     bounds = [(lbound, ubound) for _ in range(n_samples)]

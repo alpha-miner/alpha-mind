@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from alphamind.portfolio.optimizers import (
+    L1LPOptimizer,
     LPOptimizer,
     QuadraticOptimizer,
     TargetVolOptimizer,
@@ -163,6 +164,126 @@ class TestOptimizers:
         np.testing.assert_array_almost_equal(
             optimizer.x_value(), [-0.3, -0.10919033, 0.40919033], 4
         )
+
+    def test_lpoptimizer_reuses_dpp_model_with_clarabel(self):
+        cons_matrix = np.array([[1.0, 1.0, 1.0, 1.0]])
+        optimizer = LPOptimizer(
+            objective=np.array([-1.0, -2.0]),
+            cons_matrix=cons_matrix,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+        )
+        assert optimizer.solver == "CLARABEL"
+        assert optimizer.is_dpp
+        assert optimizer.is_dcp
+        assert optimizer.solve_count == 1
+
+        objective = np.array([-2.0, -1.0])
+        optimizer.solve(objective=objective)
+        reference = LPOptimizer(
+            objective=objective,
+            cons_matrix=cons_matrix,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+        )
+
+        assert optimizer.solve_count == 2
+        np.testing.assert_allclose(optimizer.x_value(), reference.x_value(), atol=1e-8)
+        assert optimizer.feval() == pytest.approx(reference.feval(), abs=1e-10)
+
+    def test_l1optimizer_reuses_dpp_model_with_new_turnover_data(self):
+        cons_matrix = np.array([[1.0, 1.0, 1.0, 1.0]])
+        optimizer = L1LPOptimizer(
+            objective=np.array([-1.0, -0.5]),
+            cons_matrix=cons_matrix,
+            current_pos=np.array([1.0, 0.0]),
+            target_turn_over=0.2,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+        )
+        objective = np.array([-0.5, -1.0])
+        current = np.array([0.0, 1.0])
+        optimizer.solve(
+            objective=objective,
+            current_pos=current,
+            target_turn_over=0.4,
+        )
+        reference = L1LPOptimizer(
+            objective=objective,
+            cons_matrix=cons_matrix,
+            current_pos=current,
+            target_turn_over=0.4,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+        )
+
+        assert optimizer.is_dpp
+        assert optimizer.solve_count == 2
+        np.testing.assert_allclose(optimizer.x_value(), reference.x_value(), atol=1e-7)
+
+    def test_quadratic_optimizer_reuses_model_and_rejects_new_risk(self):
+        cov = np.eye(2)
+        cons_matrix = np.array([[1.0, 1.0, 1.0, 1.0]])
+        optimizer = QuadraticOptimizer(
+            objective=np.array([-0.1, -0.2]),
+            cons_matrix=cons_matrix,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+            cov=cov,
+        )
+        objective = np.array([-0.2, -0.1])
+        optimizer.solve(objective=objective, penalty=2.0)
+        reference = QuadraticOptimizer(
+            objective=objective,
+            cons_matrix=cons_matrix,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+            penalty=2.0,
+            cov=cov,
+        )
+
+        assert optimizer.is_dpp
+        np.testing.assert_allclose(optimizer.x_value(), reference.x_value(), atol=1e-7)
+        with pytest.raises(ValueError, match="risk model is fixed"):
+            optimizer.solve(cov=2.0 * cov)
+
+    def test_target_vol_optimizer_reuses_dpp_model(self):
+        cov = np.eye(2)
+        cons_matrix = np.array([[1.0, 1.0, 1.0, 1.0]])
+        optimizer = TargetVolOptimizer(
+            objective=np.array([-0.1, -0.2]),
+            cons_matrix=cons_matrix,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+            target_vol=0.8,
+            cov=cov,
+        )
+        optimizer.solve(target_vol=1.0)
+        reference = TargetVolOptimizer(
+            objective=np.array([-0.1, -0.2]),
+            cons_matrix=cons_matrix,
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+            target_vol=1.0,
+            cov=cov,
+        )
+
+        assert optimizer.is_dpp
+        np.testing.assert_allclose(optimizer.x_value(), reference.x_value(), atol=1e-7)
+        with pytest.raises(ValueError, match="target_vol must be non-negative"):
+            optimizer.solve(target_vol=-0.1)
+
+    def test_cached_optimizer_rejects_changed_constraint_exposures(self):
+        optimizer = LPOptimizer(
+            objective=np.array([-1.0, -2.0]),
+            cons_matrix=np.array([[1.0, 1.0, 1.0, 1.0]]),
+            lbound=np.zeros(2),
+            ubound=np.ones(2),
+        )
+        with pytest.raises(ValueError, match="constraint exposures are fixed"):
+            optimizer.solve(
+                cons_matrix=np.array([[1.0, 2.0, 1.0, 1.0]]),
+            )
 
     def test_factor_risk_uses_factor_covariance_directly(self, monkeypatch):
         matrix_shapes = []
