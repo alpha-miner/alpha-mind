@@ -9,7 +9,7 @@ uv sync --frozen --group dev --extra notebooks
 uv run python scripts/execute_notebooks.py
 ```
 
-The runner executes every code cell in a real Jupyter Python kernel, one notebook at a time. Any failing cell makes the command return a nonzero status. Results are not written back to the notebooks, so the repository examples contain no historical outputs. Cells containing synchronous calc-flow calls use top-level `await asyncio.to_thread(...)` to remain compatible with Jupyter's existing event loop.
+The runner executes every code cell in a real Jupyter Python kernel, one notebook at a time. Any failing cell makes the command return a nonzero status. Results are not written back to the notebooks, so the repository examples contain no historical outputs. Direct calc-flow SQL examples use the native `await cf.compute_async(...)` API. Cells containing synchronous `Transformer` calls use top-level `await asyncio.to_thread(...)` to remain compatible with Jupyter's existing event loop.
 
 For interactive reading:
 
