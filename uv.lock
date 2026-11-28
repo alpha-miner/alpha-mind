@@ -3477,7 +3477,7 @@ dependencies = [
     { name = "jupyterlab-server", version = "2.28.0", source = { registry = "https://pypi.org/simple" } },
     { name = "notebook-shim" },
     { name = "packaging" },
-    { name = "setuptools", version = "82.0.1", source = { registry = "https://pypi.org/simple" } },
+    { name = "setuptools", version = "82.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "tomli" },
     { name = "tornado", version = "6.5.10", source = { registry = "https://pypi.org/simple" } },
     { name = "traitlets", version = "5.15.1", source = { registry = "https://pypi.org/simple" } },

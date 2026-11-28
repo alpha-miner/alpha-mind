@@ -104,9 +104,7 @@ class _CvxpyOptimizer:
             self._cons_lower.value = matrix[:, -2]
             self._cons_upper.value = matrix[:, -1]
             exposure = self._cons_exposure @ self._x_var
-            constraints.extend(
-                [exposure >= self._cons_lower, exposure <= self._cons_upper]
-            )
+            constraints.extend([exposure >= self._cons_lower, exposure <= self._cons_upper])
         if extra_constraints:
             constraints.extend(extra_constraints)
         self._problem = cp.Problem(cp.Minimize(objective), constraints)
@@ -140,9 +138,7 @@ class _CvxpyOptimizer:
         cons_matrix=_UNSET,
     ):
         if objective is not _UNSET:
-            self._objective.value = _vector(
-                objective, "objective", len(self._objective_value)
-            )
+            self._objective.value = _vector(objective, "objective", len(self._objective_value))
         if lbound is not _UNSET:
             self._lbound.value = self._bound_value(lbound, -np.inf, "lbound")
         if ubound is not _UNSET:
@@ -231,9 +227,7 @@ class L1LPOptimizer(_CvxpyOptimizer):
         super().__init__(objective, lbound, ubound, solver, solver_options, use_dpp)
         self._current_pos = cp.Parameter(len(self._objective_value))
         self._target_turn_over = cp.Parameter(nonneg=True)
-        self._current_pos.value = _vector(
-            current_pos, "current_pos", len(self._objective_value)
-        )
+        self._current_pos.value = _vector(current_pos, "current_pos", len(self._objective_value))
         self._target_turn_over.value = target_turn_over
         self._build_problem(
             self._objective @ self._x_var,
@@ -282,9 +276,7 @@ class QuadraticOptimizer(_CvxpyOptimizer):
         self._factor_cov = factor_cov
         self._factor_load = factor_load
         self._factor_special = factor_special
-        risk = _risk_expression(
-            self._x_var, cov, factor_cov, factor_load, factor_special
-        )
+        risk = _risk_expression(self._x_var, cov, factor_cov, factor_load, factor_special)
         self._build_problem(
             self._objective @ self._x_var + 0.5 * self._penalty * risk,
             cons_matrix,
@@ -344,9 +336,7 @@ class TargetVolOptimizer(_CvxpyOptimizer):
         self._factor_cov = factor_cov
         self._factor_load = factor_load
         self._factor_special = factor_special
-        risk = _risk_expression(
-            self._x_var, cov, factor_cov, factor_load, factor_special
-        )
+        risk = _risk_expression(self._x_var, cov, factor_cov, factor_load, factor_special)
         self._build_problem(
             self._objective @ self._x_var,
             cons_matrix,
@@ -369,7 +359,5 @@ class TargetVolOptimizer(_CvxpyOptimizer):
             if target_vol < 0:
                 raise ValueError("target_vol must be non-negative")
             self._variance_target.value = target_vol**2
-        QuadraticOptimizer._validate_risk_model(
-            self, cov, factor_cov, factor_load, factor_special
-        )
+        QuadraticOptimizer._validate_risk_model(self, cov, factor_cov, factor_load, factor_special)
         return super().solve(objective, lbound, ubound, cons_matrix)

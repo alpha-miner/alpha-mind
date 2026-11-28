@@ -126,10 +126,10 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - run: uv build
-      - name: Install and smoke-test the wheel
+      - name: Install locked dependencies and smoke-test the wheel
         run: |
-          uv venv .package-venv
-          uv pip install --python .package-venv/bin/python dist/*.whl
+          UV_PROJECT_ENVIRONMENT=.package-venv uv sync --frozen --no-group dev
+          uv pip install --python .package-venv/bin/python --no-deps --force-reinstall dist/*.whl
           .package-venv/bin/python -c "import alphamind; import alphamind.api"
           .package-venv/bin/alphamind --help
           .package-venv/bin/alphamind-benchmarks --help
