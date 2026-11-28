@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "calc-flow-python>=2026.11.14",
+    "calc-flow-python>=2026.11.29",
     "connectorx>=0.3.3",
     "cvxpy>=1.4",
     "dal-python>=2026.11.15",
