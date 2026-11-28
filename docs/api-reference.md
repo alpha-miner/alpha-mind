@@ -98,7 +98,7 @@ Note that `crosssetctions` is a historical spelling in the current source. See [
 | `alphamind.portfolio.constraints` | `BoundaryDirection`, `BoundaryType`, `BoundaryImpl`, `BoxBoundary`, `LinearConstraints`, `create_box_bounds`; legacy `Constraints` |
 | `alphamind.portfolio.evolver` | `evolve_positions` |
 
-`longshortbulder` is also a historical spelling in the current source. See [Risk models](risk-models.md) and [Portfolio construction](portfolio-construction.md) for details.
+`longshortbulder` is also a historical spelling in the current source. All numerical optimizer classes default to reusable DPP models with Clarabel; call `solve(...)` to update parameters on a cached instance. See [Risk models](risk-models.md) and [Portfolio construction](portfolio-construction.md) for details.
 
 ## Execution
 

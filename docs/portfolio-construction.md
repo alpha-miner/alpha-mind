@@ -130,11 +130,43 @@ risk_matrix = constraints.risk_exp
 
 The old `Constraints` class remains available but is deprecated; new code should use `LinearConstraints`.
 
-## Using cvxpy optimizers directly
+## Reusable DPP + Clarabel optimizers
 
-The low-level classes are `LPOptimizer`, `L1LPOptimizer`, `QuadraticOptimizer`, and `TargetVolOptimizer`. They accept minimization objectives and provide `status()`, `feval()`, and `x_value()`. Linear problems use HiGHS by default, while quadratic and second-order-cone problems use Clarabel; override these choices with `solver` and `solver_options`.
+The low-level classes are `LPOptimizer`, `L1LPOptimizer`, `QuadraticOptimizer`, and `TargetVolOptimizer`. They accept minimization objectives and provide `status()`, `feval()`, and `x_value()`. All four classes default to **Clarabel** and require a DPP-compliant model by default. `is_dpp`, `is_dcp`, `solver`, and `solve_count` expose the model state. Override the solver explicitly with `solver="HIGHS"` or another CVXPY-supported solver when required.
 
-When passing `cons_matrix` directly, each row has the format `[exposure coefficients..., lower bound, upper bound]`, for `n_assets + 2` columns. Most research code should prefer the high-level builders.
+The constructor builds and solves the model once. Call `solve(...)` on the same instance to update data and reuse the cached DPP problem instead of reconstructing it:
+
+```python
+from alphamind.portfolio.optimizers import L1LPOptimizer
+
+optimizer = L1LPOptimizer(
+    objective=-er,
+    cons_matrix=cons_matrix,
+    current_pos=current_weights,
+    target_turn_over=0.2,
+    lbound=lower,
+    ubound=upper,
+)
+weights = optimizer.x_value()
+
+optimizer.solve(
+    objective=-next_er,
+    cons_matrix=next_cons_matrix,
+    current_pos=next_current_weights,
+    target_turn_over=0.2,
+    lbound=next_lower,
+    ubound=next_upper,
+)
+next_weights = optimizer.x_value()
+```
+
+Expected returns, asset bounds, and linear-constraint targets are DPP parameters. L1 models additionally parameterize current positions and turnover; quadratic models parameterize `penalty`; target-volatility models parameterize `target_vol` through an internal variance limit. Every solve returns the optimizer instance and increments `solve_count`.
+
+The model structure is fixed: asset count, constraint exposures, and the covariance or factor-risk arrays cannot change on a cached instance. Constraint targets in the final two `cons_matrix` columns may change, but exposure coefficients must remain identical. Construct a new optimizer when the structure or risk model changes. Setting `use_dpp=False` disables the compliance check for advanced use, but does not make arbitrary parameter expressions DPP-compliant.
+
+When passing `cons_matrix` directly, each row has the format `[exposure coefficients..., lower bound, upper bound]`, for `n_assets + 2` columns.
+
+The high-level `linear_builder`, `mean_variance_builder`, and `target_vol_builder` use the same DPP + Clarabel defaults, but they are intentionally one-shot convenience functions and construct a fresh optimizer per call. For repeated rebalancing with changing data, retain a low-level optimizer and call `solve(...)` so the DPP cache can actually be reused.
 
 ## Holding drift with returns
 
