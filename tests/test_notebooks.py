@@ -38,6 +38,19 @@ def test_notebook_index_covers_every_notebook():
         assert f"<{path.name}>" in index
 
 
+def test_direct_calc_flow_sql_examples_use_native_async_api():
+    for name in (
+        "Example 1 - Factor IC analysis.ipynb",
+        "Quick Start 7 - Single Factor IC Analysis.ipynb",
+    ):
+        notebook = json.loads((ROOT / "notebooks" / name).read_text(encoding="utf-8"))
+        code = "\n".join(
+            cell["source"] for cell in notebook["cells"] if cell["cell_type"] == "code"
+        )
+        assert "await cf.compute_async(" in code
+        assert "cf.compute," not in code
+
+
 def test_english_notebook_markdown_and_code_comments_are_preserved():
     for path in NOTEBOOKS:
         expected = ENGLISH_CONTENT[path.name]
