@@ -70,11 +70,13 @@ class _CvxpyOptimizer:
         size = len(self._objective_value)
         self._x_var = cp.Variable(size)
         self._objective = cp.Parameter(size)
-        self._lbound = cp.Parameter(size)
-        self._ubound = cp.Parameter(size)
+        self._lbound = cp.Parameter(size) if lbound is not None else None
+        self._ubound = cp.Parameter(size) if ubound is not None else None
         self._objective.value = self._objective_value
-        self._lbound.value = self._bound_value(lbound, -np.inf, "lbound")
-        self._ubound.value = self._bound_value(ubound, np.inf, "ubound")
+        if self._lbound is not None:
+            self._lbound.value = self._bound_value(lbound, "lbound")
+        if self._ubound is not None:
+            self._ubound.value = self._bound_value(ubound, "ubound")
         self._cons_exposure = None
         self._cons_lower = None
         self._cons_upper = None
@@ -87,13 +89,15 @@ class _CvxpyOptimizer:
         self._status = None
         self._solve_count = 0
 
-    def _bound_value(self, value, default, name):
-        if value is None:
-            return np.full(len(self._objective_value), default, dtype=float)
+    def _bound_value(self, value, name):
         return _vector(value, name, len(self._objective_value))
 
     def _build_problem(self, objective, cons_matrix, extra_constraints=None):
-        constraints = [self._x_var >= self._lbound, self._x_var <= self._ubound]
+        constraints = []
+        if self._lbound is not None:
+            constraints.append(self._x_var >= self._lbound)
+        if self._ubound is not None:
+            constraints.append(self._x_var <= self._ubound)
         if cons_matrix is not None:
             matrix = np.asarray(cons_matrix, dtype=float)
             if matrix.ndim != 2 or matrix.shape[1] != len(self._objective_value) + 2:
@@ -130,6 +134,15 @@ class _CvxpyOptimizer:
         self._cons_lower.value = matrix[:, -2]
         self._cons_upper.value = matrix[:, -1]
 
+    def _update_bound(self, parameter, value, name):
+        if parameter is None:
+            if value is not None:
+                raise ValueError(f"cached optimizer cannot add {name}")
+            return
+        if value is None:
+            raise ValueError(f"cached optimizer cannot remove {name}")
+        parameter.value = self._bound_value(value, name)
+
     def solve(
         self,
         objective=_UNSET,
@@ -140,9 +153,9 @@ class _CvxpyOptimizer:
         if objective is not _UNSET:
             self._objective.value = _vector(objective, "objective", len(self._objective_value))
         if lbound is not _UNSET:
-            self._lbound.value = self._bound_value(lbound, -np.inf, "lbound")
+            self._update_bound(self._lbound, lbound, "lbound")
         if ubound is not _UNSET:
-            self._ubound.value = self._bound_value(ubound, np.inf, "ubound")
+            self._update_bound(self._ubound, ubound, "ubound")
         if cons_matrix is not _UNSET:
             self._update_constraints(cons_matrix)
         options = dict(self._solver_options)
